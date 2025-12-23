@@ -25,7 +25,7 @@ def test_get_subscription_not_found(mock_db_session):
         response = client.get("/v1/billing/subscription")
         assert response.status_code == 200
         assert response.json()["status"] == "active"
-        assert response.json()["plan_id"] == "free"
+        assert response.json()["plan_id"] == "FREE"
 
 def test_upgrade_plan_success(mock_billing_service):
     # Override auth dependency to avoid DB hit

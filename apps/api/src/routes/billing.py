@@ -1,13 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List
 from poly_db.database import get_db_session
-from poly_db.repositories import (
-    TeamRepository,
-    SubscriptionRepository,
-    InvoiceRepository,
-    CreditPurchaseRepository
-)
+from poly_db.repositories import TeamRepository
 from poly_core.services.billing import BillingService
 from poly_db.models.teams import PlanType
 from poly_core.constants import I18nKeys
@@ -23,7 +18,11 @@ from poly_core.schemas.billing import (
     DowngradeSubscriptionRequest,
     PaymentMethodResponse,
     SetupSessionRequest,
-    CreditPurchaseResponse
+    CreditPurchaseResponse,
+    CreditsResponse,
+    UsageHistoryResponse,
+    PricingResponse,
+    InvoicePdfResponse
 )
 from ..config import get_settings
 import uuid
@@ -51,30 +50,9 @@ def get_billing_service(session: Session = Depends(get_db_session)):
 @router.get("/subscription", response_model=SubscriptionResponse)
 async def get_subscription(
     team_id: uuid.UUID = Depends(get_current_team_id),
-    session: Session = Depends(get_db_session)
+    billing_service: BillingService = Depends(get_billing_service)
 ):
-    repo = SubscriptionRepository(session)
-    sub = repo.get_by_team_id(team_id)
-    if not sub:
-        # Return default FREE plan response if no subscription found
-        # In a real app we might want to ensure every team has a subscription record or handle None
-        # But schema requires fields. Let's return dummy stricture matching schema or create logic.
-        # For now, let's assume if no sub, it's a "virtual" free plan
-        return {
-            "stripe_subscription_id": "",
-            "status": "active",
-            "plan_id": "free",
-            "current_period_end": 0, # or now?
-            "cancel_at_period_end": False
-        }
-        # Actually Pydantic validation might fail on ints/dates.
-        # Better: create a default subscription for the team if missing?
-        # Or return null?
-        # Schema says current_period_end is datetime.
-        # Let's fake it for now or return None if schema allowed Optional.
-        # But schema is strict.
-        
-    return sub
+    return billing_service.get_subscription_or_default(team_id)
 
 @router.post("/portal", response_model=PortalSessionResponse)
 async def create_portal_session(
@@ -125,7 +103,7 @@ async def purchase_credits(
     billing_service: BillingService = Depends(get_billing_service)
 ):
     try:
-        session = billing_service.create_credits_checkout_session(
+        session = billing_service.purchase_credits(
             team_id=team_id,
             amount=body.amount,
             success_url=body.success_url,
@@ -138,30 +116,49 @@ async def purchase_credits(
 @router.get("/usage", response_model=UsageResponse)
 async def get_usage(
     team_id: uuid.UUID = Depends(get_current_team_id),
-    session: Session = Depends(get_db_session)
+    billing_service: BillingService = Depends(get_billing_service)
 ):
-    repo = TeamRepository(session)
-    team = repo.get(team_id)
-    if not team:
+    try:
+        return billing_service.get_usage(team_id)
+    except ValueError:
         raise HTTPException(status_code=404, detail=I18nKeys.ERR_TEAM_NOT_FOUND)
-    
-    from poly_core.constants import PLAN_LIMITS
-    limits = PLAN_LIMITS.get(team.plan.value, PLAN_LIMITS["FREE"])
-    
-    return {
-        "plan": team.plan,
-        "monthly_upload_count": team.monthly_upload_count,
-        "monthly_limit": limits["uploads_per_month"],
-        "extra_credits": team.extra_credits
-    }
+
+@router.get("/usage/history", response_model=UsageHistoryResponse)
+async def get_usage_history(
+    team_id: uuid.UUID = Depends(get_current_team_id),
+    billing_service: BillingService = Depends(get_billing_service)
+):
+    items = billing_service.get_usage_history(team_id)
+    return {"items": items}
 
 @router.get("/invoices", response_model=List[InvoiceResponse])
 async def list_invoices(
     team_id: uuid.UUID = Depends(get_current_team_id),
-    session: Session = Depends(get_db_session)
+    billing_service: BillingService = Depends(get_billing_service)
 ):
-    repo = InvoiceRepository(session)
-    return repo.get_all_by_team(team_id)
+    return billing_service.list_invoices(team_id)
+
+@router.get("/invoices/{invoice_id}", response_model=InvoiceResponse)
+async def get_invoice(
+    invoice_id: uuid.UUID,
+    team_id: uuid.UUID = Depends(get_current_team_id),
+    billing_service: BillingService = Depends(get_billing_service)
+):
+    invoice = billing_service.get_invoice_for_team(team_id, invoice_id)
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return invoice
+
+@router.get("/invoices/{invoice_id}/pdf", response_model=InvoicePdfResponse)
+async def get_invoice_pdf(
+    invoice_id: uuid.UUID,
+    team_id: uuid.UUID = Depends(get_current_team_id),
+    billing_service: BillingService = Depends(get_billing_service)
+):
+    url = billing_service.get_invoice_pdf_for_team(team_id, invoice_id)
+    if not url:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return {"url": url}
 
 @router.post("/subscription/downgrade")
 async def downgrade_plan(
@@ -193,6 +190,18 @@ async def list_payment_methods(
 ):
     return billing_service.list_payment_methods(team_id)
 
+@router.patch("/payment-methods/{payment_method_id}/default")
+async def set_default_payment_method(
+    payment_method_id: str,
+    team_id: uuid.UUID = Depends(get_current_team_id),
+    billing_service: BillingService = Depends(get_billing_service)
+):
+    try:
+        billing_service.set_default_payment_method(team_id, payment_method_id)
+        return {"status": "success"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.post("/payment-methods", response_model=CheckoutSessionResponse)
 async def add_payment_method(
     body: SetupSessionRequest,
@@ -220,7 +229,22 @@ async def delete_payment_method(
 @router.get("/credits/history", response_model=List[CreditPurchaseResponse])
 async def get_credits_history(
     team_id: uuid.UUID = Depends(get_current_team_id),
-    session: Session = Depends(get_db_session)
+    billing_service: BillingService = Depends(get_billing_service)
 ):
-    repo = CreditPurchaseRepository(session)
-    return repo.get_all_by_team(team_id)
+    return billing_service.list_credit_purchases(team_id)
+
+@router.get("/credits", response_model=CreditsResponse)
+async def get_credits(
+    team_id: uuid.UUID = Depends(get_current_team_id),
+    billing_service: BillingService = Depends(get_billing_service)
+):
+    try:
+        return billing_service.get_credits(team_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail=I18nKeys.ERR_TEAM_NOT_FOUND)
+
+@router.get("/pricing", response_model=PricingResponse)
+async def get_pricing(
+    billing_service: BillingService = Depends(get_billing_service)
+):
+    return billing_service.get_pricing()

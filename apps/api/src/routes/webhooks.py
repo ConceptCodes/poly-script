@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, Header, HTTPException, Depends
 import stripe
 from sqlalchemy.orm import Session
 from poly_db.database import get_db_session
+from poly_db.repositories import TeamRepository, InvoiceRepository, SubscriptionRepository
 from poly_core.services.billing import BillingService
 from ..config import get_settings
 import uuid
@@ -27,6 +28,9 @@ async def stripe_webhook(
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     billing_service = BillingService(session, settings.STRIPE_SECRET_KEY)
+    team_repo = TeamRepository(session)
+    invoice_repo = InvoiceRepository(session)
+    sub_repo = SubscriptionRepository(session)
 
     if event["type"] == "checkout.session.completed":
         session_obj = event["data"]["object"]
@@ -53,13 +57,40 @@ async def stripe_webhook(
 
     elif event["type"] == "invoice.paid":
         invoice = event["data"]["object"]
-        # Update local invoice record
-        from poly_db.repositories import InvoiceRepository
-        from datetime import datetime
-        inv_repo = InvoiceRepository(session)
-        # Find or create invoice
-        # In a real app, you'd want to sync all invoices
-        pass
+        team = team_repo.get_by_stripe_customer_id(invoice.get("customer"))
+        if team:
+            from datetime import datetime, timezone
+            invoice_id = invoice.get("id")
+            existing = invoice_repo.get_by_stripe_invoice_id(invoice_id)
+            payload = {
+                "team_id": team.id,
+                "stripe_invoice_id": invoice_id,
+                "amount_due": invoice.get("amount_due", 0),
+                "amount_paid": invoice.get("amount_paid", 0),
+                "currency": invoice.get("currency", "usd"),
+                "status": invoice.get("status", "paid"),
+                "invoice_pdf": invoice.get("invoice_pdf"),
+                "hosted_invoice_url": invoice.get("hosted_invoice_url"),
+                "period_start": datetime.fromtimestamp(invoice.get("period_start", 0), tz=timezone.utc),
+                "period_end": datetime.fromtimestamp(invoice.get("period_end", 0), tz=timezone.utc),
+            }
+            if existing:
+                invoice_repo.update(existing.id, **payload)
+            else:
+                invoice_repo.create(**payload)
+
+    elif event["type"] == "invoice.payment_failed":
+        invoice = event["data"]["object"]
+        team = team_repo.get_by_stripe_customer_id(invoice.get("customer"))
+        if team:
+            invoice_id = invoice.get("id")
+            existing = invoice_repo.get_by_stripe_invoice_id(invoice_id)
+            if existing:
+                invoice_repo.update(existing.id, status=invoice.get("status", "past_due"))
+            # Mark subscription past_due if present
+            sub = sub_repo.get_by_team_id(team.id)
+            if sub:
+                sub_repo.update(sub.id, status="past_due")
 
     session.commit()
     return {"status": "success"}
