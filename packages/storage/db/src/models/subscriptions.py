@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy import String, ForeignKey, DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base, TimestampMixin
