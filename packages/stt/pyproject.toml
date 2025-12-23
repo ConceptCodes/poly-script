@@ -5,3 +5,54 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-asyncio>=0.26.0",
+    "ruff>=0.14.10",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "N",
+    "UP",
+    "B",
+    "C4",
+    "DTZ",
+    "T",
+    "PGH",
+    "PLC",
+    "PIE",
+    "SIM",
+    "TID",
+    "TCH",
+    "ARG",
+    "PTH",
+    "PD",
+    "ERA",
+    "PLR",
+    "FLY",
+    "RUF",
+]
+ignore = [
+    "E501",
+    "PLR2004",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "double"
+skip-magic-trailing-comma = false
+line-ending = "lf"
