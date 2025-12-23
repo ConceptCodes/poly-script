@@ -8,6 +8,7 @@ from ..models.credit_purchases import CreditPurchase
 from ..models.invoices import Invoice
 import uuid
 
+
 class TeamRepository(BaseRepository[Team]):
     def __init__(self, session):
         super().__init__(Team, session)
@@ -23,6 +24,7 @@ class TeamRepository(BaseRepository[Team]):
     def list_by_plan(self, plan: PlanType) -> list[Team]:
         stmt = select(Team).where(Team.plan == plan)
         return self.session.execute(stmt).scalars().all()
+
 
 class SubscriptionRepository(BaseRepository[Subscription]):
     def __init__(self, session):
@@ -40,29 +42,40 @@ class SubscriptionRepository(BaseRepository[Subscription]):
         stmt = select(Subscription).where(Subscription.status == status)
         return self.session.execute(stmt).scalars().all()
 
+
 class UsageLogRepository(BaseRepository[UsageLog]):
     def __init__(self, session):
         super().__init__(UsageLog, session)
 
     def get_monthly_usage(self, team_id: uuid.UUID) -> int:
-        stmt = select(func.coalesce(func.sum(UsageLog.amount), 0)).where(UsageLog.team_id == team_id)
+        stmt = select(func.coalesce(func.sum(UsageLog.amount), 0)).where(
+            UsageLog.team_id == team_id
+        )
         return int(self.session.execute(stmt).scalar_one() or 0)
 
     def get_by_team_id(self, team_id: uuid.UUID) -> list[UsageLog]:
-        stmt = select(UsageLog).where(UsageLog.team_id == team_id).order_by(UsageLog.created_at.desc())
+        stmt = (
+            select(UsageLog).where(UsageLog.team_id == team_id).order_by(UsageLog.created_at.desc())
+        )
         return self.session.execute(stmt).scalars().all()
+
 
 class CreditPurchaseRepository(BaseRepository[CreditPurchase]):
     def __init__(self, session):
         super().__init__(CreditPurchase, session)
 
     def get_all_by_team(self, team_id: uuid.UUID) -> list[CreditPurchase]:
-        stmt = select(CreditPurchase).where(CreditPurchase.team_id == team_id).order_by(CreditPurchase.created_at.desc())
+        stmt = (
+            select(CreditPurchase)
+            .where(CreditPurchase.team_id == team_id)
+            .order_by(CreditPurchase.created_at.desc())
+        )
         return self.session.execute(stmt).scalars().all()
 
     def get_by_stripe_session_id(self, stripe_session_id: str) -> Optional[CreditPurchase]:
         stmt = select(CreditPurchase).where(CreditPurchase.stripe_session_id == stripe_session_id)
         return self.session.execute(stmt).scalar_one_or_none()
+
 
 class InvoiceRepository(BaseRepository[Invoice]):
     def __init__(self, session):

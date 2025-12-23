@@ -5,7 +5,7 @@ from .billing import (
     SubscriptionRepository,
     UsageLogRepository,
     CreditPurchaseRepository,
-    InvoiceRepository
+    InvoiceRepository,
 )
 from .payment_methods import PaymentMethodRepository
 from .teams import TeamMemberRepository, TeamInvitationRepository
@@ -35,5 +35,5 @@ __all__ = [
     "TranscriptEditRepository",
     "AdminUserRepository",
     "AuditLogRepository",
-    "UserSettingsRepository"
+    "UserSettingsRepository",
 ]

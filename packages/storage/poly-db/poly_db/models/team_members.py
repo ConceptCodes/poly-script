@@ -4,16 +4,16 @@ from .base import Base, TimestampMixin
 import enum
 import uuid
 
+
 class TeamRole(str, enum.Enum):
     ADMIN = "ADMIN"
     MEMBER = "MEMBER"
     VIEWER = "VIEWER"
 
+
 class TeamMember(Base, TimestampMixin):
     __tablename__ = "team_members"
-    __table_args__ = (
-        UniqueConstraint("team_id", "user_id", name="uq_team_user"),
-    )
+    __table_args__ = (UniqueConstraint("team_id", "user_id", name="uq_team_user"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     team_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("teams.id", ondelete="CASCADE"))

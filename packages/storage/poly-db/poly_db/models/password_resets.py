@@ -5,6 +5,7 @@ from .base import Base, TimestampMixin
 from datetime import datetime
 import uuid
 
+
 class PasswordReset(Base, TimestampMixin):
     __tablename__ = "password_resets"
 

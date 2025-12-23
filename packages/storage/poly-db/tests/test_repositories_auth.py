@@ -1,6 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from poly_db.models import User, OAuthAccount, PasswordReset, RefreshToken
-from poly_db.repositories import OAuthAccountRepository, PasswordResetRepository, RefreshTokenRepository
+from poly_db.repositories import (
+    OAuthAccountRepository,
+    PasswordResetRepository,
+    RefreshTokenRepository,
+)
 
 
 def test_auth_repositories(session):

@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from poly_db.models import Base
 
+
 @pytest.fixture(scope="session")
 def engine():
     """Create an in-memory SQLite database for testing."""
@@ -14,6 +15,7 @@ def engine():
     )
     Base.metadata.create_all(engine)
     return engine
+
 
 @pytest.fixture
 def session(engine):

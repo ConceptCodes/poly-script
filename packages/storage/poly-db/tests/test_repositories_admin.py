@@ -3,7 +3,9 @@ from poly_db.repositories import AdminUserRepository, AuditLogRepository
 
 
 def test_admin_repositories(session):
-    admin = AdminUser(email="admin@example.com", hashed_password="pw", full_name="Admin", is_active=True)
+    admin = AdminUser(
+        email="admin@example.com", hashed_password="pw", full_name="Admin", is_active=True
+    )
     session.add(admin)
     session.commit()
 

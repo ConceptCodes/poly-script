@@ -5,10 +5,11 @@ from sqlalchemy import select
 import uuid
 from typing import Optional, List
 
+
 class TranscriptionJobRepository(BaseRepository[TranscriptionJob]):
     def __init__(self, session):
         super().__init__(TranscriptionJob, session)
-        
+
     def get_by_team_id(self, team_id: uuid.UUID) -> List[TranscriptionJob]:
         stmt = select(TranscriptionJob).where(TranscriptionJob.team_id == team_id)
         return self.session.execute(stmt).scalars().all()
@@ -17,17 +18,19 @@ class TranscriptionJobRepository(BaseRepository[TranscriptionJob]):
         stmt = select(TranscriptionJob).where(TranscriptionJob.status == status)
         return self.session.execute(stmt).scalars().all()
 
-    def get_by_team_and_status(self, team_id: uuid.UUID, status: JobStatus) -> List[TranscriptionJob]:
+    def get_by_team_and_status(
+        self, team_id: uuid.UUID, status: JobStatus
+    ) -> List[TranscriptionJob]:
         stmt = select(TranscriptionJob).where(
-            TranscriptionJob.team_id == team_id,
-            TranscriptionJob.status == status
+            TranscriptionJob.team_id == team_id, TranscriptionJob.status == status
         )
         return self.session.execute(stmt).scalars().all()
+
 
 class AudioAssetRepository(BaseRepository[AudioAsset]):
     def __init__(self, session):
         super().__init__(AudioAsset, session)
-        
+
     def get_by_job_id(self, job_id: uuid.UUID) -> Optional[AudioAsset]:
         stmt = select(AudioAsset).where(AudioAsset.job_id == job_id)
         return self.session.execute(stmt).scalar_one_or_none()

@@ -6,6 +6,7 @@ import uuid
 
 T = TypeVar("T", bound=Base)
 
+
 class BaseRepository(Generic[T]):
     def __init__(self, model: Type[T], session: Session):
         self.model = model

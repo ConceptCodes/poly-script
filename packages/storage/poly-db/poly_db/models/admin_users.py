@@ -3,6 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base, TimestampMixin
 import uuid
 
+
 class AdminUser(Base, TimestampMixin):
     __tablename__ = "admin_users"
 

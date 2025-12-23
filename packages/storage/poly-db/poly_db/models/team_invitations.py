@@ -6,6 +6,7 @@ from .team_members import TeamRole
 from datetime import datetime
 import uuid
 
+
 class TeamInvitation(Base, TimestampMixin):
     __tablename__ = "team_invitations"
 
@@ -16,7 +17,7 @@ class TeamInvitation(Base, TimestampMixin):
     token: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    
+
     # Relationships
     team: Mapped["Team"] = relationship(back_populates="invitations")
 

@@ -4,6 +4,7 @@ from .base import Base, TimestampMixin
 from datetime import datetime
 import uuid
 
+
 class RefreshToken(Base, TimestampMixin):
     __tablename__ = "refresh_tokens"
 
@@ -12,7 +13,7 @@ class RefreshToken(Base, TimestampMixin):
     token: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
-    
+
     # Relationships
     user: Mapped["User"] = relationship(back_populates="refresh_tokens")
 

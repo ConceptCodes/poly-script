@@ -51,11 +51,9 @@ __all__ = [
     "TranscriptEdit",
     "UserSettings",
     "AuditLog",
-
     # Repositories
     "BaseRepository",
     "UserRepository",
-    
     # Database
     "get_engine",
     "get_session_factory",
