@@ -1,6 +1,6 @@
 from pydantic import BaseModel, HttpUrl, Field
 from datetime import datetime
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Any
 from poly_db.models.teams import PlanType
 import uuid
 
@@ -67,3 +67,30 @@ class CreditPurchaseResponse(BaseModel):
     price_paid: int
     currency: str
     model_config = {"from_attributes": True}
+
+class CreditsResponse(BaseModel):
+    plan: PlanType
+    extra_credits: int
+    model_config = {"from_attributes": True}
+
+class UsageLogResponse(BaseModel):
+    action: str
+    amount: int
+    description: Optional[str]
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+class UsageHistoryResponse(BaseModel):
+    items: List[UsageLogResponse]
+
+class PricingPlanResponse(BaseModel):
+    plan: str
+    limits: Dict[str, Union[int, float]]
+    price_id: Optional[str] = None
+
+class PricingResponse(BaseModel):
+    plans: List[PricingPlanResponse]
+    credit_price_cents: int
+
+class InvoicePdfResponse(BaseModel):
+    url: Optional[str]

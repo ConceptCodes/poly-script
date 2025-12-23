@@ -12,9 +12,12 @@ def reset_all_monthly_usage(stripe_secret_key: str):
         team_repo = TeamRepository(session)
         teams = team_repo.list()
         for team in teams:
-            # Here we might check the team's billing cycle date
-            # But for simplicity, we reset everyone (could be separate crons)
-            billing_service.reset_monthly_usage(team.id)
+            if hasattr(team, "monthly_reset_date") and team.monthly_reset_date:
+                from datetime import datetime, timezone
+                if team.monthly_reset_date <= datetime.now(timezone.utc):
+                    billing_service.reset_monthly_usage(team.id)
+            else:
+                billing_service.reset_monthly_usage(team.id)
         session.commit()
 
 def sync_active_subscriptions(stripe_secret_key: str):
@@ -28,6 +31,6 @@ def sync_active_subscriptions(stripe_secret_key: str):
         sub_repo = SubscriptionRepository(session)
         subs = sub_repo.list()
         for sub in subs:
-            if sub.status == "active":
+            if sub.status in {"active", "trialing", "past_due"}:
                 billing_service.sync_subscription(sub.stripe_subscription_id)
         session.commit()

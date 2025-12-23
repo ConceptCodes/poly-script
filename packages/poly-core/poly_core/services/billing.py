@@ -1,10 +1,17 @@
 import stripe
 import uuid
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
-from poly_db.repositories import TeamRepository, SubscriptionRepository, UsageLogRepository
+from poly_db.repositories import (
+    TeamRepository,
+    SubscriptionRepository,
+    UsageLogRepository,
+    CreditPurchaseRepository,
+    InvoiceRepository,
+)
 from poly_db.models.teams import PlanType
-from ..constants import PLAN_LIMITS, PLAN_STRIPE_IDS, I18nKeys
+from ..constants import PLAN_LIMITS, PLAN_STRIPE_IDS, CREDIT_PRICE_CENTS, I18nKeys
 
 class BillingService:
     def __init__(self, session: Session, stripe_api_key: str):
@@ -13,6 +20,8 @@ class BillingService:
         self.team_repo = TeamRepository(session)
         self.subscription_repo = SubscriptionRepository(session)
         self.usage_repo = UsageLogRepository(session)
+        self.credit_repo = CreditPurchaseRepository(session)
+        self.invoice_repo = InvoiceRepository(session)
 
     def create_stripe_customer(self, team_id: uuid.UUID, email: str, name: str) -> str:
         """Creates a Stripe customer for a team."""
@@ -31,6 +40,30 @@ class BillingService:
         
         self.team_repo.update(team_id, stripe_customer_id=customer.id)
         return customer.id
+
+    def get_subscription(self, team_id: uuid.UUID):
+        """Returns the local subscription record if available."""
+        return self.subscription_repo.get_by_team_id(team_id)
+
+    def get_subscription_or_default(self, team_id: uuid.UUID) -> Dict[str, Any]:
+        """Returns subscription data or a default FREE plan response."""
+        sub = self.subscription_repo.get_by_team_id(team_id)
+        if sub:
+            return sub
+        team = self.team_repo.get(team_id)
+        now = datetime.now(timezone.utc)
+        plan_id = team.plan.value if team else PlanType.FREE.value
+        return {
+            "stripe_subscription_id": "",
+            "status": "active",
+            "plan_id": plan_id,
+            "current_period_end": now + timedelta(days=30),
+            "cancel_at_period_end": False
+        }
+
+    def upgrade_plan(self, team_id: uuid.UUID, new_plan: PlanType, success_url: str, cancel_url: str):
+        """Creates a checkout session to upgrade a team to a paid plan."""
+        return self.create_checkout_session(team_id, new_plan, success_url, cancel_url)
 
     def check_upload_limit(self, team_id: uuid.UUID) -> Tuple[bool, str]:
         """Checks if a team can upload a new file based on their plan and extra credits."""
@@ -132,7 +165,7 @@ class BillingService:
                     "product_data": {"name": f"{amount} PolyScript Credits"},
                     "unit_amount": CREDIT_PRICE_CENTS,
                 },
-                "quantity": 1,
+                "quantity": amount,
             }],
             mode="payment",
             success_url=success_url,
@@ -140,6 +173,10 @@ class BillingService:
             metadata={"team_id": str(team_id), "amount": str(amount), "type": "credits"}
         )
         return session
+
+    def purchase_credits(self, team_id: uuid.UUID, amount: int, success_url: str, cancel_url: str):
+        """Creates a checkout session to purchase credits."""
+        return self.create_credits_checkout_session(team_id, amount, success_url, cancel_url)
 
     def sync_subscription(self, stripe_subscription_id: str):
         """Syncs a Stripe subscription with the local database."""
@@ -195,6 +232,9 @@ class BillingService:
         
         # Check if already processed
         # (This is just a simple check, in production you'd want more robust idempotency)
+        existing = purchase_repo.get_by_stripe_session_id(stripe_session_id)
+        if existing:
+            return
         
         purchase_repo.create(
             team_id=team_id,
@@ -280,7 +320,75 @@ class BillingService:
             customer=team.stripe_customer_id,
             type="card"
         )
-        return methods.data
+        results: List[Dict[str, Any]] = []
+        for method in methods.data:
+            card = method.get("card") if isinstance(method, dict) else method.card
+            if not card:
+                continue
+            results.append({
+                "id": method["id"] if isinstance(method, dict) else method.id,
+                "brand": card.get("brand"),
+                "last4": card.get("last4"),
+                "exp_month": card.get("exp_month"),
+                "exp_year": card.get("exp_year"),
+            })
+        return results
+
+    def get_credits(self, team_id: uuid.UUID) -> Dict[str, Any]:
+        team = self.team_repo.get(team_id)
+        if not team:
+            raise ValueError("Team not found")
+        return {"plan": team.plan, "extra_credits": team.extra_credits}
+
+    def get_usage(self, team_id: uuid.UUID) -> Dict[str, Any]:
+        team = self.team_repo.get(team_id)
+        if not team:
+            raise ValueError("Team not found")
+        limits = PLAN_LIMITS.get(team.plan.value, PLAN_LIMITS["FREE"])
+        monthly_limit = limits["uploads_per_month"]
+        if isinstance(monthly_limit, float) and monthly_limit == float("inf"):
+            monthly_limit = "inf"
+        return {
+            "plan": team.plan,
+            "monthly_upload_count": team.monthly_upload_count,
+            "monthly_limit": monthly_limit,
+            "extra_credits": team.extra_credits
+        }
+
+    def get_usage_history(self, team_id: uuid.UUID) -> List[Any]:
+        return self.usage_repo.get_by_team_id(team_id)
+
+    def list_invoices(self, team_id: uuid.UUID) -> List[Any]:
+        return self.invoice_repo.get_all_by_team(team_id)
+
+    def get_invoice_for_team(self, team_id: uuid.UUID, invoice_id: uuid.UUID) -> Optional[Any]:
+        invoice = self.invoice_repo.get(invoice_id)
+        if not invoice or invoice.team_id != team_id:
+            return None
+        return invoice
+
+    def get_invoice_pdf_for_team(self, team_id: uuid.UUID, invoice_id: uuid.UUID) -> Optional[str]:
+        invoice = self.get_invoice_for_team(team_id, invoice_id)
+        if not invoice:
+            return None
+        return invoice.invoice_pdf or invoice.hosted_invoice_url
+
+    def list_credit_purchases(self, team_id: uuid.UUID) -> List[Any]:
+        return self.credit_repo.get_all_by_team(team_id)
+
+    def get_pricing(self) -> Dict[str, Any]:
+        plans = []
+        for plan, limits in PLAN_LIMITS.items():
+            normalized_limits = {
+                key: ("inf" if isinstance(value, float) and value == float("inf") else value)
+                for key, value in limits.items()
+            }
+            plans.append({
+                "plan": plan,
+                "limits": normalized_limits,
+                "price_id": PLAN_STRIPE_IDS.get(plan)
+            })
+        return {"plans": plans, "credit_price_cents": CREDIT_PRICE_CENTS}
         
     def create_setup_session(self, team_id: uuid.UUID, success_url: str, cancel_url: str) -> stripe.checkout.Session:
         """Creates a Checkout Session for adding a new payment method."""
@@ -309,3 +417,18 @@ class BillingService:
             raise ValueError("Payment method does not belong to this team")
             
         stripe.PaymentMethod.detach(payment_method_id)
+
+    def set_default_payment_method(self, team_id: uuid.UUID, payment_method_id: str):
+        """Sets default payment method for a Stripe customer."""
+        team = self.team_repo.get(team_id)
+        if not team or not team.stripe_customer_id:
+            raise ValueError("Team or Stripe customer not found")
+
+        pm = stripe.PaymentMethod.retrieve(payment_method_id)
+        if pm.customer != team.stripe_customer_id:
+            raise ValueError("Payment method does not belong to this team")
+
+        stripe.Customer.modify(
+            team.stripe_customer_id,
+            invoice_settings={"default_payment_method": payment_method_id}
+        )
