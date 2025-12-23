@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter, Button } from "@poly/ui";
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../../../lib/api";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
+import { AddPaymentMethodForm } from "../forms/AddPaymentMethodForm";
 
 interface PaymentMethod {
   id: string;
@@ -14,7 +15,6 @@ interface PaymentMethod {
 export function PaymentMethodsCard() {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     loadMethods();
@@ -31,24 +31,6 @@ export function PaymentMethodsCard() {
     }
   };
 
-  const handleAdd = async () => {
-    setAdding(true);
-    try {
-      // In a real app we might want to check if success URL needs params
-      const { checkout_url } = await apiFetch("/billing/payment-methods", {
-        method: "POST",
-        body: JSON.stringify({
-           success_url: window.location.href, 
-           cancel_url: window.location.href
-        })
-      });
-      window.location.href = checkout_url;
-    } catch (err) {
-        alert("Failed to start setup session");
-        setAdding(false);
-    }
-  };
-
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to remove this payment method?")) return;
     try {
@@ -56,6 +38,15 @@ export function PaymentMethodsCard() {
         await loadMethods();
     } catch (err) {
         alert("Failed to delete payment method");
+    }
+  };
+
+  const handleSetDefault = async (id: string) => {
+    try {
+      await apiFetch(`/billing/payment-methods/${id}/default`, { method: "PATCH" });
+      await loadMethods();
+    } catch (err) {
+      alert("Failed to set default payment method");
     }
   };
 
@@ -81,19 +72,26 @@ export function PaymentMethodsCard() {
                                 <span className="text-xs text-muted-foreground">Exp {pm.exp_month}/{pm.exp_year}</span>
                             </div>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(pm.id)}>
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleSetDefault(pm.id)}>
+                            Set Default
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(pm.id)}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
                     </div>
                 ))}
             </div>
         )}
       </CardContent>
       <CardFooter>
-        <Button onClick={handleAdd} disabled={adding} variant="outline" className="w-full">
-            {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Plus className="mr-2 h-4 w-4"/>}
-            Add Payment Method
-        </Button>
+        <div className="w-full space-y-3">
+          <AddPaymentMethodForm />
+          <p className="text-xs text-muted-foreground">
+            You'll be redirected to Stripe to securely add a card.
+          </p>
+        </div>
       </CardFooter>
     </Card>
   );

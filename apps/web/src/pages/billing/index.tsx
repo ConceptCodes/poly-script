@@ -8,6 +8,8 @@ import { PaymentMethodsCard } from "./components/cards/PaymentMethodsCard";
 import { PurchaseCreditsForm } from "./components/forms/PurchaseCreditsForm";
 import { UpgradeModal } from "./components/modals/UpgradeModal";
 import { CancelSubscriptionModal } from "./components/modals/CancelSubscriptionModal";
+import { InvoicesCard } from "./components/cards/InvoicesCard";
+import { UsageHistoryCard } from "./components/cards/UsageHistoryCard";
 
 interface BillingData {
   plan: string;
@@ -195,6 +197,8 @@ export default function BillingPage() {
             />
              {/* Payment Methods only relevant if customer exists. Free plans might not have one yet. */}
              {data?.plan !== 'FREE' && <PaymentMethodsCard />}
+             <InvoicesCard />
+             <UsageHistoryCard />
         </div>
       </div>
 
