@@ -14,6 +14,9 @@
     "generic": {
       "internal_error": "An internal error occurred",
       "forbidden": "You do not have permission to perform this action"
+    },
+    "teams": {
+      "not_found": "Team not found"
     }
   },
   "notifications": {
