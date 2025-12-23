@@ -1,9 +1,9 @@
-import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
-from sqlalchemy.orm import Session
 
+import pytest
 from apps.api.src.main import app
+from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 
 @pytest.fixture
@@ -30,8 +30,7 @@ class TestTeamEndpoints:
                 mock_service.get_team.return_value = mock_team
 
                 response = client.get(
-                    "/v1/teams/team-id",
-                    headers={"Authorization": "Bearer valid-token"}
+                    "/v1/teams/team-id", headers={"Authorization": "Bearer valid-token"}
                 )
 
                 assert response.status_code == 200
@@ -48,8 +47,7 @@ class TestTeamEndpoints:
                 mock_service.get_team.side_effect = TeamError("Team not found")
 
                 response = client.get(
-                    "/v1/teams/not-found",
-                    headers={"Authorization": "Bearer valid-token"}
+                    "/v1/teams/not-found", headers={"Authorization": "Bearer valid-token"}
                 )
 
                 assert response.status_code == 404
@@ -68,7 +66,7 @@ class TestTeamEndpoints:
                 response = client.post(
                     "/v1/teams",
                     headers={"Authorization": "Bearer valid-token"},
-                    json={"name": "New Team", "language": "en"}
+                    json={"name": "New Team", "language": "en"},
                 )
 
                 assert response.status_code == 200
@@ -90,7 +88,7 @@ class TestTeamEndpoints:
                 response = client.patch(
                     "/v1/teams/team-id",
                     headers={"Authorization": "Bearer valid-token"},
-                    json={"name": "Updated Team"}
+                    json={"name": "Updated Team"},
                 )
 
                 assert response.status_code == 200
@@ -104,8 +102,7 @@ class TestTeamEndpoints:
                 mock_team_service.return_value = mock_service
 
                 response = client.delete(
-                    "/v1/teams/team-id",
-                    headers={"Authorization": "Bearer valid-token"}
+                    "/v1/teams/team-id", headers={"Authorization": "Bearer valid-token"}
                 )
 
                 assert response.status_code == 204
@@ -127,8 +124,7 @@ class TestTeamEndpoints:
                 mock_service.get_members.return_value = [mock_member1, mock_member2]
 
                 response = client.get(
-                    "/v1/teams/team-id/members",
-                    headers={"Authorization": "Bearer valid-token"}
+                    "/v1/teams/team-id/members", headers={"Authorization": "Bearer valid-token"}
                 )
 
                 assert response.status_code == 200
@@ -149,10 +145,7 @@ class TestTeamEndpoints:
                 response = client.post(
                     "/v1/teams/team-id/invitations",
                     headers={"Authorization": "Bearer valid-token"},
-                    json={
-                        "email": "newuser@example.com",
-                        "role": "MEMBER"
-                    }
+                    json={"email": "newuser@example.com", "role": "MEMBER"},
                 )
 
                 assert response.status_code == 200
@@ -172,7 +165,7 @@ class TestTeamEndpoints:
                 response = client.post(
                     "/v1/invitations/invite-token/accept",
                     headers={"Authorization": "Bearer valid-token"},
-                    json={}
+                    json={},
                 )
 
                 assert response.status_code == 200
@@ -193,7 +186,7 @@ class TestTeamEndpoints:
                 response = client.patch(
                     "/v1/teams/team-id/members/user-id",
                     headers={"Authorization": "Bearer valid-token"},
-                    json={"role": "ADMIN"}
+                    json={"role": "ADMIN"},
                 )
 
                 assert response.status_code == 200
@@ -208,7 +201,7 @@ class TestTeamEndpoints:
 
                 response = client.delete(
                     "/v1/teams/team-id/members/user-id",
-                    headers={"Authorization": "Bearer valid-token"}
+                    headers={"Authorization": "Bearer valid-token"},
                 )
 
                 assert response.status_code == 204

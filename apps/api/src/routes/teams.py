@@ -1,21 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from poly_db.database import get_db_session
-from poly_core.services.team import TeamService
-from poly_core.services.invitation import InvitationService
-from poly_core.constants import I18nKeys
-from schemas.teams import (
-    CreateTeamRequest,
-    UpdateTeamRequest,
-    TeamResponse,
-    TeamMemberResponse,
-    UpdateMemberRoleRequest,
-    CreateInvitationRequest,
-    InvitationResponse,
-    AcceptInvitationRequest,
-)
-from dependencies import get_current_user
 
+from dependencies import get_current_user
+from poly_core.constants import I18nKeys
+from poly_core.services.invitation import InvitationService
+from poly_core.services.team import TeamService
+from poly_db.database import get_db_session
+from schemas.teams import (
+    AcceptInvitationRequest,
+    CreateInvitationRequest,
+    CreateTeamRequest,
+    InvitationResponse,
+    TeamMemberResponse,
+    TeamResponse,
+    UpdateMemberRoleRequest,
+    UpdateTeamRequest,
+)
 
 router = APIRouter(prefix="/v1/teams", tags=["Teams"])
 
@@ -149,7 +149,9 @@ def remove_team_member(
         )
 
 
-@router.post("/{team_id}/invitations", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{team_id}/invitations", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED
+)
 def create_invitation(
     team_id: str,
     request: CreateInvitationRequest,

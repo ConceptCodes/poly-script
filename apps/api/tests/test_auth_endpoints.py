@@ -1,9 +1,9 @@
-import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
-from sqlalchemy.orm import Session
 
+import pytest
 from apps.api.src.main import app
+from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 
 @pytest.fixture
@@ -36,8 +36,8 @@ class TestAuthEndpoints:
                         "email": "test@example.com",
                         "password": "password_123",
                         "full_name": "John Doe",
-                        "language": "en"
-                    }
+                        "language": "en",
+                    },
                 )
 
                 assert response.status_code == 200
@@ -54,8 +54,8 @@ class TestAuthEndpoints:
                     "email": "invalid-email",
                     "password": "password_123",
                     "full_name": "John Doe",
-                    "language": "en"
-                }
+                    "language": "en",
+                },
             )
 
             assert response.status_code == 422
@@ -72,15 +72,14 @@ class TestAuthEndpoints:
                 mock_user.is_active = True
                 mock_service.login.return_value = mock_user
 
-                with patch("apps.api.src.routes.auth.AuthService._create_access_token") as mock_token:
+                with patch(
+                    "apps.api.src.routes.auth.AuthService._create_access_token"
+                ) as mock_token:
                     mock_token.return_value = "access-token"
 
                     response = client.post(
                         "/v1/auth/login",
-                        json={
-                            "email": "test@example.com",
-                            "password": "password_123"
-                        }
+                        json={"email": "test@example.com", "password": "password_123"},
                     )
 
                     assert response.status_code == 200
@@ -98,10 +97,7 @@ class TestAuthEndpoints:
 
                 response = client.post(
                     "/v1/auth/login",
-                    json={
-                        "email": "test@example.com",
-                        "password": "wrong_password"
-                    }
+                    json={"email": "test@example.com", "password": "wrong_password"},
                 )
 
                 assert response.status_code == 401
@@ -116,10 +112,7 @@ class TestAuthEndpoints:
                 mock_user.id = "user-id"
                 mock_service.verify_email.return_value = mock_user
 
-                response = client.post(
-                    "/v1/auth/verify-email",
-                    json={"token": "valid-token"}
-                )
+                response = client.post("/v1/auth/verify-email", json={"token": "valid-token"})
 
                 assert response.status_code == 200
                 data = response.json()
@@ -133,10 +126,7 @@ class TestAuthEndpoints:
 
                 mock_service.verify_email.side_effect = EmailVerificationError("Invalid token")
 
-                response = client.post(
-                    "/v1/auth/verify-email",
-                    json={"token": "invalid-token"}
-                )
+                response = client.post("/v1/auth/verify-email", json={"token": "invalid-token"})
 
                 assert response.status_code == 400
 
@@ -146,10 +136,7 @@ class TestAuthEndpoints:
             mock_user.id = "user-id"
             mock_user.email = "test@example.com"
 
-            response = client.get(
-                "/v1/auth/me",
-                headers={"Authorization": "Bearer valid-token"}
-            )
+            response = client.get("/v1/auth/me", headers={"Authorization": "Bearer valid-token"})
 
             assert response.status_code == 200
 
@@ -167,7 +154,7 @@ class TestAuthEndpoints:
                 response = client.post(
                     "/v1/auth/logout",
                     headers={"Authorization": "Bearer valid-token"},
-                    json={"refresh_token": "refresh-token"}
+                    json={"refresh_token": "refresh-token"},
                 )
 
                 assert response.status_code == 204

@@ -1,23 +1,28 @@
-from fastapi import APIRouter, Request, Header, HTTPException, Depends
-import stripe
-from sqlalchemy.orm import Session
-from poly_db.database import get_db_session
-from poly_db.repositories import TeamRepository, InvoiceRepository, SubscriptionRepository
-from poly_core.services.billing import BillingService
-from ..config import get_settings
 import uuid
+from datetime import UTC
+
+import stripe
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from sqlalchemy.orm import Session
+
+from poly_core.services.billing import BillingService
+from poly_db.database import get_db_session
+from poly_db.repositories import InvoiceRepository, SubscriptionRepository, TeamRepository
+
+from ..config import get_settings
 
 router = APIRouter(prefix="/v1/webhooks", tags=["webhooks"])
+
 
 @router.post("/stripe")
 async def stripe_webhook(
     request: Request,
     stripe_signature: str = Header(None),
-    session: Session = Depends(get_db_session)
+    session: Session = Depends(get_db_session),
 ):
     settings = get_settings()
     payload = await request.body()
-    
+
     try:
         event = stripe.Webhook.construct_event(
             payload, stripe_signature, settings.STRIPE_WEBHOOK_SECRET
@@ -36,7 +41,7 @@ async def stripe_webhook(
         session_obj = event["data"]["object"]
         metadata = session_obj.get("metadata", {})
         team_id_str = metadata.get("team_id")
-        
+
         if team_id_str:
             team_id = uuid.UUID(team_id_str)
             if metadata.get("type") == "credits":
@@ -47,11 +52,10 @@ async def stripe_webhook(
                 # The subscription will be created and handled by other events
                 pass
 
-    elif event["type"] in ["customer.subscription.created", "customer.subscription.updated"]:
-        subscription = event["data"]["object"]
-        billing_service.sync_subscription(subscription["id"])
-
-    elif event["type"] == "customer.subscription.deleted":
+    elif (
+        event["type"] in ["customer.subscription.created", "customer.subscription.updated"]
+        or event["type"] == "customer.subscription.deleted"
+    ):
         subscription = event["data"]["object"]
         billing_service.sync_subscription(subscription["id"])
 
@@ -59,7 +63,8 @@ async def stripe_webhook(
         invoice = event["data"]["object"]
         team = team_repo.get_by_stripe_customer_id(invoice.get("customer"))
         if team:
-            from datetime import datetime, timezone
+            from datetime import datetime
+
             invoice_id = invoice.get("id")
             existing = invoice_repo.get_by_stripe_invoice_id(invoice_id)
             payload = {
@@ -71,8 +76,8 @@ async def stripe_webhook(
                 "status": invoice.get("status", "paid"),
                 "invoice_pdf": invoice.get("invoice_pdf"),
                 "hosted_invoice_url": invoice.get("hosted_invoice_url"),
-                "period_start": datetime.fromtimestamp(invoice.get("period_start", 0), tz=timezone.utc),
-                "period_end": datetime.fromtimestamp(invoice.get("period_end", 0), tz=timezone.utc),
+                "period_start": datetime.fromtimestamp(invoice.get("period_start", 0), tz=UTC),
+                "period_end": datetime.fromtimestamp(invoice.get("period_end", 0), tz=UTC),
             }
             if existing:
                 invoice_repo.update(existing.id, **payload)

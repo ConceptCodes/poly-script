@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from ..config import get_settings
+
+from src.config import get_settings
+
 
 def setup_middleware(app: FastAPI) -> None:
     settings = get_settings()
-    
+
     # CORS Middleware
     app.add_middleware(
         CORSMiddleware,
@@ -13,5 +15,5 @@ def setup_middleware(app: FastAPI) -> None:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     # Add other middlewares as needed (e.g., logging, rate limiting)

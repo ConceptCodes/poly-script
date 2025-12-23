@@ -1,5 +1,5 @@
-from typing import Optional
 import uuid
+
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -63,10 +63,10 @@ class ResetPasswordRequest(BaseModel):
 
 
 class OAuthAuthURLRequest(BaseModel):
-    redirect_url: Optional[str] = None
-    state: Optional[str] = None
+    redirect_url: str | None = None
+    state: str | None = None
 
 
 class OAuthCallbackRequest(BaseModel):
     code: str
-    state: Optional[str] = None
+    state: str | None = None

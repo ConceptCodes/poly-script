@@ -1,9 +1,7 @@
-from typing import Optional, List
 import uuid
-from pydantic import BaseModel, Field
 from enum import Enum
 
-from ..constants import TeamRole, PlanType
+from pydantic import BaseModel, Field
 
 
 class TeamRoleSchema(str, Enum):
@@ -23,8 +21,8 @@ class CreateTeamRequest(BaseModel):
 
 
 class UpdateTeamRequest(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=128)
-    host_language: Optional[str] = None
+    name: str | None = Field(None, min_length=1, max_length=128)
+    host_language: str | None = None
 
 
 class TeamResponse(BaseModel):
@@ -32,7 +30,7 @@ class TeamResponse(BaseModel):
     name: str
     host_language: str
     plan: PlanTypeSchema
-    stripe_customer_id: Optional[str] = None
+    stripe_customer_id: str | None = None
     monthly_upload_count: int
     extra_credits: int
     created_at: str
@@ -45,8 +43,8 @@ class TeamMemberResponse(BaseModel):
     team_id: uuid.UUID
     role: TeamRoleSchema
     created_at: str
-    user_email: Optional[str] = None
-    user_full_name: Optional[str] = None
+    user_email: str | None = None
+    user_full_name: str | None = None
 
 
 class UpdateMemberRoleRequest(BaseModel):
@@ -64,7 +62,7 @@ class InvitationResponse(BaseModel):
     email: str
     role: TeamRoleSchema
     expires_at: str
-    accepted_at: Optional[str] = None
+    accepted_at: str | None = None
     created_at: str
 
 

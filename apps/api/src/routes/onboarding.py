@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from poly_db.database import get_db_session
-from poly_core.services.team import TeamService
-from schemas.onboarding import CompleteOnboardingRequest, OnboardingResponse
-from dependencies import get_current_user
 
+from dependencies import get_current_user
+from poly_core.services.team import TeamService
+from poly_db.database import get_db_session
+from schemas.onboarding import CompleteOnboardingRequest, OnboardingResponse
 
 router = APIRouter(prefix="/v1/onboarding", tags=["Onboarding"])
 
