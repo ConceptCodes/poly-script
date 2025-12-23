@@ -41,7 +41,10 @@ export function UsageHistoryCard() {
         ) : (
           <div className="space-y-2">
             {items.slice(0, 10).map((item, idx) => (
-              <div key={`${item.created_at}-${idx}`} className="flex items-center justify-between border rounded p-3">
+              <div
+                key={`${item.created_at}-${idx}`}
+                className="flex items-center justify-between border rounded p-3"
+              >
                 <div>
                   <p className="text-sm font-medium capitalize">{item.action}</p>
                   <p className="text-xs text-muted-foreground">

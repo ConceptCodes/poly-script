@@ -8,8 +8,11 @@ interface UsageCardProps {
 }
 
 export function UsageCard({ monthlyUploadCount, monthlyLimit, extraCredits }: UsageCardProps) {
-  const isInfinite = monthlyLimit === "inf" || (typeof monthlyLimit === 'number' && monthlyLimit === Infinity);
-  const percentage = isInfinite ? 0 : Math.min((monthlyUploadCount / (monthlyLimit as number)) * 100, 100);
+  const isInfinite =
+    monthlyLimit === "inf" || (typeof monthlyLimit === "number" && monthlyLimit === Infinity);
+  const percentage = isInfinite
+    ? 0
+    : Math.min((monthlyUploadCount / (monthlyLimit as number)) * 100, 100);
 
   return (
     <Card>
@@ -21,11 +24,13 @@ export function UsageCard({ monthlyUploadCount, monthlyLimit, extraCredits }: Us
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span>Monthly Uploads</span>
-            <span>{monthlyUploadCount} / {isInfinite ? "∞" : monthlyLimit}</span>
+            <span>
+              {monthlyUploadCount} / {isInfinite ? "∞" : monthlyLimit}
+            </span>
           </div>
           {!isInfinite && <Progress value={percentage} className="h-2" />}
         </div>
-        
+
         <div className="pt-4 border-t">
           <div className="flex justify-between items-center text-sm">
             <span>Extra Credits</span>

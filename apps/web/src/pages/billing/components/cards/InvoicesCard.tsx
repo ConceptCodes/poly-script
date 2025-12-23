@@ -44,13 +44,20 @@ export function InvoicesCard() {
         ) : (
           <div className="space-y-2">
             {invoices.map((invoice) => (
-              <div key={invoice.id} className="flex items-center justify-between border rounded p-3">
+              <div
+                key={invoice.id}
+                className="flex items-center justify-between border rounded p-3"
+              >
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">{new Date(invoice.created_at).toLocaleDateString()}</p>
+                  <p className="text-sm font-medium">
+                    {new Date(invoice.created_at).toLocaleDateString()}
+                  </p>
                   <p className="text-xs text-muted-foreground">{invoice.status.toUpperCase()}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium">${(invoice.amount_paid / 100).toFixed(2)}</span>
+                  <span className="text-sm font-medium">
+                    ${(invoice.amount_paid / 100).toFixed(2)}
+                  </span>
                   {(invoice.invoice_pdf || invoice.hosted_invoice_url) && (
                     <Button variant="outline" size="sm" asChild>
                       <a

@@ -1,9 +1,18 @@
-import { useForm } from '@tanstack/react-form';
-import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, Label } from '@poly/ui';
-import { apiFetch } from '../../../../lib/api';
-import { useState } from 'react';
-import { purchaseCreditsSchema } from '../../schemas';
-import { ConfirmPurchaseModal } from '../modals/ConfirmPurchaseModal';
+import { useForm } from "@tanstack/react-form";
+import {
+  Button,
+  Input,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Label,
+} from "@poly/ui";
+import { apiFetch } from "../../../../lib/api";
+import { useState } from "react";
+import { purchaseCreditsSchema } from "../../schemas";
+import { ConfirmPurchaseModal } from "../modals/ConfirmPurchaseModal";
 
 export function PurchaseCreditsForm() {
   const [loading, setLoading] = useState(false);
@@ -44,8 +53,7 @@ export function PurchaseCreditsForm() {
       <CardHeader>
         <CardTitle>Purchase Credits</CardTitle>
         <CardDescription>
-          Buy extra credits to upload more files beyond your plan limit.
-          $0.10 per credit.
+          Buy extra credits to upload more files beyond your plan limit. $0.10 per credit.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -77,7 +85,7 @@ export function PurchaseCreditsForm() {
                     onChange={(e) => field.handleChange(e.target.valueAsNumber)}
                   />
                   <div className="flex items-center text-sm text-muted-foreground whitespace-nowrap">
-                    = ${(field.state.value * 0.10).toFixed(2)}
+                    = ${(field.state.value * 0.1).toFixed(2)}
                   </div>
                 </div>
                 {field.state.meta.errors ? (
@@ -95,7 +103,7 @@ export function PurchaseCreditsForm() {
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         credits={pendingAmount}
-        totalPrice={(pendingAmount * 0.10).toFixed(2)}
+        totalPrice={(pendingAmount * 0.1).toFixed(2)}
         onConfirm={handleConfirm}
         isLoading={loading}
       />

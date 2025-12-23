@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../lib/api";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter, Button, Badge, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@poly/ui";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+  Button,
+  Badge,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@poly/ui";
 import { Link } from "react-router-dom";
 
 interface UsageData {
@@ -55,8 +69,10 @@ export default function UploadPage() {
     fetchUsage();
   }, []);
 
-  const isLimitReached = usage 
-    ? (usage.monthly_limit !== "inf" && usage.monthly_upload_count >= (usage.monthly_limit as number) && usage.extra_credits <= 0)
+  const isLimitReached = usage
+    ? usage.monthly_limit !== "inf" &&
+      usage.monthly_upload_count >= (usage.monthly_limit as number) &&
+      usage.extra_credits <= 0
     : false;
 
   const languageLimit = (() => {
@@ -72,7 +88,8 @@ export default function UploadPage() {
 
   const selectedLanguageRestricted = isLanguageRestricted(selectedLanguage);
 
-  if (loading) return <div className="p-6 text-center text-muted-foreground italic">Checking limits...</div>;
+  if (loading)
+    return <div className="p-6 text-center text-muted-foreground italic">Checking limits...</div>;
 
   return (
     <div className="container mx-auto p-6 max-w-2xl space-y-6">
@@ -80,7 +97,8 @@ export default function UploadPage() {
         <h1 className="text-3xl font-bold">Upload Audio</h1>
         {usage && (
           <Badge variant="outline">
-            {usage.plan} Plan: {usage.monthly_upload_count} / {usage.monthly_limit === "inf" ? "∞" : usage.monthly_limit}
+            {usage.plan} Plan: {usage.monthly_upload_count} /{" "}
+            {usage.monthly_limit === "inf" ? "∞" : usage.monthly_limit}
           </Badge>
         )}
       </div>
@@ -95,14 +113,15 @@ export default function UploadPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm">
-              Upgrade your plan to STANDARD or PRO to get more uploads, or purchase extra credits to continue.
+              Upgrade your plan to STANDARD or PRO to get more uploads, or purchase extra credits to
+              continue.
             </p>
           </CardContent>
           <CardFooter className="flex space-x-4">
             <Button asChild>
               <Link to="/billing">Upgrade Plan</Link>
             </Button>
-            {usage?.plan === 'FREE' && (
+            {usage?.plan === "FREE" && (
               <Button variant="outline" asChild>
                 <Link to="/billing">Buy Credits</Link>
               </Button>
@@ -141,7 +160,11 @@ export default function UploadPage() {
               </SelectTrigger>
               <SelectContent>
                 {LANGUAGES.map((lang) => (
-                  <SelectItem key={lang.code} value={lang.code} disabled={isLanguageRestricted(lang.code)}>
+                  <SelectItem
+                    key={lang.code}
+                    value={lang.code}
+                    disabled={isLanguageRestricted(lang.code)}
+                  >
                     {lang.label}
                   </SelectItem>
                 ))}
@@ -154,8 +177,14 @@ export default function UploadPage() {
             )}
           </div>
           <div className="border-2 border-dashed rounded-lg p-12 text-center hover:bg-muted/50 transition-colors cursor-pointer">
-            <p className="text-muted-foreground">Drag and drop audio file here, or click to select</p>
-            <input type="file" className="hidden" disabled={isLimitReached || selectedLanguageRestricted} />
+            <p className="text-muted-foreground">
+              Drag and drop audio file here, or click to select
+            </p>
+            <input
+              type="file"
+              className="hidden"
+              disabled={isLimitReached || selectedLanguageRestricted}
+            />
           </div>
         </CardContent>
         <CardFooter className="flex justify-end">

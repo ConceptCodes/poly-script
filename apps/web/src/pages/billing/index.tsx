@@ -23,7 +23,7 @@ interface BillingData {
 const PLAN_PRICES: Record<string, number> = {
   FREE: 0,
   STANDARD: 29,
-  PRO: 99
+  PRO: 99,
 };
 
 const PLAN_ORDER = ["FREE", "STANDARD", "PRO"];
@@ -78,65 +78,65 @@ export default function BillingPage() {
     if (!targetPlan || !data) return;
     setProcessing(true);
     try {
-        const currentIdx = PLAN_ORDER.indexOf(data.plan);
-        const targetIdx = PLAN_ORDER.indexOf(targetPlan);
-        
-        if (data.plan === 'FREE') {
-             // Free -> Paid (Checkout)
-            const { checkout_url } = await apiFetch("/billing/subscription/upgrade", {
-                method: "POST",
-                body: JSON.stringify({
-                  plan: targetPlan,
-                  success_url: window.location.origin + "/billing?success=true",
-                  cancel_url: window.location.origin + "/billing?canceled=true",
-                }),
-            });
-            window.location.href = checkout_url;
-        } else {
-            // Paid -> Paid (Modify)
-            // We use the downgrade endpoint which handles modification (both up and down usually if implemented as modify)
-            // But wait, my implementation of `downgrade_plan` in BillingService uses `stripe.Subscription.modify`. 
-            // This works for upgrades too (Standard -> Pro), just charging the difference immediately.
-            // Let's assume it works for both for now, or fallback to checkout if not.
-            // Actually, for Upgrades (Standard -> Pro), Checkout is often preferred to handle SCA/Payment failures. 
-            // But let's try the direct modify first.
-            await apiFetch("/billing/subscription/downgrade", {
-                method: "POST",
-                body: JSON.stringify({ plan: targetPlan })
-            });
-            window.location.reload();
-        }
+      const currentIdx = PLAN_ORDER.indexOf(data.plan);
+      const targetIdx = PLAN_ORDER.indexOf(targetPlan);
+
+      if (data.plan === "FREE") {
+        // Free -> Paid (Checkout)
+        const { checkout_url } = await apiFetch("/billing/subscription/upgrade", {
+          method: "POST",
+          body: JSON.stringify({
+            plan: targetPlan,
+            success_url: window.location.origin + "/billing?success=true",
+            cancel_url: window.location.origin + "/billing?canceled=true",
+          }),
+        });
+        window.location.href = checkout_url;
+      } else {
+        // Paid -> Paid (Modify)
+        // We use the downgrade endpoint which handles modification (both up and down usually if implemented as modify)
+        // But wait, my implementation of `downgrade_plan` in BillingService uses `stripe.Subscription.modify`.
+        // This works for upgrades too (Standard -> Pro), just charging the difference immediately.
+        // Let's assume it works for both for now, or fallback to checkout if not.
+        // Actually, for Upgrades (Standard -> Pro), Checkout is often preferred to handle SCA/Payment failures.
+        // But let's try the direct modify first.
+        await apiFetch("/billing/subscription/downgrade", {
+          method: "POST",
+          body: JSON.stringify({ plan: targetPlan }),
+        });
+        window.location.reload();
+      }
     } catch (err: any) {
-        alert("Failed to change plan: " + err.message);
-        setProcessing(false);
-        setUpgradeModalOpen(false);
+      alert("Failed to change plan: " + err.message);
+      setProcessing(false);
+      setUpgradeModalOpen(false);
     }
   };
 
   const handleCancelClick = () => {
-      setCancelModalOpen(true);
+    setCancelModalOpen(true);
   };
 
   const handleCancelConfirm = async () => {
-      setProcessing(true);
-      try {
-          await apiFetch("/billing/subscription/cancel", { method: "POST" });
-          window.location.reload();
-      } catch (err: any) {
-          alert("Failed to cancel: " + err.message);
-          setProcessing(false);
-      }
+    setProcessing(true);
+    try {
+      await apiFetch("/billing/subscription/cancel", { method: "POST" });
+      window.location.reload();
+    } catch (err: any) {
+      alert("Failed to cancel: " + err.message);
+      setProcessing(false);
+    }
   };
 
   const handleReactivate = async () => {
-      setProcessing(true);
-      try {
-          await apiFetch("/billing/subscription/reactivate", { method: "POST" });
-          window.location.reload();
-      } catch (err: any) {
-          alert("Failed to reactivate: " + err.message);
-          setProcessing(false);
-      }
+    setProcessing(true);
+    try {
+      await apiFetch("/billing/subscription/reactivate", { method: "POST" });
+      window.location.reload();
+    } catch (err: any) {
+      alert("Failed to reactivate: " + err.message);
+      setProcessing(false);
+    }
   };
 
   if (loading) {
@@ -171,58 +171,62 @@ export default function BillingPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-8">
-          <CurrentPlanCard 
-            plan={data?.plan || "FREE"} 
-            status={data?.status || "active"} 
+          <CurrentPlanCard
+            plan={data?.plan || "FREE"}
+            status={data?.status || "active"}
             cancelAtPeriodEnd={data?.cancel_at_period_end}
-            onManage={handleManageBilling} 
+            onManage={handleManageBilling}
             onReactivate={handleReactivate}
           />
           {/* Explicit Cancel Button for Paid Plans if not using Portal exclusively */}
-          {data?.plan !== 'FREE' && !data?.cancel_at_period_end && (
-              <div className="flex justify-end">
-                   <Button variant="link" className="text-destructive h-auto p-0" onClick={handleCancelClick}>
-                       Cancel Subscription
-                   </Button>
-              </div>
+          {data?.plan !== "FREE" && !data?.cancel_at_period_end && (
+            <div className="flex justify-end">
+              <Button
+                variant="link"
+                className="text-destructive h-auto p-0"
+                onClick={handleCancelClick}
+              >
+                Cancel Subscription
+              </Button>
+            </div>
           )}
-          
-          {data?.plan === 'FREE' && <PurchaseCreditsForm />}
+
+          {data?.plan === "FREE" && <PurchaseCreditsForm />}
         </div>
         <div className="space-y-8">
-            <UsageCard 
-            monthlyUploadCount={data?.monthly_upload_count || 0} 
-            monthlyLimit={data?.monthly_limit || 5} 
-            extraCredits={data?.extra_credits || 0} 
-            />
-             {/* Payment Methods only relevant if customer exists. Free plans might not have one yet. */}
-             {data?.plan !== 'FREE' && <PaymentMethodsCard />}
-             <InvoicesCard />
-             <UsageHistoryCard />
+          <UsageCard
+            monthlyUploadCount={data?.monthly_upload_count || 0}
+            monthlyLimit={data?.monthly_limit || 5}
+            extraCredits={data?.extra_credits || 0}
+          />
+          {/* Payment Methods only relevant if customer exists. Free plans might not have one yet. */}
+          {data?.plan !== "FREE" && <PaymentMethodsCard />}
+          <InvoicesCard />
+          <UsageHistoryCard />
         </div>
       </div>
 
-      <PlanComparisonCard 
-        currentPlan={data?.plan || "FREE"} 
+      <PlanComparisonCard
+        currentPlan={data?.plan || "FREE"}
         onUpgrade={initiatePlanChange}
         isLoading={processing}
       />
 
-        <UpgradeModal 
-            open={upgradeModalOpen} 
-            onOpenChange={setUpgradeModalOpen}
-            planName={targetPlan || ""}
-            price={PLAN_PRICES[targetPlan || "STANDARD"]}
-            onConfirm={handlePlanConfirm}
-            isLoading={processing}
-        />
-        
-        <CancelSubscriptionModal 
-            open={cancelModalOpen} 
-            onOpenChange={setCancelModalOpen}
-            onConfirm={handleCancelConfirm}
-            isLoading={processing}
-        />
+      <UpgradeModal
+        open={upgradeModalOpen}
+        onOpenChange={setUpgradeModalOpen}
+        planName={targetPlan || ""}
+        price={PLAN_PRICES[targetPlan || "STANDARD"]}
+        onConfirm={handlePlanConfirm}
+        isLoading={processing}
+      />
+
+      <CancelSubscriptionModal
+        open={cancelModalOpen}
+        onOpenChange={setCancelModalOpen}
+        onConfirm={handleCancelConfirm}
+        isLoading={processing}
+      />
     </div>
   );
 }

@@ -10,7 +10,13 @@ interface CurrentPlanCardProps {
   onReactivate?: () => void;
 }
 
-export function CurrentPlanCard({ plan, status, cancelAtPeriodEnd, onManage, onReactivate }: CurrentPlanCardProps) {
+export function CurrentPlanCard({
+  plan,
+  status,
+  cancelAtPeriodEnd,
+  onManage,
+  onReactivate,
+}: CurrentPlanCardProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -18,19 +24,18 @@ export function CurrentPlanCard({ plan, status, cancelAtPeriodEnd, onManage, onR
           <CardTitle>Current Plan</CardTitle>
           <CardDescription>Manage your subscription and billing.</CardDescription>
         </div>
-        <Badge variant={plan === 'PRO' ? 'default' : 'secondary'} className="text-sm font-bold">
+        <Badge variant={plan === "PRO" ? "default" : "secondary"} className="text-sm font-bold">
           {plan}
         </Badge>
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold capitalize">
-            {cancelAtPeriodEnd ? 'Canceling' : status}
+          {cancelAtPeriodEnd ? "Canceling" : status}
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          {cancelAtPeriodEnd 
+          {cancelAtPeriodEnd
             ? "Your subscription will end at the end of the current period."
-            : `Your plan is currently ${status}.`
-          }
+            : `Your plan is currently ${status}.`}
         </p>
       </CardContent>
       <CardFooter className="gap-2">
@@ -38,9 +43,9 @@ export function CurrentPlanCard({ plan, status, cancelAtPeriodEnd, onManage, onR
           Manage Billing
         </Button>
         {cancelAtPeriodEnd && onReactivate && (
-            <Button onClick={onReactivate} variant="default" className="w-full">
-                Reactivate
-            </Button>
+          <Button onClick={onReactivate} variant="default" className="w-full">
+            Reactivate
+          </Button>
         )}
       </CardFooter>
     </Card>

@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
-  Button
+  Button,
 } from "@poly/ui";
 import { Loader2, CreditCard } from "lucide-react";
 
@@ -35,9 +35,7 @@ export function ConfirmPurchaseModal({
             <CreditCard className="h-5 w-5" />
             Confirm Credit Purchase
           </DialogTitle>
-          <DialogDescription>
-            Review your purchase before continuing to checkout.
-          </DialogDescription>
+          <DialogDescription>Review your purchase before continuing to checkout.</DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-2">
           <div className="flex justify-between text-sm">
@@ -48,7 +46,9 @@ export function ConfirmPurchaseModal({
             <span>Total</span>
             <span className="font-medium">${totalPrice}</span>
           </div>
-          <p className="text-xs text-muted-foreground">You will be redirected to Stripe to complete payment.</p>
+          <p className="text-xs text-muted-foreground">
+            You will be redirected to Stripe to complete payment.
+          </p>
         </div>
         <DialogFooter>
           <DialogClose asChild>

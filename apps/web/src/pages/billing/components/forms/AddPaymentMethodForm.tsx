@@ -1,8 +1,8 @@
-import { useForm } from '@tanstack/react-form';
-import { Button, Input, Label } from '@poly/ui';
-import { apiFetch } from '../../../../lib/api';
-import { useState } from 'react';
-import { addPaymentMethodSchema } from '../../schemas';
+import { useForm } from "@tanstack/react-form";
+import { Button, Input, Label } from "@poly/ui";
+import { apiFetch } from "../../../../lib/api";
+import { useState } from "react";
+import { addPaymentMethodSchema } from "../../schemas";
 
 export function AddPaymentMethodForm() {
   const [loading, setLoading] = useState(false);
