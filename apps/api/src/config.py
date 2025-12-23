@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     JWT_EXPIRY: str = "24h"
     ADMIN_JWT_SECRET: str
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3001"]
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"]
 
     # Storage
     STORAGE_BACKEND: str = "local" # local|s3

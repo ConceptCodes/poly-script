@@ -5,9 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "core",
-    "db",
-    "fastapi>=0.127.0",
+    "poly-db",
+    "fastapi[standard]>=0.127.0",
     "poly-redis",
     "poly-stt",
     "pydantic-settings>=2.12.0",
@@ -15,10 +14,12 @@ dependencies = [
     "slowapi>=0.1.9",
     "stripe>=14.1.0",
     "uvicorn[standard]>=0.40.0",
+    "sqlalchemy>=2.0.45",
+    "poly-core",
 ]
 
 [tool.uv.sources]
-core = { path = "../../packages/core" }
-db = { path = "../../packages/storage/db" }
-poly-redis = { path = "../../packages/storage/redis" }
-poly-stt = { path = "../../packages/stt" }
+poly-db = { path = "../../packages/storage/poly-db", editable = true }
+poly-redis = { path = "../../packages/storage/redis", editable = true }
+poly-stt = { path = "../../packages/stt", editable = true }
+poly-core = { path = "../../packages/poly-core", editable = true }

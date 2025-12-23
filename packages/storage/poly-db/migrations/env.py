@@ -9,8 +9,8 @@ from alembic import context
 
 # Add src to path
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), "..")))
-from src.models import Base
-from src.database import get_settings
+from poly_db.models.base import Base
+from poly_db.database import get_settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

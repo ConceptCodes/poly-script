@@ -1,6 +1,6 @@
 from fastapi import Request, Header
 from typing import Optional
-from core.src.services.i18n import i18n
+from poly_core.services.i18n import i18n
 
 async def get_locale(accept_language: Optional[str] = Header(None)) -> str:
     """

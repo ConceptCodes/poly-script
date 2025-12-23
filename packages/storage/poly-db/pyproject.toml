@@ -1,5 +1,5 @@
 [project]
-name = "db"
+name = "poly-db"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -13,3 +13,7 @@ dependencies = [
     "pytest-cov>=7.0.0",
     "sqlalchemy>=2.0.45",
 ]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["poly_db*"]
+exclude = ["migrations*"]
