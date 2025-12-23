@@ -13,6 +13,7 @@ from poly_db.repositories import (
 from poly_db.models.teams import PlanType
 from ..constants import PLAN_LIMITS, PLAN_STRIPE_IDS, CREDIT_PRICE_CENTS, I18nKeys
 
+
 class BillingService:
     def __init__(self, session: Session, stripe_api_key: str):
         self.session = session
@@ -28,16 +29,14 @@ class BillingService:
         team = self.team_repo.get(team_id)
         if not team:
             raise ValueError(f"Team {team_id} not found")
-        
+
         if team.stripe_customer_id:
             return team.stripe_customer_id
 
         customer = stripe.Customer.create(
-            email=email,
-            name=name,
-            metadata={"team_id": str(team_id)}
+            email=email, name=name, metadata={"team_id": str(team_id)}
         )
-        
+
         self.team_repo.update(team_id, stripe_customer_id=customer.id)
         return customer.id
 
@@ -58,10 +57,12 @@ class BillingService:
             "status": "active",
             "plan_id": plan_id,
             "current_period_end": now + timedelta(days=30),
-            "cancel_at_period_end": False
+            "cancel_at_period_end": False,
         }
 
-    def upgrade_plan(self, team_id: uuid.UUID, new_plan: PlanType, success_url: str, cancel_url: str):
+    def upgrade_plan(
+        self, team_id: uuid.UUID, new_plan: PlanType, success_url: str, cancel_url: str
+    ):
         """Creates a checkout session to upgrade a team to a paid plan."""
         return self.create_checkout_session(team_id, new_plan, success_url, cancel_url)
 
@@ -98,7 +99,7 @@ class BillingService:
                 job_id=job_id,
                 action="upload",
                 amount=1,
-                description=f"Plan usage: {team.plan.value}"
+                description=f"Plan usage: {team.plan.value}",
             )
         elif team.extra_credits > 0:
             self.team_repo.update(team_id, extra_credits=team.extra_credits - 1)
@@ -107,24 +108,27 @@ class BillingService:
                 job_id=job_id,
                 action="upload",
                 amount=1,
-                description="Credit usage"
+                description="Credit usage",
             )
         else:
             raise ValueError("Usage limit exceeded and no credits available")
 
-    def create_portal_session(self, team_id: uuid.UUID, return_url: str) -> stripe.billing_portal.Session:
+    def create_portal_session(
+        self, team_id: uuid.UUID, return_url: str
+    ) -> stripe.billing_portal.Session:
         """Creates a Stripe Billing Portal session."""
         team = self.team_repo.get(team_id)
         if not team or not team.stripe_customer_id:
             raise ValueError("Team or Stripe customer not found")
 
         session = stripe.billing_portal.Session.create(
-            customer=team.stripe_customer_id,
-            return_url=return_url
+            customer=team.stripe_customer_id, return_url=return_url
         )
         return session
 
-    def create_checkout_session(self, team_id: uuid.UUID, plan_type: PlanType, success_url: str, cancel_url: str) -> stripe.checkout.Session:
+    def create_checkout_session(
+        self, team_id: uuid.UUID, plan_type: PlanType, success_url: str, cancel_url: str
+    ) -> stripe.checkout.Session:
         """Creates a Stripe Checkout session for a subscription upgrade."""
         team = self.team_repo.get(team_id)
         if not team or not team.stripe_customer_id:
@@ -141,17 +145,19 @@ class BillingService:
             mode="subscription",
             success_url=success_url,
             cancel_url=cancel_url,
-            metadata={"team_id": str(team_id), "plan_type": plan_type.value}
+            metadata={"team_id": str(team_id), "plan_type": plan_type.value},
         )
         return session
 
-    def create_credits_checkout_session(self, team_id: uuid.UUID, amount: int, success_url: str, cancel_url: str) -> stripe.checkout.Session:
+    def create_credits_checkout_session(
+        self, team_id: uuid.UUID, amount: int, success_url: str, cancel_url: str
+    ) -> stripe.checkout.Session:
         """Creates a Stripe Checkout session for purchasing credits."""
         team = self.team_repo.get(team_id)
         if not team or not team.stripe_customer_id:
             raise ValueError("Team or Stripe customer not found")
-        
-        # In a real app, you might have a specific price_id for credits, 
+
+        # In a real app, you might have a specific price_id for credits,
         # or use ad-hoc line items if permitted.
         # For simplicity, we'll assume a unit price in cents.
         from ..constants import CREDIT_PRICE_CENTS
@@ -159,18 +165,20 @@ class BillingService:
         session = stripe.checkout.Session.create(
             customer=team.stripe_customer_id,
             payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency": "usd",
-                    "product_data": {"name": f"{amount} PolyScript Credits"},
-                    "unit_amount": CREDIT_PRICE_CENTS,
-                },
-                "quantity": amount,
-            }],
+            line_items=[
+                {
+                    "price_data": {
+                        "currency": "usd",
+                        "product_data": {"name": f"{amount} PolyScript Credits"},
+                        "unit_amount": CREDIT_PRICE_CENTS,
+                    },
+                    "quantity": amount,
+                }
+            ],
             mode="payment",
             success_url=success_url,
             cancel_url=cancel_url,
-            metadata={"team_id": str(team_id), "amount": str(amount), "type": "credits"}
+            metadata={"team_id": str(team_id), "amount": str(amount), "type": "credits"},
         )
         return session
 
@@ -193,13 +201,14 @@ class BillingService:
 
         # Update or create subscription record
         local_sub = self.subscription_repo.get_by_team_id(team_id)
-        
+
         plan_id = sub["items"]["data"][0]["price"]["id"]
         # Map price_id back to PlanType
         reverse_map = {v: k for k, v in PLAN_STRIPE_IDS.items()}
         plan_type_str = reverse_map.get(plan_id, "FREE")
 
         from datetime import datetime
+
         if local_sub:
             self.subscription_repo.update(
                 local_sub.id,
@@ -208,7 +217,7 @@ class BillingService:
                 current_period_start=datetime.fromtimestamp(sub.current_period_start),
                 current_period_end=datetime.fromtimestamp(sub.current_period_end),
                 cancel_at_period_end=sub.cancel_at_period_end,
-                stripe_data=sub.to_dict()
+                stripe_data=sub.to_dict(),
             )
         else:
             self.subscription_repo.create(
@@ -219,7 +228,7 @@ class BillingService:
                 current_period_start=datetime.fromtimestamp(sub.current_period_start),
                 current_period_end=datetime.fromtimestamp(sub.current_period_end),
                 cancel_at_period_end=sub.cancel_at_period_end,
-                stripe_data=sub.to_dict()
+                stripe_data=sub.to_dict(),
             )
 
         # Update Team plan
@@ -228,22 +237,23 @@ class BillingService:
     def handle_payment_succeeded(self, team_id: uuid.UUID, amount: int, stripe_session_id: str):
         """Handles a successful checkout payment (e.g., for credits)."""
         from poly_db.repositories import CreditPurchaseRepository
+
         purchase_repo = CreditPurchaseRepository(self.session)
-        
+
         # Check if already processed
         # (This is just a simple check, in production you'd want more robust idempotency)
         existing = purchase_repo.get_by_stripe_session_id(stripe_session_id)
         if existing:
             return
-        
+
         purchase_repo.create(
             team_id=team_id,
             stripe_session_id=stripe_session_id,
             amount=amount,
-            price_paid=amount * 100, # Simplified: $1 per credit
-            currency="usd"
+            price_paid=amount * 100,  # Simplified: $1 per credit
+            currency="usd",
         )
-        
+
         team = self.team_repo.get(team_id)
         self.team_repo.update(team_id, extra_credits=team.extra_credits + amount)
 
@@ -254,10 +264,7 @@ class BillingService:
             return
 
         if at_period_end:
-            stripe.Subscription.modify(
-                team.stripe_subscription_id,
-                cancel_at_period_end=True
-            )
+            stripe.Subscription.modify(team.stripe_subscription_id, cancel_at_period_end=True)
         else:
             stripe.Subscription.delete(team.stripe_subscription_id)
 
@@ -273,27 +280,29 @@ class BillingService:
 
         new_price_id = PLAN_STRIPE_IDS.get(new_plan.value)
         if not new_price_id:
-             # If downgrading to FREE, we might actually want to cancel the paid subscription
-             # effectively. Handling strict downgrade to FREE involves canceling at period end usually,
-             # or immediate cancellation.
-             # Assuming FREE has no price ID in PLAN_STRIPE_IDS?
-             # If so, we should probably treat it as a cancellation.
-             if new_plan == PlanType.FREE:
-                 self.cancel_subscription(team_id, at_period_end=True)
-                 return
-             raise ValueError(f"Invalid plan type: {new_plan}")
+            # If downgrading to FREE, we might actually want to cancel the paid subscription
+            # effectively. Handling strict downgrade to FREE involves canceling at period end usually,
+            # or immediate cancellation.
+            # Assuming FREE has no price ID in PLAN_STRIPE_IDS?
+            # If so, we should probably treat it as a cancellation.
+            if new_plan == PlanType.FREE:
+                self.cancel_subscription(team_id, at_period_end=True)
+                return
+            raise ValueError(f"Invalid plan type: {new_plan}")
 
         # Retrieve current subscription to get item ID
         stripe_sub = stripe.Subscription.retrieve(sub.stripe_subscription_id)
-        item_id = stripe_sub['items']['data'][0]['id']
+        item_id = stripe_sub["items"]["data"][0]["id"]
 
         stripe.Subscription.modify(
             sub.stripe_subscription_id,
-            items=[{
-                "id": item_id,
-                "price": new_price_id,
-            }],
-            proration_behavior='always_invoice', # Charge/Credit immediately
+            items=[
+                {
+                    "id": item_id,
+                    "price": new_price_id,
+                }
+            ],
+            proration_behavior="always_invoice",  # Charge/Credit immediately
         )
 
     def reactivate_subscription(self, team_id: uuid.UUID):
@@ -302,11 +311,8 @@ class BillingService:
         if not sub or not sub.stripe_subscription_id:
             raise ValueError("No subscription found")
 
-        stripe.Subscription.modify(
-            sub.stripe_subscription_id,
-            cancel_at_period_end=False
-        )
-        
+        stripe.Subscription.modify(sub.stripe_subscription_id, cancel_at_period_end=False)
+
         # Update local state immediately
         self.subscription_repo.update(sub.id, cancel_at_period_end=False)
 
@@ -315,23 +321,22 @@ class BillingService:
         team = self.team_repo.get(team_id)
         if not team or not team.stripe_customer_id:
             return []
-            
-        methods = stripe.PaymentMethod.list(
-            customer=team.stripe_customer_id,
-            type="card"
-        )
+
+        methods = stripe.PaymentMethod.list(customer=team.stripe_customer_id, type="card")
         results: List[Dict[str, Any]] = []
         for method in methods.data:
             card = method.get("card") if isinstance(method, dict) else method.card
             if not card:
                 continue
-            results.append({
-                "id": method["id"] if isinstance(method, dict) else method.id,
-                "brand": card.get("brand"),
-                "last4": card.get("last4"),
-                "exp_month": card.get("exp_month"),
-                "exp_year": card.get("exp_year"),
-            })
+            results.append(
+                {
+                    "id": method["id"] if isinstance(method, dict) else method.id,
+                    "brand": card.get("brand"),
+                    "last4": card.get("last4"),
+                    "exp_month": card.get("exp_month"),
+                    "exp_year": card.get("exp_year"),
+                }
+            )
         return results
 
     def get_credits(self, team_id: uuid.UUID) -> Dict[str, Any]:
@@ -352,7 +357,7 @@ class BillingService:
             "plan": team.plan,
             "monthly_upload_count": team.monthly_upload_count,
             "monthly_limit": monthly_limit,
-            "extra_credits": team.extra_credits
+            "extra_credits": team.extra_credits,
         }
 
     def get_usage_history(self, team_id: uuid.UUID) -> List[Any]:
@@ -383,20 +388,20 @@ class BillingService:
                 key: ("inf" if isinstance(value, float) and value == float("inf") else value)
                 for key, value in limits.items()
             }
-            plans.append({
-                "plan": plan,
-                "limits": normalized_limits,
-                "price_id": PLAN_STRIPE_IDS.get(plan)
-            })
+            plans.append(
+                {"plan": plan, "limits": normalized_limits, "price_id": PLAN_STRIPE_IDS.get(plan)}
+            )
         return {"plans": plans, "credit_price_cents": CREDIT_PRICE_CENTS}
-        
-    def create_setup_session(self, team_id: uuid.UUID, success_url: str, cancel_url: str) -> stripe.checkout.Session:
+
+    def create_setup_session(
+        self, team_id: uuid.UUID, success_url: str, cancel_url: str
+    ) -> stripe.checkout.Session:
         """Creates a Checkout Session for adding a new payment method."""
         team = self.team_repo.get(team_id)
         if not team or not team.stripe_customer_id:
-             # Create customer if missing (edge case)
-             # For now assume exists or error
-             raise ValueError("Stripe customer required")
+            # Create customer if missing (edge case)
+            # For now assume exists or error
+            raise ValueError("Stripe customer required")
 
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
@@ -412,10 +417,10 @@ class BillingService:
         # Verify ownership
         pm = stripe.PaymentMethod.retrieve(payment_method_id)
         team = self.team_repo.get(team_id)
-        
+
         if pm.customer != team.stripe_customer_id:
             raise ValueError("Payment method does not belong to this team")
-            
+
         stripe.PaymentMethod.detach(payment_method_id)
 
     def set_default_payment_method(self, team_id: uuid.UUID, payment_method_id: str):
@@ -429,6 +434,5 @@ class BillingService:
             raise ValueError("Payment method does not belong to this team")
 
         stripe.Customer.modify(
-            team.stripe_customer_id,
-            invoice_settings={"default_payment_method": payment_method_id}
+            team.stripe_customer_id, invoice_settings={"default_payment_method": payment_method_id}
         )

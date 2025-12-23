@@ -36,21 +36,9 @@ class PlanLimits(TypedDict):
 
 
 PLAN_LIMITS: dict[PlanType, PlanLimits] = {
-    PlanType.FREE: {
-        "uploads_per_month": 5,
-        "languages": 2,
-        "members": 1
-    },
-    PlanType.STANDARD: {
-        "uploads_per_month": 25,
-        "languages": 5,
-        "members": 5
-    },
-    PlanType.PRO: {
-        "uploads_per_month": float('inf'),
-        "languages": 5,
-        "members": float('inf')
-    },
+    PlanType.FREE: {"uploads_per_month": 5, "languages": 2, "members": 1},
+    PlanType.STANDARD: {"uploads_per_month": 25, "languages": 5, "members": 5},
+    PlanType.PRO: {"uploads_per_month": float("inf"), "languages": 5, "members": float("inf")},
 }
 
 PLAN_STRIPE_IDS: dict[PlanType, str] = {

@@ -47,10 +47,14 @@ class TeamService:
         return team
 
     def get_team(self, team_id: uuid.UUID, user_id: uuid.UUID) -> Optional[Team]:
-        member = self.db_session.query(TeamMember).filter(
-            TeamMember.team_id == team_id,
-            TeamMember.user_id == user_id,
-        ).first()
+        member = (
+            self.db_session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == team_id,
+                TeamMember.user_id == user_id,
+            )
+            .first()
+        )
 
         if not member:
             return None
@@ -68,10 +72,14 @@ class TeamService:
         if not team:
             return None
 
-        member = self.db_session.query(TeamMember).filter(
-            TeamMember.team_id == team_id,
-            TeamMember.user_id == user_id,
-        ).first()
+        member = (
+            self.db_session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == team_id,
+                TeamMember.user_id == user_id,
+            )
+            .first()
+        )
 
         if not member or member.role != TeamRole.ADMIN:
             return None
@@ -91,10 +99,14 @@ class TeamService:
         if not team:
             return False
 
-        member = self.db_session.query(TeamMember).filter(
-            TeamMember.team_id == team_id,
-            TeamMember.user_id == user_id,
-        ).first()
+        member = (
+            self.db_session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == team_id,
+                TeamMember.user_id == user_id,
+            )
+            .first()
+        )
 
         if not member or member.role != TeamRole.ADMIN:
             return False
@@ -104,13 +116,15 @@ class TeamService:
 
         return True
 
-    def get_members(
-        self, team_id: uuid.UUID, user_id: uuid.UUID
-    ) -> list[TeamMember]:
-        member = self.db_session.query(TeamMember).filter(
-            TeamMember.team_id == team_id,
-            TeamMember.user_id == user_id,
-        ).first()
+    def get_members(self, team_id: uuid.UUID, user_id: uuid.UUID) -> list[TeamMember]:
+        member = (
+            self.db_session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == team_id,
+                TeamMember.user_id == user_id,
+            )
+            .first()
+        )
 
         if not member:
             return []
@@ -124,10 +138,14 @@ class TeamService:
         target_user_id: uuid.UUID,
         new_role: TeamRole,
     ) -> Optional[TeamMember]:
-        requesting_member = self.db_session.query(TeamMember).filter(
-            TeamMember.team_id == team_id,
-            TeamMember.user_id == requesting_user_id,
-        ).first()
+        requesting_member = (
+            self.db_session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == team_id,
+                TeamMember.user_id == requesting_user_id,
+            )
+            .first()
+        )
 
         if not requesting_member or requesting_member.role != TeamRole.ADMIN:
             return None
@@ -135,10 +153,14 @@ class TeamService:
         if requesting_user_id == target_user_id:
             return None
 
-        target_member = self.db_session.query(TeamMember).filter(
-            TeamMember.team_id == team_id,
-            TeamMember.user_id == target_user_id,
-        ).first()
+        target_member = (
+            self.db_session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == team_id,
+                TeamMember.user_id == target_user_id,
+            )
+            .first()
+        )
 
         if not target_member:
             return None
@@ -155,10 +177,14 @@ class TeamService:
         requesting_user_id: uuid.UUID,
         target_user_id: uuid.UUID,
     ) -> bool:
-        requesting_member = self.db_session.query(TeamMember).filter(
-            TeamMember.team_id == team_id,
-            TeamMember.user_id == requesting_user_id,
-        ).first()
+        requesting_member = (
+            self.db_session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == team_id,
+                TeamMember.user_id == requesting_user_id,
+            )
+            .first()
+        )
 
         if not requesting_member:
             return False
@@ -169,10 +195,14 @@ class TeamService:
             if requesting_member.role != TeamRole.ADMIN:
                 return False
 
-            member = self.db_session.query(TeamMember).filter(
-                TeamMember.team_id == team_id,
-                TeamMember.user_id == target_user_id,
-            ).first()
+            member = (
+                self.db_session.query(TeamMember)
+                .filter(
+                    TeamMember.team_id == team_id,
+                    TeamMember.user_id == target_user_id,
+                )
+                .first()
+            )
 
         if not member:
             return False
@@ -181,24 +211,26 @@ class TeamService:
         return True
 
     def get_user_teams(self, user_id: uuid.UUID) -> list[Team]:
-        team_ids = [
-            m.team_id for m in self.member_repo.list_by_user_id(user_id)
-        ]
+        team_ids = [m.team_id for m in self.member_repo.list_by_user_id(user_id)]
 
         if not team_ids:
             return []
 
-        return self.db_session.query(Team).filter(
-            Team.id.in_(team_ids), Team.deleted_at.is_(None)
-        ).all()
+        return (
+            self.db_session.query(Team)
+            .filter(Team.id.in_(team_ids), Team.deleted_at.is_(None))
+            .all()
+        )
 
     def check_plan_limits(
         self, team_id: uuid.UUID, team: Optional[Team] = None
     ) -> tuple[bool, Optional[str]]:
         if team is None:
-            team = self.db_session.query(Team).filter(
-                Team.id == team_id, Team.deleted_at.is_(None)
-            ).first()
+            team = (
+                self.db_session.query(Team)
+                .filter(Team.id == team_id, Team.deleted_at.is_(None))
+                .first()
+            )
 
         if not team:
             return False, "Team not found"
@@ -218,5 +250,7 @@ class TeamService:
         return TeamMemberLimits(
             max_members=int(limits["members"]) if limits["members"] != float("inf") else 9999,
             max_upload_mb=0,
-            max_jobs_per_month=int(limits["uploads_per_month"]) if limits["uploads_per_month"] != float("inf") else 9999,
+            max_jobs_per_month=int(limits["uploads_per_month"])
+            if limits["uploads_per_month"] != float("inf")
+            else 9999,
         )

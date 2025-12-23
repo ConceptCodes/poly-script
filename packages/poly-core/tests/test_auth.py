@@ -105,7 +105,9 @@ class TestAuthService:
             mock_db.commit.assert_called_once()
 
     @patch("poly_core.services.auth.NotificationService")
-    def test_send_verification_email_user_not_found(self, mock_notification_class, mock_db, auth_service):
+    def test_send_verification_email_user_not_found(
+        self, mock_notification_class, mock_db, auth_service
+    ):
         mock_user_repo = Mock()
         mock_user_repo.get_by_email.return_value = None
 
@@ -264,10 +266,7 @@ class TestAuthService:
             with patch.object(auth_service, "team_repo", mock_team_repo):
                 with patch.object(auth_service, "team_member_repo", mock_team_member_repo):
                     result = auth_service.signup(
-                        "test@example.com",
-                        "password_123",
-                        "John Doe",
-                        "en"
+                        "test@example.com", "password_123", "John Doe", "en"
                     )
 
                     assert result is not None
@@ -283,9 +282,4 @@ class TestAuthService:
 
         with patch.object(auth_service, "user_repo", mock_user_repo):
             with pytest.raises(AuthError):
-                auth_service.signup(
-                    "exists@example.com",
-                    "password_123",
-                    "John Doe",
-                    "en"
-                )
+                auth_service.signup("exists@example.com", "password_123", "John Doe", "en")

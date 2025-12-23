@@ -5,7 +5,11 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from poly_db.repositories.auth import OAuthAccountRepository, PasswordResetRepository, RefreshTokenRepository
+from poly_db.repositories.auth import (
+    OAuthAccountRepository,
+    PasswordResetRepository,
+    RefreshTokenRepository,
+)
 from poly_db.repositories.users import UserSettingsRepository
 from poly_db.models.users import User
 from poly_db.models.password_resets import PasswordReset
@@ -59,9 +63,7 @@ class AuthService:
         }
         return jwt.encode(payload, self.jwt_secret, algorithm="HS256")
 
-    def create_refresh_token(
-        self, user_id: uuid.UUID, expires_in_hours: int = 30 * 24
-    ) -> str:
+    def create_refresh_token(self, user_id: uuid.UUID, expires_in_hours: int = 30 * 24) -> str:
         token = generate_token()
         expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
 
@@ -167,9 +169,7 @@ class AuthService:
             raise ValueError("User not found")
 
         token = generate_token()
-        expires_at = datetime.now(timezone.utc) + timedelta(
-            hours=self.password_reset_expiry_hours
-        )
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=self.password_reset_expiry_hours)
 
         password_reset = PasswordReset(
             user_id=user_id,
@@ -221,9 +221,7 @@ class AuthService:
             token.revoked = True
             self.refresh_token_repo.update(token)
 
-    def login(
-        self, email: str, password: str
-    ) -> TokenResponse:
+    def login(self, email: str, password: str) -> TokenResponse:
         from poly_db.repositories.users import UserRepository
 
         user_repo = UserRepository(self.db_session)

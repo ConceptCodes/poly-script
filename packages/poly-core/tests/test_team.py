@@ -37,11 +37,7 @@ class TestTeamService:
 
         with patch.object(team_service, "team_repo", mock_team_repo):
             with patch.object(team_service, "team_member_repo", mock_team_member_repo):
-                result = team_service.create_team(
-                    mock_user.id,
-                    "My Team",
-                    "en"
-                )
+                result = team_service.create_team(mock_user.id, "My Team", "en")
 
                 assert result is not None
                 assert result.id == "team-id"
@@ -57,11 +53,7 @@ class TestTeamService:
 
         with patch.object(team_service, "team_repo", mock_team_repo):
             with pytest.raises(TeamError):
-                team_service.create_team(
-                    mock_user.id,
-                    "My Team",
-                    "en"
-                )
+                team_service.create_team(mock_user.id, "My Team", "en")
 
     def test_get_team_success(self, team_service):
         mock_team = Mock()
@@ -114,12 +106,7 @@ class TestTeamService:
 
         with patch.object(team_service, "team_repo", mock_team_repo):
             with patch.object(team_service, "team_member_repo", mock_team_member_repo):
-                result = team_service.update_team(
-                    "team-id",
-                    "user-id",
-                    "New Name",
-                    None
-                )
+                result = team_service.update_team("team-id", "user-id", "New Name", None)
 
                 assert result.name == "New Name"
                 mock_db.commit.assert_called_once()
@@ -169,12 +156,7 @@ class TestTeamService:
         with patch.object(team_service, "team_repo", mock_team_repo):
             with patch.object(team_service, "user_repo", mock_user_repo):
                 with patch.object(team_service, "team_member_repo", mock_team_member_repo):
-                    result = team_service.add_member(
-                        "team-id",
-                        "admin-id",
-                        "new-user-id",
-                        "MEMBER"
-                    )
+                    result = team_service.add_member("team-id", "admin-id", "new-user-id", "MEMBER")
 
                     assert result is not None
                     mock_db.add.assert_called()
@@ -193,12 +175,7 @@ class TestTeamService:
         with patch.object(team_service, "team_repo", mock_team_repo):
             with patch.object(team_service, "team_member_repo", mock_team_member_repo):
                 with pytest.raises(TeamError):
-                    team_service.add_member(
-                        "team-id",
-                        "member-id",
-                        "new-user-id",
-                        "MEMBER"
-                    )
+                    team_service.add_member("team-id", "member-id", "new-user-id", "MEMBER")
 
     def test_remove_member_success(self, mock_db, team_service):
         mock_team = Mock()
@@ -234,12 +211,7 @@ class TestTeamService:
 
         with patch.object(team_service, "team_repo", mock_team_repo):
             with patch.object(team_service, "team_member_repo", mock_team_member_repo):
-                result = team_service.update_member_role(
-                    "team-id",
-                    "admin-id",
-                    "user-id",
-                    "ADMIN"
-                )
+                result = team_service.update_member_role("team-id", "admin-id", "user-id", "ADMIN")
 
                 assert result.role == "ADMIN"
                 mock_db.commit.assert_called_once()
@@ -261,9 +233,4 @@ class TestTeamService:
         with patch.object(team_service, "team_repo", mock_team_repo):
             with patch.object(team_service, "team_member_repo", mock_team_member_repo):
                 with pytest.raises(TeamError):
-                    team_service.update_member_role(
-                        "team-id",
-                        "admin-id",
-                        "user-id",
-                        "MEMBER"
-                    )
+                    team_service.update_member_role("team-id", "admin-id", "user-id", "MEMBER")

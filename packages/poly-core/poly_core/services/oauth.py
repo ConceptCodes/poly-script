@@ -94,23 +94,15 @@ class OAuthService:
         except Exception:
             return None
 
-    def find_or_create_oauth_user(
-        self, google_info: GoogleUserInfo
-    ) -> Optional[User]:
+    def find_or_create_oauth_user(self, google_info: GoogleUserInfo) -> Optional[User]:
         existing_oauth = self.oauth_repo.get_by_provider_user_id(
             provider="google", provider_user_id=google_info["google_id"]
         )
         if existing_oauth:
-            return (
-                self.db_session.query(User)
-                .filter(User.id == existing_oauth.user_id)
-                .first()
-            )
+            return self.db_session.query(User).filter(User.id == existing_oauth.user_id).first()
 
         existing_user = (
-            self.db_session.query(User)
-            .filter(User.email == google_info["email"])
-            .first()
+            self.db_session.query(User).filter(User.email == google_info["email"]).first()
         )
         if existing_user:
             oauth_account = OAuthAccount(

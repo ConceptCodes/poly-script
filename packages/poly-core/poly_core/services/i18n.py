@@ -2,6 +2,7 @@ import json
 import os
 from typing import Dict, Any, Optional
 
+
 class I18nService:
     def __init__(self, locales_dir: str):
         self.locales_dir = locales_dir
@@ -26,7 +27,7 @@ class I18nService:
     def t(self, key: str, locale: str = "en", **kwargs: Any) -> str:
         data = self._load_locale(locale)
         keys = key.split(".")
-        
+
         value = data
         for k in keys:
             if isinstance(value, dict) and k in value:
@@ -41,6 +42,7 @@ class I18nService:
             return key
 
         return value.format(**kwargs)
+
 
 # Instance will be created with proper path at app startup
 i18n = None

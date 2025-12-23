@@ -44,9 +44,7 @@ class NotificationService:
                 server.login(self.smtp_user, self.smtp_password)
             server.send_message(msg)
 
-    def _render_template(
-        self, template_name: str, context: EmailTemplateContext
-    ) -> str:
+    def _render_template(self, template_name: str, context: EmailTemplateContext) -> str:
         template_path = self.templates_dir / template_name
         with open(template_path) as f:
             template = Template(f.read())
