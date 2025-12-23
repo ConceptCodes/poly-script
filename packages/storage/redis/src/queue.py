@@ -4,12 +4,14 @@ from typing import Optional, Any, Dict
 from redis import Redis
 from pydantic import BaseModel, Field
 
+
 class TranscriptionWorkItem(BaseModel):
     job_id: uuid.UUID
     audio_ref: str
     requested_language: Optional[str] = None
     engine: Optional[str] = None
     options: Dict[str, Any] = Field(default_factory=dict)
+
 
 class TranscriptionQueue:
     QUEUE_KEY = "transcription:queue"
