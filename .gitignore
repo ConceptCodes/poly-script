@@ -24,6 +24,10 @@ ENV/
 env/
 .python-version
 .uv
+*.egg-info/
+*.egg/
+build/
+dist/
 
 # OS
 .DS_Store
