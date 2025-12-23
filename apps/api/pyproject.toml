@@ -1,7 +1,24 @@
 [project]
-name = "api"
+name = "poly-api"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "core",
+    "db",
+    "fastapi>=0.127.0",
+    "poly-redis",
+    "poly-stt",
+    "pydantic-settings>=2.12.0",
+    "python-multipart>=0.0.21",
+    "slowapi>=0.1.9",
+    "stripe>=14.1.0",
+    "uvicorn[standard]>=0.40.0",
+]
+
+[tool.uv.sources]
+core = { path = "../../packages/core" }
+db = { path = "../../packages/storage/db" }
+poly-redis = { path = "../../packages/storage/redis" }
+poly-stt = { path = "../../packages/stt" }
