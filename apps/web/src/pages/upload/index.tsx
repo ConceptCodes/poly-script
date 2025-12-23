@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../lib/api";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@poly/ui";
-import { Button } from "@poly/ui";
-import { Badge } from "@poly/ui";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter, Button, Badge, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@poly/ui";
 import { Link } from "react-router-dom";
 
 interface UsageData {
@@ -12,15 +10,42 @@ interface UsageData {
   extra_credits: number;
 }
 
+interface PricingPlan {
+  plan: string;
+  limits: {
+    uploads_per_month: number | "inf";
+    languages: number | "inf";
+    members: number | "inf";
+  };
+}
+
+interface PricingData {
+  plans: PricingPlan[];
+}
+
+const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "de", label: "German" },
+  { code: "es", label: "Spanish" },
+  { code: "fr", label: "French" },
+  { code: "jp", label: "Japanese" },
+];
+
 export default function UploadPage() {
   const [usage, setUsage] = useState<UsageData | null>(null);
+  const [pricing, setPricing] = useState<PricingData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedLanguage, setSelectedLanguage] = useState("en");
 
   useEffect(() => {
     async function fetchUsage() {
       try {
-        const data = await apiFetch("/billing/usage");
-        setUsage(data);
+        const [usageData, pricingData] = await Promise.all([
+          apiFetch("/billing/usage"),
+          apiFetch("/billing/pricing"),
+        ]);
+        setUsage(usageData);
+        setPricing(pricingData);
       } catch (err) {
         console.error("Failed to fetch usage", err);
       } finally {
@@ -33,6 +58,19 @@ export default function UploadPage() {
   const isLimitReached = usage 
     ? (usage.monthly_limit !== "inf" && usage.monthly_upload_count >= (usage.monthly_limit as number) && usage.extra_credits <= 0)
     : false;
+
+  const languageLimit = (() => {
+    if (!usage || !pricing) return "inf";
+    const plan = pricing.plans.find((p) => p.plan === usage.plan);
+    return plan?.limits.languages ?? "inf";
+  })();
+
+  const isLanguageRestricted = (code: string) => {
+    if (languageLimit === "inf") return false;
+    return LANGUAGES.findIndex((l) => l.code === code) >= (languageLimit as number);
+  };
+
+  const selectedLanguageRestricted = isLanguageRestricted(selectedLanguage);
 
   if (loading) return <div className="p-6 text-center text-muted-foreground italic">Checking limits...</div>;
 
@@ -73,19 +111,55 @@ export default function UploadPage() {
         </Card>
       )}
 
+      {selectedLanguageRestricted && (
+        <Card className="border-amber-500 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="text-amber-700">Language Not Available</CardTitle>
+            <CardDescription>
+              Your current plan doesn’t include this language. Upgrade to unlock all languages.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="flex space-x-4">
+            <Button asChild>
+              <Link to="/billing">Upgrade Plan</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+
       <Card className={isLimitReached ? "opacity-50 pointer-events-none" : ""}>
         <CardHeader>
           <CardTitle>File Upload</CardTitle>
           <CardDescription>Select an audio file to transcribe.</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="space-y-2 mb-6">
+            <label className="text-sm font-medium">Language</label>
+            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code} disabled={isLanguageRestricted(lang.code)}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {languageLimit !== "inf" && (
+              <p className="text-xs text-muted-foreground">
+                Your plan allows {languageLimit} languages.
+              </p>
+            )}
+          </div>
           <div className="border-2 border-dashed rounded-lg p-12 text-center hover:bg-muted/50 transition-colors cursor-pointer">
             <p className="text-muted-foreground">Drag and drop audio file here, or click to select</p>
-            <input type="file" className="hidden" disabled={isLimitReached} />
+            <input type="file" className="hidden" disabled={isLimitReached || selectedLanguageRestricted} />
           </div>
         </CardContent>
         <CardFooter className="flex justify-end">
-          <Button disabled={isLimitReached}>Upload & Process</Button>
+          <Button disabled={isLimitReached || selectedLanguageRestricted}>Upload & Process</Button>
         </CardFooter>
       </Card>
     </div>
