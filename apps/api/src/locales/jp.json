@@ -1,0 +1,22 @@
+{
+  "errors": {
+    "auth": {
+      "invalid_credentials": "Invalid email or password",
+      "user_not_found": "User not found",
+      "email_already_exists": "Email already exists",
+      "not_verified": "Email not verified"
+    },
+    "jobs": {
+      "not_found": "Job not found",
+      "limit_reached": "Monthly upload limit reached",
+      "unsupported_language": "Language not supported by your plan"
+    },
+    "generic": {
+      "internal_error": "An internal error occurred",
+      "forbidden": "You do not have permission to perform this action"
+    }
+  },
+  "notifications": {
+    "invitation_subject": "You have been invited to join team {team_name}"
+  }
+}
