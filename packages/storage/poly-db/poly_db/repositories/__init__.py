@@ -7,6 +7,7 @@ from .billing import (
     CreditPurchaseRepository,
     InvoiceRepository
 )
+from .payment_methods import PaymentMethodRepository
 from .teams import TeamMemberRepository, TeamInvitationRepository
 from .auth import OAuthAccountRepository, PasswordResetRepository, RefreshTokenRepository
 from .jobs import TranscriptionJobRepository, AudioAssetRepository
@@ -22,6 +23,7 @@ __all__ = [
     "UsageLogRepository",
     "CreditPurchaseRepository",
     "InvoiceRepository",
+    "PaymentMethodRepository",
     "TeamMemberRepository",
     "TeamInvitationRepository",
     "OAuthAccountRepository",

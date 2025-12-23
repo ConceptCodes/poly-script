@@ -12,10 +12,14 @@ class OAuthAccountRepository(BaseRepository[OAuthAccount]):
         
     def get_by_provider(self, provider: str, provider_account_id: str) -> Optional[OAuthAccount]:
         stmt = select(OAuthAccount).where(
-            OAuthAccount.oauth_name == provider,
-            OAuthAccount.oauth_account_id == provider_account_id
+            OAuthAccount.provider == provider,
+            OAuthAccount.provider_user_id == provider_account_id
         )
         return self.session.execute(stmt).scalar_one_or_none()
+
+    def get_by_user_id(self, user_id: uuid.UUID) -> List[OAuthAccount]:
+        stmt = select(OAuthAccount).where(OAuthAccount.user_id == user_id)
+        return self.session.execute(stmt).scalars().all()
 
 class PasswordResetRepository(BaseRepository[PasswordReset]):
     def __init__(self, session):
@@ -26,6 +30,16 @@ class PasswordResetRepository(BaseRepository[PasswordReset]):
         # Assuming there is a token field
         return self.session.execute(stmt).scalar_one_or_none()
 
+    def get_active_by_token(self, token: str) -> Optional[PasswordReset]:
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        stmt = select(PasswordReset).where(
+            PasswordReset.token == token,
+            PasswordReset.used_at.is_(None),
+            PasswordReset.expires_at > now
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
 class RefreshTokenRepository(BaseRepository[RefreshToken]):
     def __init__(self, session):
         super().__init__(RefreshToken, session)
@@ -33,3 +47,17 @@ class RefreshTokenRepository(BaseRepository[RefreshToken]):
     def get_by_token(self, token: str) -> Optional[RefreshToken]:
         stmt = select(RefreshToken).where(RefreshToken.token == token)
         return self.session.execute(stmt).scalar_one_or_none()
+
+    def get_active_by_token(self, token: str) -> Optional[RefreshToken]:
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        stmt = select(RefreshToken).where(
+            RefreshToken.token == token,
+            RefreshToken.revoked.is_(False),
+            RefreshToken.expires_at > now
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
+    def list_by_user_id(self, user_id: uuid.UUID) -> List[RefreshToken]:
+        stmt = select(RefreshToken).where(RefreshToken.user_id == user_id)
+        return self.session.execute(stmt).scalars().all()

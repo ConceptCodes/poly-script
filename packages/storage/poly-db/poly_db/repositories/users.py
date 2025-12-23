@@ -11,3 +11,7 @@ class UserSettingsRepository(BaseRepository[UserSettings]):
     def get_by_user_id(self, user_id: uuid.UUID) -> Optional[UserSettings]:
         stmt = select(UserSettings).where(UserSettings.user_id == user_id)
         return self.session.execute(stmt).scalar_one_or_none()
+
+    def list_by_language(self, host_language: str) -> list[UserSettings]:
+        stmt = select(UserSettings).where(UserSettings.host_language == host_language)
+        return self.session.execute(stmt).scalars().all()
