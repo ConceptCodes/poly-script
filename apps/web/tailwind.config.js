@@ -9,4 +9,4 @@ export default {
     "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
   ],
   // Extend or override theme if needed, but presets handle most
-}
+};
