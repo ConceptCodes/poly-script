@@ -1,0 +1,8 @@
+{
+  "name": "poly-script",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

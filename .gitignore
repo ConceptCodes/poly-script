@@ -1,4 +1,36 @@
+# Environment variables
+.env
 .env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+build/
+.next/
+.astro/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.python-version
+.uv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# App Specific
 app-spec.txt
 GEMINI.md
-__tasks__
+__tasks__/
+/storage
