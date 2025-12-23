@@ -1,22 +1,4 @@
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from src.models import Base, User, Team, PlanType, TeamMember, TeamRole
-
-@pytest.fixture
-def engine():
-    """Create an in-memory SQLite database for testing."""
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine)
-    return engine
-
-@pytest.fixture
-def session(engine):
-    """Create a new database session for a test."""
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    yield session
-    session.close()
+from poly_db.models import User, Team, PlanType, TeamMember, TeamRole
 
 def test_create_user(session):
     """Test creating a user."""

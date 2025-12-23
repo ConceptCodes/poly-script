@@ -1,0 +1,33 @@
+from poly_db.models import Team, PlanType, TranscriptionJob, JobStatus, AudioAsset
+from poly_db.repositories import TranscriptionJobRepository, AudioAssetRepository
+
+
+def test_job_repositories(session):
+    team = Team(name="Jobs Team", plan=PlanType.FREE)
+    session.add(team)
+    session.commit()
+
+    job = TranscriptionJob(team_id=team.id, status=JobStatus.QUEUED)
+    session.add(job)
+    session.commit()
+
+    asset = AudioAsset(
+        job_id=job.id,
+        storage_uri="local://audio1.wav",
+        filename="audio1.wav",
+        mime_type="audio/wav",
+        file_size=1234,
+        duration_seconds=12.5,
+    )
+    session.add(asset)
+    session.commit()
+
+    job_repo = TranscriptionJobRepository(session)
+    assert job.id in [j.id for j in job_repo.get_by_team_id(team.id)]
+    assert job.id in [j.id for j in job_repo.get_by_status(JobStatus.QUEUED)]
+    assert job.id in [j.id for j in job_repo.get_by_team_and_status(team.id, JobStatus.QUEUED)]
+
+    asset_repo = AudioAssetRepository(session)
+    assert asset_repo.get_by_job_id(job.id).id == asset.id
+    assert asset_repo.get_by_storage_uri("local://audio1.wav").id == asset.id
+    assert asset.id in [a.id for a in asset_repo.list_by_team_id(team.id)]
