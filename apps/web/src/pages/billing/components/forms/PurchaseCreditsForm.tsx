@@ -9,15 +9,16 @@ import {
   CardContent,
   Label,
 } from "@poly/ui";
-import { apiFetch } from "../../../../lib/api";
 import { useState } from "react";
 import { purchaseCreditsSchema } from "../../schemas";
 import { ConfirmPurchaseModal } from "../modals/ConfirmPurchaseModal";
+import { usePurchaseCredits } from "../../../../hooks/useBilling";
 
 export function PurchaseCreditsForm() {
-  const [loading, setLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingAmount, setPendingAmount] = useState(10);
+
+  const purchaseCredits = usePurchaseCredits();
 
   const form = useForm({
     defaultValues: {
@@ -29,23 +30,12 @@ export function PurchaseCreditsForm() {
     },
   });
 
-  const handleConfirm = async () => {
-    setLoading(true);
-    try {
-      const { checkout_url } = await apiFetch("/billing/credits/purchase", {
-        method: "POST",
-        body: JSON.stringify({
-          amount: pendingAmount,
-          success_url: window.location.origin + "/billing?success=true",
-          cancel_url: window.location.origin + "/billing?canceled=true",
-        }),
-      });
-      window.location.href = checkout_url;
-    } catch (err: any) {
-      alert("Failed to start checkout: " + err.message);
-      setLoading(false);
-      setConfirmOpen(false);
-    }
+  const handleConfirm = () => {
+    purchaseCredits.mutate({
+      amount: pendingAmount,
+      success_url: window.location.origin + "/billing?success=true",
+      cancel_url: window.location.origin + "/billing?canceled=true",
+    });
   };
 
   return (
@@ -53,7 +43,7 @@ export function PurchaseCreditsForm() {
       <CardHeader>
         <CardTitle>Purchase Credits</CardTitle>
         <CardDescription>
-          Buy extra credits to upload more files beyond your plan limit. $0.10 per credit.
+          Buy extra credits to upload more files beyond your plan limit. $1.00 per credit.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -85,7 +75,7 @@ export function PurchaseCreditsForm() {
                     onChange={(e) => field.handleChange(e.target.valueAsNumber)}
                   />
                   <div className="flex items-center text-sm text-muted-foreground whitespace-nowrap">
-                    = ${(field.state.value * 0.1).toFixed(2)}
+                    = ${(field.state.value * 1).toFixed(2)}
                   </div>
                 </div>
                 {field.state.meta.errors ? (
@@ -94,8 +84,8 @@ export function PurchaseCreditsForm() {
               </div>
             )}
           />
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Processing..." : "Buy Credits"}
+          <Button type="submit" disabled={purchaseCredits.isPending} className="w-full">
+            {purchaseCredits.isPending ? "Processing..." : "Buy Credits"}
           </Button>
         </form>
       </CardContent>
@@ -103,9 +93,9 @@ export function PurchaseCreditsForm() {
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         credits={pendingAmount}
-        totalPrice={(pendingAmount * 0.1).toFixed(2)}
+        totalPrice={(pendingAmount * 1).toFixed(2)}
         onConfirm={handleConfirm}
-        isLoading={loading}
+        isLoading={purchaseCredits.isPending}
       />
     </Card>
   );

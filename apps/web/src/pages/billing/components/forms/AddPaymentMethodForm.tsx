@@ -1,31 +1,21 @@
 import { useForm } from "@tanstack/react-form";
 import { Button, Input, Label } from "@poly/ui";
-import { apiFetch } from "../../../../lib/api";
 import { useState } from "react";
 import { addPaymentMethodSchema } from "../../schemas";
+import { useAddPaymentMethod } from "../../../../hooks/useBilling";
 
 export function AddPaymentMethodForm() {
-  const [loading, setLoading] = useState(false);
+  const addPaymentMethod = useAddPaymentMethod();
 
   const form = useForm({
     defaultValues: {
       cardholderName: "",
     },
     onSubmit: async () => {
-      setLoading(true);
-      try {
-        const { checkout_url } = await apiFetch("/billing/payment-methods", {
-          method: "POST",
-          body: JSON.stringify({
-            success_url: window.location.href,
-            cancel_url: window.location.href,
-          }),
-        });
-        window.location.href = checkout_url;
-      } catch (err: any) {
-        alert("Failed to start setup session: " + err.message);
-        setLoading(false);
-      }
+      addPaymentMethod.mutate({
+        success_url: window.location.href,
+        cancel_url: window.location.href,
+      });
     },
   });
 
@@ -62,8 +52,8 @@ export function AddPaymentMethodForm() {
           </div>
         )}
       />
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Redirecting..." : "Add Payment Method"}
+      <Button type="submit" disabled={addPaymentMethod.isPending} className="w-full">
+        {addPaymentMethod.isPending ? "Redirecting..." : "Add Payment Method"}
       </Button>
     </form>
   );

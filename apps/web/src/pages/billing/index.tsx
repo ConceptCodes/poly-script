@@ -1,6 +1,5 @@
 import { Button, Skeleton } from "@poly/ui";
-import { useEffect, useState } from "react";
-import { apiFetch } from "../../lib/api";
+import { useState } from "react";
 import { UsageCard } from "./components/cards/UsageCard";
 import { CurrentPlanCard } from "./components/cards/CurrentPlanCard";
 import { PlanComparisonCard } from "./components/cards/PlanComparisonCard";
@@ -10,63 +9,59 @@ import { UpgradeModal } from "./components/modals/UpgradeModal";
 import { CancelSubscriptionModal } from "./components/modals/CancelSubscriptionModal";
 import { InvoicesCard } from "./components/cards/InvoicesCard";
 import { UsageHistoryCard } from "./components/cards/UsageHistoryCard";
-
-interface BillingData {
-  plan: string;
-  monthly_upload_count: number;
-  monthly_limit: number | "inf";
-  extra_credits: number;
-  status: string;
-  cancel_at_period_end: boolean;
-}
+import {
+  useUsage,
+  useSubscription,
+  useCreatePortalSession,
+  useUpgradeSubscription,
+  useDowngradeSubscription,
+  useCancelSubscription,
+  useReactivateSubscription,
+} from "../../hooks/useBilling";
 
 const PLAN_PRICES: Record<string, number> = {
   FREE: 0,
-  STANDARD: 29,
-  PRO: 99,
+  STANDARD: 10,
+  PRO: 30,
 };
 
 const PLAN_ORDER = ["FREE", "STANDARD", "PRO"];
 
-export default function BillingPage() {
-  const [data, setData] = useState<BillingData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function BillingPage() {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [targetPlan, setTargetPlan] = useState<string | null>(null);
-  const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Queries
+  const { data: usage, isLoading: usageLoading, error: usageError } = useUsage();
+  const { data: subscription, isLoading: subscriptionLoading } = useSubscription();
 
-  async function fetchData() {
-    try {
-      const usage = await apiFetch("/billing/usage");
-      const subscription = await apiFetch("/billing/subscription");
-      setData({
-        ...usage,
-        status: subscription.status || "active",
-        cancel_at_period_end: subscription.cancel_at_period_end,
-      });
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Mutations
+  const createPortalSession = useCreatePortalSession();
+  const upgradeSubscription = useUpgradeSubscription();
+  const downgradeSubscription = useDowngradeSubscription();
+  const cancelSubscription = useCancelSubscription();
+  const reactivateSubscription = useReactivateSubscription();
 
-  const handleManageBilling = async () => {
-    try {
-      const { url } = await apiFetch("/billing/portal", {
-        method: "POST",
-        body: JSON.stringify({ return_url: window.location.href }),
-      });
-      window.location.href = url;
-    } catch (err: any) {
-      alert("Failed to open billing portal: " + err.message);
-    }
+  const loading = usageLoading || subscriptionLoading;
+  const error = usageError?.message;
+  const processing = 
+    upgradeSubscription.isPending || 
+    downgradeSubscription.isPending || 
+    cancelSubscription.isPending || 
+    reactivateSubscription.isPending;
+
+  // Combine usage and subscription data
+  const data = usage && subscription ? {
+    ...usage,
+    status: subscription.status || "active",
+    cancel_at_period_end: subscription.cancel_at_period_end,
+    current_period_start: subscription.current_period_start,
+    current_period_end: subscription.current_period_end,
+  } : null;
+
+  const handleManageBilling = () => {
+    createPortalSession.mutate(window.location.href);
   };
 
   const initiatePlanChange = (plan: string) => {
@@ -74,42 +69,27 @@ export default function BillingPage() {
     setUpgradeModalOpen(true);
   };
 
-  const handlePlanConfirm = async () => {
+  const handlePlanConfirm = () => {
     if (!targetPlan || !data) return;
-    setProcessing(true);
-    try {
-      const currentIdx = PLAN_ORDER.indexOf(data.plan);
-      const targetIdx = PLAN_ORDER.indexOf(targetPlan);
 
-      if (data.plan === "FREE") {
-        // Free -> Paid (Checkout)
-        const { checkout_url } = await apiFetch("/billing/subscription/upgrade", {
-          method: "POST",
-          body: JSON.stringify({
-            plan: targetPlan,
-            success_url: window.location.origin + "/billing?success=true",
-            cancel_url: window.location.origin + "/billing?canceled=true",
-          }),
-        });
-        window.location.href = checkout_url;
-      } else {
-        // Paid -> Paid (Modify)
-        // We use the downgrade endpoint which handles modification (both up and down usually if implemented as modify)
-        // But wait, my implementation of `downgrade_plan` in BillingService uses `stripe.Subscription.modify`.
-        // This works for upgrades too (Standard -> Pro), just charging the difference immediately.
-        // Let's assume it works for both for now, or fallback to checkout if not.
-        // Actually, for Upgrades (Standard -> Pro), Checkout is often preferred to handle SCA/Payment failures.
-        // But let's try the direct modify first.
-        await apiFetch("/billing/subscription/downgrade", {
-          method: "POST",
-          body: JSON.stringify({ plan: targetPlan }),
-        });
-        window.location.reload();
-      }
-    } catch (err: any) {
-      alert("Failed to change plan: " + err.message);
-      setProcessing(false);
-      setUpgradeModalOpen(false);
+    if (data.plan === "FREE") {
+      // Free -> Paid (Checkout)
+      upgradeSubscription.mutate({
+        plan: targetPlan,
+        success_url: window.location.origin + "/billing?success=true",
+        cancel_url: window.location.origin + "/billing?canceled=true",
+      });
+    } else {
+      // Paid -> Paid (Modify)
+      downgradeSubscription.mutate(targetPlan, {
+        onSuccess: () => {
+          window.location.reload();
+        },
+        onError: (err: any) => {
+          alert("Failed to change plan: " + err.message);
+          setUpgradeModalOpen(false);
+        },
+      });
     }
   };
 
@@ -117,26 +97,26 @@ export default function BillingPage() {
     setCancelModalOpen(true);
   };
 
-  const handleCancelConfirm = async () => {
-    setProcessing(true);
-    try {
-      await apiFetch("/billing/subscription/cancel", { method: "POST" });
-      window.location.reload();
-    } catch (err: any) {
-      alert("Failed to cancel: " + err.message);
-      setProcessing(false);
-    }
+  const handleCancelConfirm = () => {
+    cancelSubscription.mutate(undefined, {
+      onSuccess: () => {
+        window.location.reload();
+      },
+      onError: (err: any) => {
+        alert("Failed to cancel: " + err.message);
+      },
+    });
   };
 
-  const handleReactivate = async () => {
-    setProcessing(true);
-    try {
-      await apiFetch("/billing/subscription/reactivate", { method: "POST" });
-      window.location.reload();
-    } catch (err: any) {
-      alert("Failed to reactivate: " + err.message);
-      setProcessing(false);
-    }
+  const handleReactivate = () => {
+    reactivateSubscription.mutate(undefined, {
+      onSuccess: () => {
+        window.location.reload();
+      },
+      onError: (err: any) => {
+        alert("Failed to reactivate: " + err.message);
+      },
+    });
   };
 
   if (loading) {
@@ -175,6 +155,9 @@ export default function BillingPage() {
             plan={data?.plan || "FREE"}
             status={data?.status || "active"}
             cancelAtPeriodEnd={data?.cancel_at_period_end}
+            currentPeriodStart={data?.current_period_start}
+            currentPeriodEnd={data?.current_period_end}
+            planPrice={PLAN_PRICES[data?.plan || "FREE"]}
             onManage={handleManageBilling}
             onReactivate={handleReactivate}
           />

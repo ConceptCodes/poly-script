@@ -6,6 +6,9 @@ interface CurrentPlanCardProps {
   plan: string;
   status: string;
   cancelAtPeriodEnd?: boolean;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  planPrice?: number;
   onManage: () => void;
   onReactivate?: () => void;
 }
@@ -14,9 +17,21 @@ export function CurrentPlanCard({
   plan,
   status,
   cancelAtPeriodEnd,
+  currentPeriodStart,
+  currentPeriodEnd,
+  planPrice,
   onManage,
   onReactivate,
 }: CurrentPlanCardProps) {
+  const periodLabel =
+    currentPeriodStart && currentPeriodEnd
+      ? `${new Date(currentPeriodStart).toLocaleDateString()} - ${new Date(
+          currentPeriodEnd
+        ).toLocaleDateString()}`
+      : null;
+  const nextBillingDate = currentPeriodEnd
+    ? new Date(currentPeriodEnd).toLocaleDateString()
+    : null;
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -29,6 +44,11 @@ export function CurrentPlanCard({
         </Badge>
       </CardHeader>
       <CardContent>
+        {planPrice !== undefined && (
+          <div className="text-sm text-muted-foreground mb-2">
+            ${planPrice}/month
+          </div>
+        )}
         <div className="text-2xl font-bold capitalize">
           {cancelAtPeriodEnd ? "Canceling" : status}
         </div>
@@ -37,6 +57,16 @@ export function CurrentPlanCard({
             ? "Your subscription will end at the end of the current period."
             : `Your plan is currently ${status}.`}
         </p>
+        {periodLabel && (
+          <p className="text-xs text-muted-foreground mt-2">
+            Current period: {periodLabel}
+          </p>
+        )}
+        {plan !== "FREE" && nextBillingDate && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Next billing date: {nextBillingDate}
+          </p>
+        )}
       </CardContent>
       <CardFooter className="gap-2">
         <Button onClick={onManage} variant="outline" className="w-full">

@@ -48,7 +48,7 @@ export function PlanComparisonCard({ currentPlan, onUpgrade, isLoading }: PlanCo
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              $29<span className="text-sm font-normal text-muted-foreground">/mo</span>
+              $10<span className="text-sm font-normal text-muted-foreground">/mo</span>
             </div>
             <ul className="mt-4 space-y-2 text-sm">
               <li>✓ 25 uploads per month</li>
@@ -75,7 +75,7 @@ export function PlanComparisonCard({ currentPlan, onUpgrade, isLoading }: PlanCo
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              $99<span className="text-sm font-normal text-muted-foreground">/mo</span>
+              $30<span className="text-sm font-normal text-muted-foreground">/mo</span>
             </div>
             <ul className="mt-4 space-y-2 text-sm">
               <li>✓ Unlimited uploads</li>
