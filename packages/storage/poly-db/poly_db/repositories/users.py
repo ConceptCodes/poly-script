@@ -1,4 +1,5 @@
 from .base import BaseRepository
+from .user_repository import UserRepository
 from ..models.user_settings import UserSettings
 from sqlalchemy import select
 import uuid
@@ -16,3 +17,6 @@ class UserSettingsRepository(BaseRepository[UserSettings]):
     def list_by_language(self, host_language: str) -> list[UserSettings]:
         stmt = select(UserSettings).where(UserSettings.host_language == host_language)
         return self.session.execute(stmt).scalars().all()
+
+
+__all__ = ["UserRepository", "UserSettingsRepository"]

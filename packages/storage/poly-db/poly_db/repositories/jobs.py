@@ -14,8 +14,10 @@ class TranscriptionJobRepository(BaseRepository[TranscriptionJob]):
         stmt = select(TranscriptionJob).where(TranscriptionJob.team_id == team_id)
         return self.session.execute(stmt).scalars().all()
 
-    def get_by_status(self, status: JobStatus) -> List[TranscriptionJob]:
-        stmt = select(TranscriptionJob).where(TranscriptionJob.status == status)
+    def get_by_status(self, team_id: uuid.UUID, status: JobStatus) -> List[TranscriptionJob]:
+        stmt = select(TranscriptionJob).where(
+            TranscriptionJob.team_id == team_id, TranscriptionJob.status == status
+        )
         return self.session.execute(stmt).scalars().all()
 
     def get_by_team_and_status(
@@ -35,8 +37,12 @@ class AudioAssetRepository(BaseRepository[AudioAsset]):
         stmt = select(AudioAsset).where(AudioAsset.job_id == job_id)
         return self.session.execute(stmt).scalar_one_or_none()
 
-    def get_by_storage_uri(self, storage_uri: str) -> Optional[AudioAsset]:
-        stmt = select(AudioAsset).where(AudioAsset.storage_uri == storage_uri)
+    def get_by_storage_uri(self, team_id: uuid.UUID, storage_uri: str) -> Optional[AudioAsset]:
+        stmt = (
+            select(AudioAsset)
+            .join(TranscriptionJob, AudioAsset.job_id == TranscriptionJob.id)
+            .where(AudioAsset.storage_uri == storage_uri, TranscriptionJob.team_id == team_id)
+        )
         return self.session.execute(stmt).scalar_one_or_none()
 
     def list_by_team_id(self, team_id: uuid.UUID) -> List[AudioAsset]:

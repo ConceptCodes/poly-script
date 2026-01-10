@@ -17,11 +17,15 @@ class User(Base, TimestampMixin):
     # Verification
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     verification_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    verification_token_expires_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Status
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_suspended: Mapped[bool] = mapped_column(Boolean, default=False)
     suspension_reason: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     team_memberships: Mapped[List["TeamMember"]] = relationship(
