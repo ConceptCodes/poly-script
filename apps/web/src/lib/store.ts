@@ -55,108 +55,165 @@ interface AppState {
   auth: AuthState;
   onboarding: OnboardingState;
   language: string;
+  isAuthenticated: boolean;
+  user: User | null;
+  team: Team | null;
+  members: TeamMember[];
+  invitations: TeamInvitation[];
+  setAuth: (authData: Partial<AuthState>) => void;
+  setUser: (user: User) => void;
+  setTeam: (team: Team) => void;
+  setMembers: (members: TeamMember[]) => void;
+  setInvitations: (invitations: TeamInvitation[]) => void;
+  setAuthenticated: (isAuthenticated: boolean) => void;
+  setLoading: (isLoading: boolean) => void;
+  setError: (error: string | null) => void;
+  logout: () => void;
+  setOnboardingComplete: (isComplete: boolean) => void;
+  setOnboardingStep: (step: number) => void;
+  setOnboardingLanguage: (language: string) => void;
+  setOnboardingTeamName: (teamName: string) => void;
+  setOnboardingInviteMembers: (inviteMembers: Array<{ email: string; role: "ADMIN" | "MEMBER" }>) => void;
+  resetOnboarding: () => void;
+  setLanguage: (language: string) => void;
+  initializeFromAuth: (user: User, team: Team) => void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
-  auth: {
+export const useAppStore = create<AppState>((set, get) => {
+  return {
+    auth: {
+      isAuthenticated: false,
+      user: null,
+      team: null,
+      members: [],
+      invitations: [],
+      isLoading: false,
+      error: null,
+    },
+    onboarding: {
+      step: 1,
+      language: "en",
+      teamName: "",
+      inviteMembers: [],
+    },
+    language: "en",
     isAuthenticated: false,
     user: null,
     team: null,
     members: [],
     invitations: [],
-    isLoading: false,
-    error: null,
-  },
-  onboarding: {
-    step: 1,
-    language: "en",
-    teamName: "",
-    inviteMembers: [],
-  },
-  language: "en",
-  setUser: (user: User) =>
-    set((state) => ({
-      auth: { ...state.auth, user },
-    })),
-  setTeam: (team: Team) =>
-    set((state) => ({
-      auth: { ...state.auth, team },
-    })),
-  setMembers: (members: TeamMember[]) =>
-    set((state) => ({
-      auth: { ...state.auth, members },
-    })),
-  setInvitations: (invitations: TeamInvitation[]) =>
-    set((state) => ({
-      auth: { ...state.auth, invitations },
-    })),
-  setAuthenticated: (isAuthenticated: boolean) =>
-    set((state) => ({
-      auth: { ...state.auth, isAuthenticated },
-    })),
-  setLoading: (isLoading: boolean) =>
-    set((state) => ({
-      auth: { ...state.auth, isLoading },
-    })),
-  setError: (error: string | null) =>
-    set((state) => ({
-      auth: { ...state.auth, error },
-    })),
-  logout: () =>
-    set({
-      auth: {
+    setAuth: (authData: Partial<AuthState>) =>
+      set((state) => ({
+        auth: { ...state.auth, ...authData },
+        isAuthenticated: !!authData.isAuthenticated || state.auth.isAuthenticated,
+        user: authData.user ?? state.user,
+        team: authData.team ?? state.team,
+        members: authData.members ?? state.members,
+        invitations: authData.invitations ?? state.invitations,
+      })),
+    setUser: (user: User) =>
+      set((state) => ({
+        auth: { ...state.auth, user },
+        user,
+      })),
+    setTeam: (team: Team) =>
+      set((state) => ({
+        auth: { ...state.auth, team },
+        team,
+      })),
+    setMembers: (members: TeamMember[]) =>
+      set((state) => ({
+        auth: { ...state.auth, members },
+        members,
+      })),
+    setInvitations: (invitations: TeamInvitation[]) =>
+      set((state) => ({
+        auth: { ...state.auth, invitations },
+        invitations,
+      })),
+    setAuthenticated: (isAuthenticated: boolean) =>
+      set((state) => ({
+        auth: { ...state.auth, isAuthenticated },
+        isAuthenticated,
+      })),
+    setLoading: (isLoading: boolean) =>
+      set((state) => ({
+        auth: { ...state.auth, isLoading },
+      })),
+    setError: (error: string | null) =>
+      set((state) => ({
+        auth: { ...state.auth, error },
+      })),
+    logout: () =>
+      set({
+        auth: {
+          isAuthenticated: false,
+          user: null,
+          team: null,
+          members: [],
+          invitations: [],
+          isLoading: false,
+          error: null,
+        },
         isAuthenticated: false,
         user: null,
         team: null,
         members: [],
         invitations: [],
-        isLoading: false,
-        error: null,
-      },
-      onboarding: {
-        step: 1,
-        language: "en",
-        teamName: "",
-        inviteMembers: [],
-      },
-    }),
-  setOnboardingStep: (step: number) =>
-    set((state) => ({
-      onboarding: { ...state.onboarding, step },
-    })),
-  setOnboardingLanguage: (language: string) =>
-    set((state) => ({
-      onboarding: { ...state.onboarding, language },
-    })),
-  setOnboardingTeamName: (teamName: string) =>
-    set((state) => ({
-      onboarding: { ...state.onboarding, teamName },
-    })),
-  setOnboardingInviteMembers: (inviteMembers: Array<{ email: string; role: "ADMIN" | "MEMBER" }>) =>
-    set((state) => ({
-      onboarding: { ...state.onboarding, inviteMembers },
-    })),
-  resetOnboarding: () =>
-    set({
-      onboarding: {
-        step: 1,
-        language: "en",
-        teamName: "",
-        inviteMembers: [],
-      },
-    }),
-  setLanguage: (language: string) => set({ language }),
-  initializeFromAuth: (user: User, team: Team) =>
-    set({
-      auth: {
+        onboarding: {
+          step: 1,
+          language: "en",
+          teamName: "",
+          inviteMembers: [],
+        },
+      }),
+    setOnboardingComplete: (isComplete: boolean) =>
+      set((state) => ({
+        auth: { ...state.auth, isLoading: isComplete },
+      })),
+    setOnboardingStep: (step: number) =>
+      set((state) => ({
+        onboarding: { ...state.onboarding, step },
+      })),
+    setOnboardingLanguage: (language: string) =>
+      set((state) => ({
+        onboarding: { ...state.onboarding, language },
+      })),
+    setOnboardingTeamName: (teamName: string) =>
+      set((state) => ({
+        onboarding: { ...state.onboarding, teamName },
+      })),
+    setOnboardingInviteMembers: (inviteMembers: Array<{ email: string; role: "ADMIN" | "MEMBER" }>) =>
+      set((state) => ({
+        onboarding: { ...state.onboarding, inviteMembers },
+      })),
+    resetOnboarding: () =>
+      set((state) => ({
+        onboarding: {
+          step: 1,
+          language: "en",
+          teamName: "",
+          inviteMembers: [],
+        },
+      })),
+    setLanguage: (language: string) => set({ language }),
+    initializeFromAuth: (user: User, team: Team) =>
+      set({
+        auth: {
+          isAuthenticated: true,
+          user,
+          team,
+          members: [],
+          invitations: [],
+          isLoading: false,
+          error: null,
+        },
         isAuthenticated: true,
         user,
         team,
         members: [],
         invitations: [],
-        isLoading: false,
-        error: null,
-      },
-      language: team?.defaultLanguage || "en",
-    }),
-}));
+        language: team?.defaultLanguage || "en",
+      }),
+  };
+});

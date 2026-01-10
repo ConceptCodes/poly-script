@@ -1,12 +1,27 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/v1";
 
-export async function apiFetch(endpoint: string, options: RequestInit = {}) {
+interface ApiOptions extends Omit<RequestInit, 'body'> {
+  body?: Record<string, unknown> | null;
+}
+
+export async function apiFetch<T = unknown>(endpoint: string, options: ApiOptions = {}): Promise<T> {
+  const token = localStorage.getItem("access_token");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+  if (token && !headers.Authorization) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const body = options.body && typeof options.body === 'object'
+    ? JSON.stringify(options.body)
+    : undefined;
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    headers,
+    body: body as BodyInit,
   });
 
   if (!response.ok) {
@@ -14,5 +29,6 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     throw new Error(error.detail || response.statusText);
   }
 
-  return response.json();
+  const data = await response.json();
+  return data as T;
 }

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Button } from "@poly/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui/select";
+import { Button } from "@poly/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui";
 import { Globe } from "lucide-react";
 
 export function LanguageSwitcher() {

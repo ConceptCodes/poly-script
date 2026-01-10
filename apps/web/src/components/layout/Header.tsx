@@ -19,7 +19,7 @@ export function Header() {
     const fetchUsage = async () => {
       try {
         const data = await apiFetch("/billing/usage");
-        setUsage(data);
+        setUsage(data as SimpleUsage);
       } catch (e) {
         console.error("Failed to fetch header usage", e);
       }
