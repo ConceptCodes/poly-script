@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -25,7 +27,20 @@ def get_team_service(db: Session = Depends(get_db_session)) -> TeamService:
 
 
 def get_invitation_service(db: Session = Depends(get_db_session)) -> InvitationService:
-    return InvitationService(db)
+    from src.config import get_settings
+    from poly_core.services.notification import NotificationService
+
+    settings = get_settings()
+    notification_service = NotificationService(
+        smtp_host=settings.SMTP_HOST,
+        smtp_port=settings.SMTP_PORT,
+        smtp_user=settings.SMTP_USER,
+        smtp_password=settings.SMTP_PASSWORD,
+        smtp_from=settings.SMTP_FROM,
+        templates_dir=str(Path(__file__).resolve().parents[1] / "templates"),
+        app_url=settings.APP_URL,
+    )
+    return InvitationService(db, notification_service)
 
 
 @router.post("", response_model=TeamResponse, status_code=status.HTTP_201_CREATED)
@@ -39,6 +54,11 @@ def create_team(
         name=request.name,
         host_language=request.host_language,
     )
+    if not team:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=I18nKeys.USER_NOT_FOUND.value,
+        )
     return team
 
 
@@ -101,7 +121,7 @@ def get_team_members(
     team_service: TeamService = Depends(get_team_service),
     current_user: dict = Depends(get_current_user),
 ):
-    members = team_service.get_team_members(
+    members = team_service.get_members(
         team_id=team_id,
         user_id=current_user["id"],
     )
@@ -118,8 +138,8 @@ def update_member_role(
 ):
     member = team_service.update_member_role(
         team_id=team_id,
-        member_id=member_id,
-        user_id=current_user["id"],
+        requesting_user_id=current_user["id"],
+        target_user_id=member_id,
         new_role=request.role,
     )
     if not member:
@@ -139,8 +159,8 @@ def remove_team_member(
 ):
     success = team_service.remove_member(
         team_id=team_id,
-        member_id=member_id,
-        user_id=current_user["id"],
+        requesting_user_id=current_user["id"],
+        target_user_id=member_id,
     )
     if not success:
         raise HTTPException(
@@ -160,10 +180,15 @@ def create_invitation(
 ):
     invitation = invitation_service.create_invitation(
         team_id=team_id,
+        inviting_user_id=current_user["id"],
         email=request.email,
         role=request.role,
-        inviting_user_id=current_user["id"],
     )
+    if not invitation:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=I18nKeys.ERR_GENERIC_FORBIDDEN.value,
+        )
     return invitation
 
 
@@ -173,10 +198,7 @@ def get_team_invitations(
     invitation_service: InvitationService = Depends(get_invitation_service),
     current_user: dict = Depends(get_current_user),
 ):
-    invitations = invitation_service.get_team_invitations(
-        team_id=team_id,
-        user_id=current_user["id"],
-    )
+    invitations = invitation_service.get_pending_invitations(team_id=team_id, user_id=current_user["id"])
     return invitations
 
 
@@ -187,11 +209,7 @@ def cancel_invitation(
     invitation_service: InvitationService = Depends(get_invitation_service),
     current_user: dict = Depends(get_current_user),
 ):
-    success = invitation_service.cancel_invitation(
-        team_id=team_id,
-        invitation_id=invitation_id,
-        user_id=current_user["id"],
-    )
+    success = invitation_service.cancel_invitation(invitation_id=invitation_id, user_id=current_user["id"])
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
