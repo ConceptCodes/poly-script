@@ -15,5 +15,8 @@ export * from "./components/ui/badge";
 export * from "./components/ui/avatar";
 export * from "./components/ui/switch";
 export * from "./components/ui/skeleton";
+export * from "./components/ui/alert";
+export * from "./components/ui/separator";
+export * from "./components/ui/checkbox";
 export * from "./lib/utils";
 export * from "./hooks/use-toast";
