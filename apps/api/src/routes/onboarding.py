@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from dependencies import get_current_user
+from poly_core.constants import I18nKeys
 from poly_core.services.team import TeamService
 from poly_db.database import get_db_session
 from schemas.onboarding import CompleteOnboardingRequest, OnboardingResponse
@@ -24,6 +25,11 @@ def complete_onboarding(
         name=request.team_name,
         host_language=request.host_language,
     )
+    if not team:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=I18nKeys.USER_NOT_FOUND.value,
+        )
     return OnboardingResponse(
         team_id=team.id,
         name=team.name,
