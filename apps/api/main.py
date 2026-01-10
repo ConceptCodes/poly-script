@@ -6,7 +6,7 @@ from poly_core.constants import I18nKeys
 from poly_core.services.i18n import I18nService
 from src.dependencies import get_locale
 from src.middleware.setup import setup_middleware
-from src.routes import billing, health, webhooks
+from src.routes import auth, billing, health, onboarding, teams, webhooks
 
 
 def create_app() -> FastAPI:
@@ -22,6 +22,9 @@ def create_app() -> FastAPI:
     setup_middleware(app)
 
     app.include_router(health.router)
+    app.include_router(auth.router)
+    app.include_router(teams.router)
+    app.include_router(onboarding.router)
     app.include_router(billing.router)
     app.include_router(webhooks.router)
 
