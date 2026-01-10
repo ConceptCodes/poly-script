@@ -92,6 +92,9 @@ class AuthService:
         from poly_db.repositories.users import UserRepository
 
         user_repo = UserRepository(self.db_session)
+        existing = user_repo.get_by_email(email)
+        if existing:
+            raise ValueError(I18nKeys.EMAIL_ALREADY_EXISTS.value)
 
         hashed_password = self.hash_password(password)
         verification_token = generate_token()

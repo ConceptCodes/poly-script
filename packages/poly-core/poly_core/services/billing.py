@@ -56,6 +56,7 @@ class BillingService:
             "stripe_subscription_id": "",
             "status": "active",
             "plan_id": plan_id,
+            "current_period_start": now,
             "current_period_end": now + timedelta(days=30),
             "cancel_at_period_end": False,
         }

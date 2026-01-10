@@ -34,7 +34,10 @@ class OAuthService:
 
         self.oauth_repo = OAuthAccountRepository(db_session)
 
-    def get_google_auth_url(self, state: Optional[str] = None) -> str:
+    def get_google_auth_url(
+        self, redirect_url: Optional[str] = None, state: Optional[str] = None
+    ) -> str:
+        redirect_uri = redirect_url or self.oauth_redirect_url
         flow = Flow.from_client_config(
             client_config={
                 "web": {
@@ -42,12 +45,12 @@ class OAuthService:
                     "client_secret": self.google_client_secret,
                     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": [self.oauth_redirect_url],
+                    "redirect_uris": [redirect_uri],
                 }
             },
             scopes=["openid", "email", "profile"],
         )
-        flow.redirect_uri = self.oauth_redirect_url
+        flow.redirect_uri = redirect_uri
 
         if state:
             authorization_url, _ = flow.authorization_url(state=state)
@@ -56,7 +59,7 @@ class OAuthService:
 
         return authorization_url
 
-    def exchange_google_code(self, code: str) -> Optional[GoogleUserInfo]:
+    def exchange_google_code(self, code: str, state: Optional[str] = None) -> Optional[GoogleUserInfo]:
         try:
             flow = Flow.from_client_config(
                 client_config={

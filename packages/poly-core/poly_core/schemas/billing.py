@@ -9,6 +9,7 @@ class SubscriptionResponse(BaseModel):
     stripe_subscription_id: str
     status: str
     plan_id: str
+    current_period_start: datetime
     current_period_end: datetime
     cancel_at_period_end: bool
     model_config = {"from_attributes": True}
@@ -22,6 +23,10 @@ class UpgradeSubscriptionRequest(BaseModel):
 
 class DowngradeSubscriptionRequest(BaseModel):
     plan: PlanType
+
+
+class CancelSubscriptionRequest(BaseModel):
+    at_period_end: bool = True
 
 
 class PurchaseCreditsRequest(BaseModel):
