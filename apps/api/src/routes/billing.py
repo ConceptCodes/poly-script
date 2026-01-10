@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from poly_core.constants import I18nKeys
 from poly_core.schemas.billing import (
     CheckoutSessionResponse,
+    CancelSubscriptionRequest,
     CreditPurchaseResponse,
     CreditsResponse,
     DowngradeSubscriptionRequest,
@@ -24,27 +25,10 @@ from poly_core.schemas.billing import (
 )
 from poly_core.services.billing import BillingService
 from poly_db.database import get_db_session
-from poly_db.models.teams import PlanType
-from poly_db.repositories import TeamRepository
-
 from ..config import get_settings
+from dependencies import get_current_team_id
 
 router = APIRouter(prefix="/v1/billing", tags=["billing"])
-
-
-# Mock dependency for current team - to be replaced by real auth in Task 03
-async def get_current_team_id() -> uuid.UUID:
-    # In a real app, this would come from the JWT token
-    # For now, we'll try to find the first team in the DB or error
-    session = next(get_db_session())
-    repo = TeamRepository(session)
-    teams = repo.list()
-    if not teams:
-        # Create a default team for development if none exists
-        team = repo.create(name="Default Team", plan=PlanType.FREE)
-        session.commit()
-        return team.id
-    return teams[0].id
 
 
 def get_billing_service(session: Session = Depends(get_db_session)):
@@ -75,15 +59,11 @@ async def create_portal_session(
 
 @router.post("/subscription/cancel")
 async def cancel_subscription(
-    at_period_end: bool = True,  # This could be query param or body. Let's keep as query for simplicity or move to body. Standard is usually POST body for actions.
-    # But for just one boolean, query is often used.
-    # However, strict guidelines prefer schemas.
-    # Let's leave as query for now as it wasn't flagged as critical, or make a schema.
-    # Current plan had Upgrade/Purchase schemas.
+    body: CancelSubscriptionRequest,
     team_id: uuid.UUID = Depends(get_current_team_id),
     billing_service: BillingService = Depends(get_billing_service),
 ):
-    billing_service.cancel_subscription(team_id, at_period_end)
+    billing_service.cancel_subscription(team_id, body.at_period_end)
     return {"status": "success"}
 
 
