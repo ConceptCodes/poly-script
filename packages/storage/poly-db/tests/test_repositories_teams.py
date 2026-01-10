@@ -20,13 +20,27 @@ def test_team_repositories(session):
         expires_at=datetime.now(timezone.utc) + timedelta(days=1),
         accepted_at=None,
     )
-    session.add(invitation)
+    expired_invitation = TeamInvitation(
+        team_id=team.id,
+        email="expired@example.com",
+        role=TeamRole.MEMBER,
+        token="expired-token",
+        expires_at=datetime.now(timezone.utc) - timedelta(days=1),
+        accepted_at=None,
+    )
+    session.add_all([invitation, expired_invitation])
     session.commit()
 
     member_repo = TeamMemberRepository(session)
     assert member.id in [m.id for m in member_repo.get_by_team_id(team.id)]
-    assert member.id in [m.id for m in member_repo.get_by_user_id(user.id)]
+    assert member.id in [m.id for m in member_repo.list_by_user_id(user.id)]
+    assert member_repo.get_by_user_and_team(user.id, team.id).id == member.id
 
     invitation_repo = TeamInvitationRepository(session)
     assert invitation_repo.get_by_token("invite-token").id == invitation.id
-    assert invitation.id in [i.id for i in invitation_repo.get_by_email("invitee@example.com")]
+    assert invitation.id in [
+        i.id for i in invitation_repo.get_by_email(team.id, "invitee@example.com")
+    ]
+    assert invitation.id in [i.id for i in invitation_repo.list_by_team_id(team.id)]
+    deleted = invitation_repo.delete_expired()
+    assert expired_invitation.id in [i.id for i in deleted]

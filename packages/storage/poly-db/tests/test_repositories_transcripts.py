@@ -4,12 +4,14 @@ from poly_db.repositories import TranscriptRepository, TranscriptEditRepository
 
 def test_transcript_repositories(session):
     team = Team(name="Transcript Team", plan=PlanType.STANDARD)
+    other_team = Team(name="Other Transcript Team", plan=PlanType.FREE)
     user = User(email="editor@example.com", is_verified=True)
-    session.add_all([team, user])
+    session.add_all([team, other_team, user])
     session.commit()
 
     job = TranscriptionJob(team_id=team.id)
-    session.add(job)
+    other_job = TranscriptionJob(team_id=other_team.id)
+    session.add_all([job, other_job])
     session.commit()
 
     transcript = Transcript(
@@ -19,7 +21,14 @@ def test_transcript_repositories(session):
         segments={"segments": []},
         engine_version="v1",
     )
-    session.add(transcript)
+    other_transcript = Transcript(
+        job_id=other_job.id,
+        text="other team",
+        language="en",
+        segments={"segments": []},
+        engine_version="v1",
+    )
+    session.add_all([transcript, other_transcript])
     session.commit()
 
     edit = TranscriptEdit(
@@ -34,10 +43,16 @@ def test_transcript_repositories(session):
     session.commit()
 
     transcript_repo = TranscriptRepository(session)
-    assert transcript_repo.get_by_job_id(job.id).id == transcript.id
-    assert transcript.id in [t.id for t in transcript_repo.list_by_language("en")]
-    assert transcript.id in [t.id for t in transcript_repo.list_recent(limit=5)]
+    assert transcript_repo.get_by_job_id(team.id, job.id).id == transcript.id
+    assert transcript.id in [t.id for t in transcript_repo.list_by_language(team.id, "en")]
+    assert other_transcript.id not in [
+        t.id for t in transcript_repo.list_by_language(team.id, "en")
+    ]
+    assert transcript.id in [t.id for t in transcript_repo.list_recent(team.id, limit=5)]
+    assert other_transcript.id not in [t.id for t in transcript_repo.list_recent(team.id, limit=5)]
 
     edit_repo = TranscriptEditRepository(session)
-    assert edit.id in [e.id for e in edit_repo.get_history_by_transcript_id(transcript.id)]
-    assert edit.id in [e.id for e in edit_repo.list_by_user_id(user.id)]
+    assert edit.id in [
+        e.id for e in edit_repo.get_history_by_transcript_id(team.id, transcript.id)
+    ]
+    assert edit.id in [e.id for e in edit_repo.list_by_user_id(team.id, user.id)]
