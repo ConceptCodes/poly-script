@@ -35,11 +35,10 @@ Thumbs.db
 
 # App Specific
 app-spec.txt
-GEMINI.md
 AGENTS.md
 __tasks__/
 /storage
-.vscodeAGENTS.md
+.vscode
 
 # IDE
 .vscode

@@ -7,8 +7,9 @@ Multi-Language Transcription Service.
 ### Apps
 - `apps/web`: Vite + React web application
 - `apps/admin`: Vite + React admin panel
-- `apps/marketing`: Astro static marketing site
-- `apps/api`: FastAPI HTTP API + background STT worker
+- `apps/marketing`: static Astro marketing site
+- `apps/api`: FastAPI HTTP API
+- `apps/worker`: Background worker service
 
 ### Packages
 - `packages/ui`: Shared shadcn/ui component library
@@ -22,8 +23,8 @@ Multi-Language Transcription Service.
 ### Prerequisites
 - [Bun](https://bun.sh)
 - [uv](https://github.com/astral-sh/uv)
-- PostgreSQL
-- Redis
+- [PostgreSQL](https://www.postgresql.org/)
+- [Redis](https://redis.io/)
 
 ### Setup
 1. Clone the repo
