@@ -1,13 +1,13 @@
 import { useTranslation } from "react-i18next";
 import { useForm } from "@tanstack/react-form";
-import { Button } from "@poly/ui/components/ui/button";
+import { Button } from "@poly/ui";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@poly/ui/components/ui/card";
+} from "@poly/ui";
 
 export function LanguageStep() {
   const { t } = useTranslation();

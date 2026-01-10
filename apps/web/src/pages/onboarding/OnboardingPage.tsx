@@ -1,20 +1,22 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CheckCircle2 } from "lucide-react";
-import { Button } from "@poly/ui/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@poly/ui/components/ui/card";
+import { Button } from "@poly/ui";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../lib/store";
+import { useAppStore } from "../../lib/store";
+import { apiFetch } from "../../lib/api";
+
+import { LanguageStep } from "./LanguageStep";
+import { TeamNameStep } from "./TeamNameStep";
+import { InviteMembersStep } from "./InviteMembersStep";
+import { CompleteStep } from "./CompleteStep";
 
 export function OnboardingPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setOnboardingComplete } = useAuthStore();
+  const { setOnboardingComplete } = useAppStore((state) => ({
+    setOnboardingComplete: state.setOnboardingComplete,
+  }));
 
   const steps = [
     { id: "language", title: t("onboarding.steps.language") },
@@ -23,8 +25,8 @@ export function OnboardingPage() {
     { id: "complete", title: t("onboarding.steps.complete") },
   ];
 
-  const [currentStep, setCurrentStep] = React.useState(0);
-  const [data, setData] = React.useState({
+  const [currentStep, setCurrentStep] = useState(0);
+  const [data, setData] = useState({
     language: "",
     teamName: "",
     members: [],
@@ -46,10 +48,13 @@ export function OnboardingPage() {
 
   const handleComplete = async () => {
     try {
-      await api.post("/v1/onboarding/complete", {
-        language: data.language,
-        team_name: data.teamName,
-        invite_members: data.members.filter((m) => m.length > 0),
+      await apiFetch("/v1/onboarding/complete", {
+        method: "POST",
+        body: {
+          language: data.language,
+          team_name: data.teamName,
+          invite_members: data.members.filter((m) => m.length > 0),
+        },
       });
       setOnboardingComplete(true);
       navigate("/dashboard");

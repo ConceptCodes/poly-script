@@ -1,15 +1,15 @@
 import { useTranslation } from "react-i18next";
 import { useForm } from "@tanstack/react-form";
-import { Button } from "@poly/ui/components/ui/button";
-import { Input } from "@poly/ui/components/ui/input";
-import { Label } from "@poly/ui/components/ui/label";
+import { Button } from "@poly/ui";
+import { Input } from "@poly/ui";
+import { Label } from "@poly/ui";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@poly/ui/components/ui/card";
+} from "@poly/ui";
 
 export function TeamNameStep() {
   const { t } = useTranslation();

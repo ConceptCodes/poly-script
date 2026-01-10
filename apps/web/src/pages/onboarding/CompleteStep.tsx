@@ -6,7 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@poly/ui/components/ui/card";
+} from "@poly/ui";
 
 export function CompleteStep() {
   const { t } = useTranslation();
