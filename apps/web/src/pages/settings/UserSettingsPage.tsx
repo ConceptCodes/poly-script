@@ -1,59 +1,55 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "@tanstack/react-form";
-import { Button } from "@poly/ui/components/ui/button";
-import { Input } from "@poly/ui/components/ui/input";
-import { Label } from "@poly/ui/components/ui/label";
+import { Button } from "@poly/ui";
+import { Input } from "@poly/ui";
+import { Label } from "@poly/ui";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@poly/ui/components/ui/card";
-import { Switch } from "@poly/ui/components/ui/switch";
-import { useAuthStore } from "../../lib/store";
+} from "@poly/ui";
+import { Switch } from "@poly/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui";
+import { Alert, AlertDescription } from "@poly/ui";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@poly/ui";
+import { useAppStore } from "../../lib/store";
+import { apiFetch } from "../../lib/api";
 
 export function UserSettingsPage() {
   const { t } = useTranslation();
-  const { user, setUser } = useAuthStore();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  const { user } = useAppStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const [form, Field] = useForm({
+  const [form] = useForm({
     defaultValues: {
-      name: "",
-      email: "",
+      name: user?.name || "",
+      email: user?.email || "",
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
+      language: user?.language || "en",
+      emailNotifications: user?.email_notifications ?? true,
+      inAppNotifications: user?.in_app_notifications ?? true,
     },
   });
-
-  const handleUpdateProfile = async ({ value }) => {
-    setIsLoading(true);
-
-    try {
-      const response = await api.patch("/v1/user/profile", {
-        name: value.name,
-      });
-      setUser({ ...user, ...response.data });
-      setSuccessMessage(t("userSettings.success"));
-    } catch (error: any) {
-      console.error("Failed to update profile:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleUpdateEmail = async () => {
     setIsLoading(true);
 
     try {
-      const response = await api.post("/v1/user/email/update", {
-        email: form.state.values.email,
+      await apiFetch("/v1/user/email/update", {
+        method: "POST",
+        body: {
+          email: form.state.values.email,
+        },
       });
-      setUser({ ...user, email: response.data.email });
       setSuccessMessage(t("userSettings.emailUpdateSuccess"));
     } catch (error: any) {
       console.error("Failed to update email:", error);
@@ -67,9 +63,12 @@ export function UserSettingsPage() {
       setIsLoading(true);
 
       try {
-        const response = await api.post("/v1/user/password", {
-          current_password: form.state.values.currentPassword,
-          new_password: form.state.values.newPassword,
+        await apiFetch("/v1/user/password", {
+          method: "POST",
+          body: {
+            current_password: form.state.values.currentPassword,
+            new_password: form.state.values.newPassword,
+          },
         });
         setSuccessMessage(t("userSettings.passwordUpdateSuccess"));
       } catch (error: any) {
@@ -84,11 +83,12 @@ export function UserSettingsPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.patch("/v1/user/preferences", {
-        language: form.state.values.language,
+      await apiFetch("/v1/user/preferences", {
+        method: "PATCH",
+        body: {
+          language: form.state.values.language,
+        },
       });
-      setUser({ ...user, language: response.data.language });
-      i18n.changeLanguage(response.data.language);
       setSuccessMessage(t("userSettings.preferencesUpdateSuccess"));
     } catch (error: any) {
       console.error("Failed to update preferences:", error);
@@ -101,11 +101,13 @@ export function UserSettingsPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.patch("/v1/user/notifications", {
-        email_notifications: form.state.values.emailNotifications,
-        in_app_notifications: form.state.values.inAppNotifications,
+      await apiFetch("/v1/user/notifications", {
+        method: "PATCH",
+        body: {
+          email_notifications: form.state.values.emailNotifications,
+          in_app_notifications: form.state.values.inAppNotifications,
+        },
       });
-      setUser({ ...user, ...response.data });
       setSuccessMessage(t("userSettings.notificationsUpdateSuccess"));
     } catch (error: any) {
       console.error("Failed to update notifications:", error);
@@ -118,7 +120,9 @@ export function UserSettingsPage() {
     setIsLoading(true);
 
     try {
-      await api.delete("/v1/user");
+      await apiFetch("/v1/user", {
+        method: "DELETE",
+      });
       navigate("/");
     } catch (error: any) {
       console.error("Failed to delete account:", error);
@@ -220,14 +224,18 @@ export function UserSettingsPage() {
               {(field) => (
                 <div>
                   <Label htmlFor={field.name}>{t("userSettings.language.label")}</Label>
-                  <select className="w-full">
-                    {field.Component}
-                    <option value="en">English</option>
-                    <option value="de">Deutsch</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
-                    <option value="jp">日本語</option>
-                  </select>
+                  <Select value={field.state.value} onValueChange={field.handleChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t("userSettings.language.placeholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="de">Deutsch</SelectItem>
+                      <SelectItem value="es">Español</SelectItem>
+                      <SelectItem value="fr">Français</SelectItem>
+                      <SelectItem value="jp">日本語</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </form.Field>
@@ -285,8 +293,8 @@ export function UserSettingsPage() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>{t("userSettings.dangerZone.confirmDelete")}</AlertDialogTitle>
+              <AlertDialogDescription>{t("userSettings.dangerZone.confirmMessage")}</AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogBody>{t("userSettings.dangerZone.confirmMessage")}</AlertDialogBody>
             <AlertDialogFooter>
               <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
                 {t("common.cancel")}

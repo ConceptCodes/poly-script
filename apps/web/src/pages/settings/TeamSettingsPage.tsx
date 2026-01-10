@@ -1,31 +1,68 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "@tanstack/react-form";
-import { Button } from "@poly/ui/components/ui/button";
-import { Input } from "@poly/ui/components/ui/input";
-import { Label } from "@poly/ui/components/ui/label";
+import { Button } from "@poly/ui";
+import { Input } from "@poly/ui";
+import { Label } from "@poly/ui";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@poly/ui/components/ui/card";
-import { Switch } from "@poly/ui/components/ui/switch";
-import { useAuthStore } from "../../lib/store";
+} from "@poly/ui";
+import { Switch } from "@poly/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui";
+import { Alert, AlertDescription } from "@poly/ui";
+import { Badge } from "@poly/ui";
+import { useAppStore } from "../../lib/store";
+import { apiFetch } from "../../lib/api";
+import { Trash2 } from "lucide-react";
+
+// Simple Dialog components for now since AlertDialog doesn't exist
+function DialogContent({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50" />
+      <div className="relative z-50 bg-white rounded-lg p-6 max-w-md w-full shadow-lg">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function DialogHeader({ children }: { children: React.ReactNode }) {
+  return <div className="mb-4">{children}</div>;
+}
+
+function DialogTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="text-lg font-semibold">{children}</h2>;
+}
+
+function DialogDescription({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm text-muted-foreground">{children}</p>;
+}
+
+function DialogFooter({ children }: { children: React.ReactNode }) {
+  return <div className="flex justify-end gap-2 mt-4">{children}</div>;
+}
 
 export function TeamSettingsPage() {
   const { t } = useTranslation();
-  const { user, team } = useAuthStore();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [inviteEmail, setInviteEmail] = React.useState("");
-  const [successMessage, setSuccessMessage] = React.useState("");
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const [form, Field] = useForm({
+  const { auth } = useAppStore();
+  const { user, team } = auth;
+
+  const [form] = useForm({
     defaultValues: {
-      teamName: "",
-      defaultLanguage: "",
+      teamName: team?.defaultLanguage || "",
+      defaultLanguage: team?.defaultLanguage || "en",
     },
   });
 
@@ -37,9 +74,12 @@ export function TeamSettingsPage() {
     setSuccessMessage("");
 
     try {
-      const response = await api.patch(`/v1/teams/${team.id}`, {
-        name: value.teamName,
-        default_language: value.defaultLanguage,
+      await apiFetch(`/v1/teams/${team.id}`, {
+        method: "PATCH",
+        body: {
+          name: value.teamName,
+          default_language: value.defaultLanguage,
+        },
       });
 
       setSuccessMessage(t("teamSettings.success"));
@@ -55,9 +95,12 @@ export function TeamSettingsPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.post(`/v1/teams/${team.id}/invitations`, {
-        email: inviteEmail,
-        role: "MEMBER",
+      await apiFetch(`/v1/teams/${team.id}/invitations`, {
+        method: "POST",
+        body: {
+          email: inviteEmail,
+          role: "MEMBER",
+        },
       });
 
       setInviteEmail("");
@@ -74,7 +117,9 @@ export function TeamSettingsPage() {
     setIsLoading(true);
 
     try {
-      await api.delete(`/v1/teams/${team.id}/members/${memberId}`);
+      await apiFetch(`/v1/teams/${team.id}/members/${memberId}`, {
+        method: "DELETE",
+      });
       setSuccessMessage(t("teamSettings.removeSuccess"));
     } catch (error: any) {
       console.error("Failed to remove member:", error);
@@ -88,7 +133,10 @@ export function TeamSettingsPage() {
     setIsLoading(true);
 
     try {
-      await api.patch(`/v1/teams/${team.id}/members/${memberId}`, { role });
+      await apiFetch(`/v1/teams/${team.id}/members/${memberId}`, {
+        method: "PATCH",
+        body: { role },
+      });
       setSuccessMessage(t("teamSettings.roleUpdateSuccess"));
     } catch (error: any) {
       console.error("Failed to update member role:", error);
@@ -101,7 +149,9 @@ export function TeamSettingsPage() {
     setIsLoading(true);
 
     try {
-      await api.delete(`/v1/teams/${team.id}`);
+      await apiFetch(`/v1/teams/${team.id}`, {
+        method: "DELETE",
+      });
       setDeleteDialogOpen(false);
       navigate("/dashboard");
     } catch (error: any) {
@@ -156,14 +206,18 @@ export function TeamSettingsPage() {
               {(field) => (
                 <div>
                   <Label htmlFor={field.name}>{t("teamSettings.defaultLanguage.label")}</Label>
-                  <select className="w-full">
-                    {field.Component}
-                    <option value="en">English</option>
-                    <option value="de">Deutsch</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
-                    <option value="jp">日本語</option>
-                  </select>
+                  <Select value={field.state.value} onValueChange={field.handleChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t("teamSettings.defaultLanguage.placeholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="de">Deutsch</SelectItem>
+                      <SelectItem value="es">Español</SelectItem>
+                      <SelectItem value="fr">Français</SelectItem>
+                      <SelectItem value="jp">日本語</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </form.Field>
@@ -218,15 +272,20 @@ export function TeamSettingsPage() {
                   </div>
                   {isAdmin && (
                     <div className="flex items-center space-x-2">
-                      <select
+                      <Select
                         defaultValue={member.role}
-                        onChange={(e) => handleChangeMemberRole(member.id, e.target.value)}
+                        onValueChange={(value) => handleChangeMemberRole(member.id, value)}
                         disabled={isLoading}
                       >
-                        <option value="ADMIN">{t("teamSettings.roles.admin")}</option>
-                        <option value="MEMBER">{t("teamSettings.roles.member")}</option>
-                        <option value="VIEWER">{t("teamSettings.roles.viewer")}</option>
-                      </select>
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ADMIN">{t("teamSettings.roles.admin")}</SelectItem>
+                          <SelectItem value="MEMBER">{t("teamSettings.roles.member")}</SelectItem>
+                          <SelectItem value="VIEWER">{t("teamSettings.roles.viewer")}</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -265,8 +324,8 @@ export function TeamSettingsPage() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>{t("teamSettings.dangerZone.confirmDelete")}</AlertDialogTitle>
+              <AlertDialogDescription>{t("teamSettings.dangerZone.confirmMessage")}</AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogBody>{t("teamSettings.dangerZone.confirmMessage")}</AlertDialogBody>
             <AlertDialogFooter>
               <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
                 {t("common.cancel")}
