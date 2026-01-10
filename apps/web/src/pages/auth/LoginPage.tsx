@@ -1,9 +1,9 @@
 import { useForm } from "@tanstack/react-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button } from "@poly/ui/components/ui/button";
-import { Input } from "@poly/ui/components/ui/input";
-import { Label } from "@poly/ui/components/ui/label";
+import { Button } from "@poly/ui";
+import { Input } from "@poly/ui";
+import { Label } from "@poly/ui";
 import {
   Card,
   CardContent,
@@ -11,40 +11,46 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@poly/ui/components/ui/card";
-import { Alert, AlertDescription } from "@poly/ui/components/ui/alert";
-import { Separator } from "@poly/ui/components/ui/separator";
-import { api } from "@/lib/api";
-import { useAuthStore } from "@/lib/authStore";
+} from "@poly/ui";
+import { Alert, AlertDescription } from "@poly/ui";
+import { Separator } from "@poly/ui";
+import { apiFetch } from "../../lib/api";
+import { useAppStore } from "../../lib/store";
+import { createLoginSchema } from "./schemas";
 
 export function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const { setUser, setAuthenticated } = useAppStore();
+  const loginSchema = createLoginSchema(t);
 
-  const form = useForm({
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-    onSubmit: async ({ value }) => {
-      try {
-        const response = await api.post("/v1/auth/login", value);
-        setAuth({
-          token: response.data.access_token,
-          refreshToken: response.data.refresh_token,
-          user: response.data.user,
-        });
-        navigate("/dashboard");
-      } catch (error: any) {
-        console.error("Login failed:", error);
-        throw error;
-      }
-    },
-  });
+   const form = useForm({
+     defaultValues: {
+       email: "",
+       password: "",
+     },
+   });
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/v1/auth/oauth/google`;
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/oauth/google`;
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const data = (await apiFetch("/auth/login", {
+        method: "POST",
+        body: form.state.values,
+      })) as { access_token: string; refresh_token: string };
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("refresh_token", data.refresh_token);
+      const me = await apiFetch("/auth/me");
+      setUser(me as any);
+      setAuthenticated(true);
+      navigate("/dashboard");
+    } catch (error: unknown) {
+      console.error("Login failed:", error);
+      throw error;
+    }
   };
 
   return (
@@ -52,102 +58,100 @@ export function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">{t("auth.login.title")}</CardTitle>
-          <CardDescription>{t("auth.login.description")}</CardDescription>
+          <CardDescription>{t("auth.login.subtitle")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form.Provider>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                form.handleSubmit();
-              }}
-              className="space-y-4"
-            >
-              <form.Field
-                name="email"
-                validators={{
-                  onChange: ({ value }) =>
-                    !value ? t("auth.validation.email_required") : undefined,
-                  onChangeAsyncDebounceMs: 500,
-                  onChangeAsync: async ({ value }) => {
-                    if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                      return t("auth.validation.email_invalid");
-                    }
-                  },
-                }}
-              >
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t("auth.email")}</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                    />
-                    {field.state.meta.errors && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field
-                name="password"
-                validators={{
-                  onChange: ({ value }) =>
-                    !value ? t("auth.validation.password_required") : undefined,
-                }}
-              >
-                {(field) => (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">{t("auth.password")}</Label>
-                      <Link
-                        to="/auth/forgot-password"
-                        className="text-sm text-blue-600 hover:text-blue-500"
-                      >
-                        {t("auth.forgot_password")}
-                      </Link>
-                    </div>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                    />
-                    {field.state.meta.errors && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-                {([canSubmit, isSubmitting]) => (
-                  <Button type="submit" className="w-full" disabled={!canSubmit || isSubmitting}>
-                    {isSubmitting ? t("auth.loading") : t("auth.login.submit")}
-                  </Button>
-                )}
-              </form.Subscribe>
-
-              <form.Subscribe selector={(state) => state.errors}>
-                {(errors) =>
-                  errors.length > 0 && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }}
+            className="space-y-4"
+          >
+             <form.Field
+               name="email"
+               validators={{
+                 onChange: ({ value }) =>
+                   loginSchema.shape.email.safeParse(value).success
+                     ? undefined
+                     : loginSchema.shape.email.safeParse(value).error?.issues[0]?.message,
+               }}
+             >
+              {(field) => (
+                <div className="space-y-2">
+                  <Label htmlFor="email">{t("auth.login.emailLabel")}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={t("auth.login.emailPlaceholder")}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                  />
+                  {field.state.meta.errors && (
                     <Alert variant="destructive">
-                      <AlertDescription>{errors[0]}</AlertDescription>
+                      <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
                     </Alert>
-                  )
-                }
-              </form.Subscribe>
-            </form>
-          </form.Provider>
+                  )}
+                </div>
+              )}
+            </form.Field>
+
+             <form.Field
+               name="password"
+               validators={{
+                 onChange: ({ value }) =>
+                   loginSchema.shape.password.safeParse(value).success
+                     ? undefined
+                     : loginSchema.shape.password.safeParse(value).error?.issues[0]?.message,
+               }}
+             >
+              {(field) => (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{t("auth.login.passwordLabel")}</Label>
+                  <Link
+                      to="/auth/forgot-password"
+                      className="text-sm text-blue-600 hover:text-blue-500"
+                    >
+                      {t("auth.login.forgotPassword")}
+                    </Link>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder={t("auth.login.passwordPlaceholder")}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                  />
+                  {field.state.meta.errors && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+              {([canSubmit, isSubmitting]) => (
+                <Button type="submit" className="w-full" disabled={!canSubmit || isSubmitting}>
+                  {isSubmitting ? t("common.loading") : t("common.submit")}
+                </Button>
+              )}
+            </form.Subscribe>
+
+            <form.Subscribe selector={(state) => state.errors}>
+              {(errors) =>
+                errors.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{errors[0]}</AlertDescription>
+                  </Alert>
+                )
+              }
+            </form.Subscribe>
+          </form>
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
@@ -155,13 +159,13 @@ export function LoginPage() {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
-                {t("auth.or_continue_with")}
+                {t("common.or")}
               </span>
             </div>
           </div>
 
           <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin}>
-            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fill="currentColor"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -179,14 +183,14 @@ export function LoginPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            {t("auth.login.with_google")}
+            {t("auth.login.googleButton")}
           </Button>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <p className="text-sm text-muted-foreground text-center">
-            {t("auth.login.no_account")}{" "}
+            {t("auth.login.noAccount")}{" "}
             <Link to="/auth/signup" className="text-blue-600 hover:text-blue-500">
-              {t("auth.signup.title")}
+              {t("auth.login.signUp")}
             </Link>
           </p>
         </CardFooter>

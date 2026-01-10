@@ -1,9 +1,9 @@
 import { useForm } from "@tanstack/react-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button } from "@poly/ui/components/ui/button";
-import { Input } from "@poly/ui/components/ui/input";
-import { Label } from "@poly/ui/components/ui/label";
+import { Button } from "@poly/ui";
+import { Input } from "@poly/ui";
+import { Label } from "@poly/ui";
 import {
   Card,
   CardContent,
@@ -11,15 +11,17 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@poly/ui/components/ui/card";
-import { Alert, AlertDescription } from "@poly/ui/components/ui/alert";
-import { Separator } from "@poly/ui/components/ui/separator";
-import { Checkbox } from "@poly/ui/components/ui/checkbox";
-import { api } from "@/lib/api";
+} from "@poly/ui";
+import { Alert, AlertDescription } from "@poly/ui";
+import { Separator } from "@poly/ui";
+import { Checkbox } from "@poly/ui";
+import { apiFetch } from "../../lib/api";
+import { createSignupSchema } from "./schemas";
 
 export function SignupPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const signupSchema = createSignupSchema(t);
 
   const form = useForm({
     defaultValues: {
@@ -30,10 +32,15 @@ export function SignupPage() {
     },
     onSubmit: async ({ value }) => {
       try {
-        await api.post("/v1/auth/signup", {
-          email: value.email,
-          password: value.password,
+        await apiFetch("/auth/signup", {
+          method: "POST",
+          body: {
+            email: value.email,
+            password: value.password,
+            full_name: value.email.split("@")[0],
+          },
         });
+        localStorage.setItem("pending_email", value.email);
         navigate("/auth/verify-email");
       } catch (error: any) {
         console.error("Signup failed:", error);
@@ -43,7 +50,7 @@ export function SignupPage() {
   });
 
   const handleGoogleSignup = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/v1/auth/oauth/google`;
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/oauth/google`;
   };
 
   return (
@@ -51,7 +58,7 @@ export function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">{t("auth.signup.title")}</CardTitle>
-          <CardDescription>{t("auth.signup.description")}</CardDescription>
+          <CardDescription>{t("auth.signup.subtitle")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form.Provider>
@@ -66,21 +73,18 @@ export function SignupPage() {
                 name="email"
                 validators={{
                   onChange: ({ value }) =>
-                    !value ? t("auth.validation.email_required") : undefined,
-                  onChangeAsyncDebounceMs: 500,
-                  onChangeAsync: async ({ value }) => {
-                    if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                      return t("auth.validation.email_invalid");
-                    }
-                  },
+                    signupSchema.shape.email.safeParse(value).success
+                      ? undefined
+                      : signupSchema.shape.email.safeParse(value).error?.issues[0]?.message,
                 }}
               >
                 {(field) => (
                   <div className="space-y-2">
-                    <Label htmlFor="email">{t("auth.email")}</Label>
+                    <Label htmlFor="email">{t("auth.signup.emailLabel")}</Label>
                     <Input
                       id="email"
                       type="email"
+                      placeholder={t("auth.signup.emailPlaceholder")}
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
@@ -98,19 +102,18 @@ export function SignupPage() {
                 name="password"
                 validators={{
                   onChange: ({ value }) =>
-                    !value ? t("auth.validation.password_required") : undefined,
-                  onChange: ({ value }) =>
-                    value && value.length < 8
-                      ? t("auth.validation.password_min_length")
-                      : undefined,
+                    signupSchema.shape.password.safeParse(value).success
+                      ? undefined
+                      : signupSchema.shape.password.safeParse(value).error?.issues[0]?.message,
                 }}
               >
                 {(field) => (
                   <div className="space-y-2">
-                    <Label htmlFor="password">{t("auth.password")}</Label>
+                    <Label htmlFor="password">{t("auth.signup.passwordLabel")}</Label>
                     <Input
                       id="password"
                       type="password"
+                      placeholder={t("auth.signup.passwordPlaceholder")}
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
@@ -128,15 +131,26 @@ export function SignupPage() {
                 name="confirmPassword"
                 validators={{
                   onChange: ({ value }) =>
-                    !value ? t("auth.validation.confirm_password_required") : undefined,
+                    (() => {
+                      const result = signupSchema.safeParse({
+                        ...form.state.values,
+                        confirmPassword: value,
+                      });
+                      return result.success
+                        ? undefined
+                        : result.error.formErrors.fieldErrors.confirmPassword?.[0];
+                    })(),
                 }}
               >
                 {(field) => (
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">{t("auth.confirm_password")}</Label>
+                    <Label htmlFor="confirmPassword">
+                      {t("auth.signup.confirmPasswordLabel")}
+                    </Label>
                     <Input
                       id="confirmPassword"
                       type="password"
+                      placeholder={t("auth.signup.confirmPasswordPlaceholder")}
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
@@ -154,7 +168,9 @@ export function SignupPage() {
                 name="terms"
                 validators={{
                   onChange: ({ value }) =>
-                    !value ? t("auth.validation.terms_required") : undefined,
+                    signupSchema.shape.terms.safeParse(value).success
+                      ? undefined
+                      : signupSchema.shape.terms.safeParse(value).error?.issues[0]?.message,
                 }}
               >
                 {(field) => (
@@ -169,14 +185,7 @@ export function SignupPage() {
                         htmlFor="terms"
                         className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >
-                        {t("auth.signup.terms_agree")}{" "}
-                        <Link to="/terms" className="text-blue-600 hover:text-blue-500">
-                          {t("auth.signup.terms_of_service")}
-                        </Link>{" "}
-                        {t("auth.signup.and")}{" "}
-                        <Link to="/privacy" className="text-blue-600 hover:text-blue-500">
-                          {t("auth.signup.privacy_policy")}
-                        </Link>
+                        {t("auth.signup.agreeToTerms")}
                       </Label>
                     </div>
                     {field.state.meta.errors && (
@@ -191,7 +200,7 @@ export function SignupPage() {
               <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
                 {([canSubmit, isSubmitting]) => (
                   <Button type="submit" className="w-full" disabled={!canSubmit || isSubmitting}>
-                    {isSubmitting ? t("auth.loading") : t("auth.signup.submit")}
+                    {isSubmitting ? t("common.loading") : t("common.submit")}
                   </Button>
                 )}
               </form.Subscribe>
@@ -214,7 +223,7 @@ export function SignupPage() {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
-                {t("auth.or_continue_with")}
+                {t("common.or")}
               </span>
             </div>
           </div>
@@ -238,14 +247,14 @@ export function SignupPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            {t("auth.signup.with_google")}
+            {t("auth.signup.googleButton")}
           </Button>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <p className="text-sm text-muted-foreground text-center">
-            {t("auth.signup.has_account")}{" "}
+            {t("auth.signup.hasAccount")}{" "}
             <Link to="/auth/login" className="text-blue-600 hover:text-blue-500">
-              {t("auth.login.title")}
+              {t("auth.signup.signIn")}
             </Link>
           </p>
         </CardFooter>

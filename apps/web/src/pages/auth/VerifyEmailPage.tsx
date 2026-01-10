@@ -1,14 +1,20 @@
-import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@poly/ui/components/ui/button";
-import { Alert, AlertDescription } from "@poly/ui/components/ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/components/ui/card";
-import { api } from "@/lib/api";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Button } from "@poly/ui";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@poly/ui";
+import { Alert, AlertDescription } from "@poly/ui";
+import { apiFetch } from "../../lib/api";
 
 type VerificationStatus = "pending" | "success" | "failed";
 
-export default function VerifyEmailPage() {
+export function VerifyEmailPage() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -17,20 +23,24 @@ export default function VerifyEmailPage() {
   const [error, setError] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const pendingEmail = localStorage.getItem("pending_email") || "";
 
-  useState(() => {
+  useEffect(() => {
     if (token) {
       verifyEmail(token);
     }
-  });
+  }, [token]);
 
   const verifyEmail = async (verificationToken: string) => {
     try {
-      await api.post("/v1/auth/verify-email", { token: verificationToken });
+      await apiFetch("/auth/verify-email", {
+        method: "POST",
+        body: { token: verificationToken },
+      });
       setStatus("success");
     } catch (err: any) {
       setStatus("failed");
-      setError(err.response?.data?.error?.message || t("error.something_went_wrong"));
+      setError(err.message || t("auth.verifyEmail.failed.resendError"));
     }
   };
 
@@ -38,10 +48,13 @@ export default function VerifyEmailPage() {
     setResending(true);
     setResendSuccess(false);
     try {
-      await api.post("/v1/auth/resend-verification", { token });
+      await apiFetch("/auth/resend-verification", {
+        method: "POST",
+        body: { email: pendingEmail },
+      });
       setResendSuccess(true);
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || t("error.something_went_wrong"));
+      setError(err.message || t("auth.verifyEmail.failed.resendError"));
     } finally {
       setResending(false);
     }
@@ -52,14 +65,16 @@ export default function VerifyEmailPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">
-            {status === "success" ? t("auth.email_verified") : t("auth.verify_email")}
+            {status === "success"
+              ? t("auth.verifyEmail.success.title")
+              : t("auth.verifyEmail.pending.title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {status === "pending" && (
             <div className="text-center space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-              <p className="text-sm text-gray-600">{t("auth.verifying_email")}</p>
+              <p className="text-sm text-gray-600">{t("auth.verifyEmail.pending.subtitle")}</p>
             </div>
           )}
 
@@ -67,12 +82,14 @@ export default function VerifyEmailPage() {
             <div className="space-y-4">
               <Alert>
                 <AlertDescription className="text-center">
-                  {t("auth.email_verified_success")}
+                  {t("auth.verifyEmail.success.subtitle")}
                 </AlertDescription>
               </Alert>
-              <p className="text-sm text-center text-gray-600">{t("auth.can_now_login")}</p>
+              <p className="text-sm text-center text-gray-600">
+                {t("auth.verifyEmail.success.subtitle")}
+              </p>
               <Button onClick={() => navigate("/auth/login")} className="w-full">
-                {t("auth.go_to_login")}
+                {t("auth.verifyEmail.success.login")}
               </Button>
             </div>
           )}
@@ -80,12 +97,14 @@ export default function VerifyEmailPage() {
           {status === "failed" && (
             <div className="space-y-4">
               <Alert variant="destructive">
-                <AlertDescription>{error || t("auth.verification_failed")}</AlertDescription>
+                <AlertDescription>
+                  {error || t("auth.verifyEmail.failed.subtitle")}
+                </AlertDescription>
               </Alert>
               {token && (
                 <>
                   <p className="text-sm text-center text-gray-600">
-                    {t("auth.resend_verification_instructions")}
+                    {t("auth.verifyEmail.failed.subtitle")}
                   </p>
                   <Button
                     onClick={resendVerification}
@@ -93,18 +112,20 @@ export default function VerifyEmailPage() {
                     className="w-full"
                     disabled={resending}
                   >
-                    {resending ? t("common.sending") : t("auth.resend_verification")}
+                    {resending
+                      ? t("auth.verifyEmail.failed.sending")
+                      : t("auth.verifyEmail.failed.resend")}
                   </Button>
                   {resendSuccess && (
                     <p className="text-sm text-center text-green-600">
-                      {t("auth.verification_email_sent")}
+                      {t("auth.verifyEmail.failed.resendSuccess")}
                     </p>
                   )}
                 </>
               )}
               <div className="pt-4">
                 <Button onClick={() => navigate("/auth/login")} variant="ghost" className="w-full">
-                  {t("common.back_to_login")}
+                  {t("auth.verifyEmail.success.login")}
                 </Button>
               </div>
             </div>

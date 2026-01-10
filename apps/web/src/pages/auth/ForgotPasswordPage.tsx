@@ -1,60 +1,57 @@
+import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { zodValidator } from "@tanstack/zod-form-adapter";
-import { z } from "zod";
 import { useTranslation } from "react-i18next";
-import { Button } from "@poly/ui/components/ui/button";
-import { Input } from "@poly/ui/components/ui/input";
-import { Label } from "@poly/ui/components/ui/label";
-import { Alert, AlertDescription } from "@poly/ui/components/ui/alert";
-import { Link, useSearchParams } from "react-router-dom";
-import { api } from "@/lib/api";
+import { Link } from "react-router-dom";
+import { Button } from "@poly/ui";
+import { Input } from "@poly/ui";
+import { Label } from "@poly/ui";
+import { Alert, AlertDescription } from "@poly/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui";
+import { apiFetch } from "../../lib/api";
+import { createForgotPasswordSchema } from "./schemas";
 
-const forgotPasswordSchema = z.object({
-  email: z.string().min(1).email("error.invalid_email"),
-});
-
-export default function ForgotPasswordPage() {
+export function ForgotPasswordPage() {
   const { t } = useTranslation();
-  const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const navigate = useNavigate();
+  const forgotSchema = createForgotPasswordSchema(t);
 
   const form = useForm({
     defaultValues: {
       email: "",
     },
-    onSubmit: async ({ value }) => {
-      try {
-        setError(null);
-        await api.post("/v1/auth/forgot-password", { email: value.email });
-        setSuccess(true);
-      } catch (err: any) {
-        setError(err.response?.data?.error?.message || t("error.something_went_wrong"));
-      }
-    },
-    validatorAdapter: zodValidator(),
   });
 
-  const redirectUrl = searchParams.get("redirect") || "/dashboard";
+  const handleSubmit = async () => {
+    try {
+      setError(null);
+      await apiFetch("/auth/forgot-password", {
+        method: "POST",
+        body: { email: form.state.values.email },
+      });
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err.message || t("auth.forgotPassword.error"));
+    }
+  };
 
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-2xl text-center">{t("auth.check_email")}</CardTitle>
+            <CardTitle className="text-2xl text-center">{t("auth.forgotPassword.title")}</CardTitle>
           </CardHeader>
           <CardContent>
             <Alert className="mb-6">
-              <AlertDescription>{t("auth.password_reset_email_sent")}</AlertDescription>
+              <AlertDescription>{t("auth.forgotPassword.success")}</AlertDescription>
             </Alert>
             <p className="text-sm text-center text-gray-600 mb-6">
-              {t("auth.check_email_instructions")}
+              {t("auth.forgotPassword.subtitle")}
             </p>
             <div className="flex justify-center">
               <Link to="/auth/login">
-                <Button variant="outline">{t("common.back_to_login")}</Button>
+                <Button variant="outline">{t("auth.forgotPassword.backToLogin")}</Button>
               </Link>
             </div>
           </CardContent>
@@ -67,11 +64,11 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">{t("auth.forgot_password")}</CardTitle>
+          <CardTitle className="text-2xl text-center">{t("auth.forgotPassword.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-center text-gray-600 mb-6">
-            {t("auth.forgot_password_instructions")}
+            {t("auth.forgotPassword.subtitle")}
           </p>
 
           {error && (
@@ -83,32 +80,34 @@ export default function ForgotPasswordPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              e.stopPropagation();
-              form.handleSubmit();
+              handleSubmit();
             }}
             className="space-y-6"
           >
             <form.Field
               name="email"
               validators={{
-                onChange: forgotPasswordSchema.shape.email,
+                onChange: ({ value }) =>
+                  forgotSchema.shape.email.safeParse(value).success
+                    ? undefined
+                    : forgotSchema.shape.email.safeParse(value).error?.issues[0]?.message,
               }}
             >
               {(field) => (
                 <div className="space-y-2">
-                  <Label htmlFor="email">{t("auth.email")}</Label>
+                  <Label htmlFor="email">{t("auth.forgotPassword.emailLabel")}</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder={t("auth.email_placeholder")}
+                    placeholder={t("auth.forgotPassword.emailPlaceholder")}
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
                     autoComplete="email"
                   />
-                  {field.state.meta.touchedErrors && (
+                  {field.state.meta.errors.length > 0 && (
                     <p className="text-sm text-destructive">
-                      {t(field.state.meta.touchedErrors[0])}
+                      {field.state.meta.errors[0]}
                     </p>
                   )}
                 </div>
@@ -116,16 +115,13 @@ export default function ForgotPasswordPage() {
             </form.Field>
 
             <Button type="submit" className="w-full" disabled={form.state.isSubmitting}>
-              {form.state.isSubmitting ? t("common.sending") : t("auth.send_reset_link")}
+              {form.state.isSubmitting ? t("auth.forgotPassword.sending") : t("auth.forgotPassword.sendLink")}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <Link
-              to={`/auth/login${redirectUrl !== "/dashboard" ? `?redirect=${redirectUrl}` : ""}`}
-              className="text-primary hover:underline"
-            >
-              {t("common.back_to_login")}
+            <Link to="/auth/login" className="text-primary hover:underline">
+              {t("auth.forgotPassword.backToLogin")}
             </Link>
           </div>
         </CardContent>
