@@ -1,10 +1,14 @@
 [project]
 name = "poly-stt"
 version = "0.1.0"
-description = "Add your description here"
+description = "Speech-to-text engines with normalized interface"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "openai-whisper>=20231117",
+    "torch>=2.0.0",
+    "torchaudio>=2.0.0",
+]
 
 [dependency-groups]
 dev = [
