@@ -15,6 +15,8 @@
   "dependencies": {
     "@poly/ui": "workspace:*",
     "@tanstack/react-form": "^1.27.6",
+    "@tanstack/react-query": "^5.90.12",
+    "@tanstack/react-query-devtools": "^5.91.1",
     "@tanstack/zod-form-adapter": "^0.42.1",
     "i18next": "^25.7.3",
     "lucide-react": "^0.562.0",
