@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Card,
@@ -6,59 +5,21 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@poly/ui/components/ui/card";
-import { Button } from "@poly/ui/components/ui/button";
-import { Badge } from "@poly/ui/components/ui/badge";
+  Button,
+  Badge,
+} from "@poly/ui";
 import { useTranslation } from "react-i18next";
-import { apiFetch } from "../../lib/api";
+import { useDashboardStats, useRecentJobs } from "../../hooks/useDashboard";
 
-interface DashboardStats {
-  total_jobs: number;
-  pending_jobs: number;
-  completed_jobs: number;
-  failed_jobs: number;
-}
-
-interface RecentJob {
-  id: string;
-  name: string;
-  status: string;
-  created_at: string;
-  language: string;
-}
-
-export default function DashboardPage() {
+export function DashboardPage() {
   const { t } = useTranslation();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentJobs, setRecentJobs] = useState<RecentJob[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        const [statsRes, jobsRes] = await Promise.all([
-          apiFetch("/v1/dashboard/stats"),
-          apiFetch("/v1/dashboard/jobs/recent"),
-        ]);
-
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          setStats(statsData);
-        }
-
-        if (jobsRes.ok) {
-          const jobsData = await jobsRes.json();
-          setRecentJobs(jobsData.jobs || []);
-        }
-      } catch (error) {
-        console.error("Failed to load dashboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadDashboard();
-  }, []);
+  
+  // Queries
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: jobsData, isLoading: jobsLoading } = useRecentJobs();
+  
+  const loading = statsLoading || jobsLoading;
+  const recentJobs = jobsData?.jobs || [];
 
   if (loading) {
     return (

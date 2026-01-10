@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-import { apiFetch } from "../../lib/api";
 import {
   Card,
   CardContent,
@@ -16,26 +14,9 @@ import {
   SelectItem,
 } from "@poly/ui";
 import { Link } from "react-router-dom";
-
-interface UsageData {
-  plan: string;
-  monthly_upload_count: number;
-  monthly_limit: number | "inf";
-  extra_credits: number;
-}
-
-interface PricingPlan {
-  plan: string;
-  limits: {
-    uploads_per_month: number | "inf";
-    languages: number | "inf";
-    members: number | "inf";
-  };
-}
-
-interface PricingData {
-  plans: PricingPlan[];
-}
+import { useState } from "react";
+import { useUsage, usePricing } from "../../hooks/useBilling";
+import type { PricingPlan } from "../../types/api";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -45,29 +26,14 @@ const LANGUAGES = [
   { code: "jp", label: "Japanese" },
 ];
 
-export default function UploadPage() {
-  const [usage, setUsage] = useState<UsageData | null>(null);
-  const [pricing, setPricing] = useState<PricingData | null>(null);
-  const [loading, setLoading] = useState(true);
+export function UploadPage() {
   const [selectedLanguage, setSelectedLanguage] = useState("en");
 
-  useEffect(() => {
-    async function fetchUsage() {
-      try {
-        const [usageData, pricingData] = await Promise.all([
-          apiFetch("/billing/usage"),
-          apiFetch("/billing/pricing"),
-        ]);
-        setUsage(usageData);
-        setPricing(pricingData);
-      } catch (err) {
-        console.error("Failed to fetch usage", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchUsage();
-  }, []);
+  // Queries
+  const { data: usage, isLoading: usageLoading } = useUsage();
+  const { data: pricing, isLoading: pricingLoading } = usePricing();
+
+  const loading = usageLoading || pricingLoading;
 
   const isLimitReached = usage
     ? usage.monthly_limit !== "inf" &&
@@ -77,8 +43,11 @@ export default function UploadPage() {
 
   const languageLimit = (() => {
     if (!usage || !pricing) return "inf";
-    const plan = pricing.plans.find((p) => p.plan === usage.plan);
-    return plan?.limits.languages ?? "inf";
+    if (Array.isArray(pricing.plans)) {
+      const plan = pricing.plans.find((p: PricingPlan) => p.plan === usage.plan);
+      return plan?.limits.languages ?? "inf";
+    }
+    return "inf";
   })();
 
   const isLanguageRestricted = (code: string) => {
@@ -135,7 +104,7 @@ export default function UploadPage() {
           <CardHeader>
             <CardTitle className="text-amber-700">Language Not Available</CardTitle>
             <CardDescription>
-              Your current plan doesn’t include this language. Upgrade to unlock all languages.
+              Your current plan doesn't include this language. Upgrade to unlock all languages.
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex space-x-4">

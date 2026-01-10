@@ -1,16 +1,17 @@
 import { useTranslation } from "react-i18next";
-import { Button } from "@poly/ui/components/ui/button";
+import { Button } from "@poly/ui";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@poly/ui/components/ui/card";
+} from "@poly/ui";
 import { useNavigate } from "react-router-dom";
 
 export function NotFoundPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center py-8">
