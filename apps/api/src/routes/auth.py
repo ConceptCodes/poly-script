@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from dependencies import get_current_user
-from poly_core.constants import I18nKeys
+from dependencies import get_current_user, get_auth_service
 from poly_core.services.auth import AuthService
 from poly_core.services.oauth import OAuthService
 from poly_core.services.team import TeamService
+from src.config import get_settings
 from schemas.auth import (
     ForgotPasswordRequest,
     LoginRequest,
@@ -25,12 +25,17 @@ from schemas.auth import (
 router = APIRouter(prefix="/v1/auth", tags=["Auth"])
 
 
-def get_auth_service(db: Session) -> AuthService:
-    return AuthService(db)
-
-
-def get_oauth_service(db: Session) -> OAuthService:
-    return OAuthService(db)
+def get_oauth_service(
+    db: Session, auth_service: AuthService = Depends(get_auth_service)
+) -> OAuthService:
+    settings = get_settings()
+    return OAuthService(
+        db_session=db,
+        google_client_id=settings.GOOGLE_CLIENT_ID or "",
+        google_client_secret=settings.GOOGLE_CLIENT_SECRET or "",
+        oauth_redirect_url=settings.OAUTH_REDIRECT_URL,
+        auth_service=auth_service,
+    )
 
 
 def get_team_service(db: Session) -> TeamService:
@@ -39,11 +44,14 @@ def get_team_service(db: Session) -> TeamService:
 
 @router.post("/signup", response_model=SignupResponse, status_code=status.HTTP_201_CREATED)
 def signup(request: SignupRequest, auth_service: AuthService = Depends(get_auth_service)):
-    user, team = auth_service.create_user(
-        email=request.email,
-        password=request.password,
-        full_name=request.full_name,
-    )
+    try:
+        user = auth_service.create_user(
+            email=request.email,
+            password=request.password,
+            full_name=request.full_name,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     return SignupResponse(
         user_id=user.id,
@@ -55,7 +63,10 @@ def signup(request: SignupRequest, auth_service: AuthService = Depends(get_auth_
 
 @router.post("/login", response_model=TokenResponse)
 def login(request: LoginRequest, auth_service: AuthService = Depends(get_auth_service)):
-    tokens = auth_service.login(email=request.email, password=request.password)
+    try:
+        tokens = auth_service.login(email=request.email, password=request.password)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     return TokenResponse(
         access_token=tokens["access_token"],
@@ -66,14 +77,20 @@ def login(request: LoginRequest, auth_service: AuthService = Depends(get_auth_se
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(request: LogoutRequest, auth_service: AuthService = Depends(get_auth_service)):
-    auth_service.logout(refresh_token=request.refresh_token)
+    try:
+        auth_service.logout(refresh_token=request.refresh_token)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh_token(
     request: RefreshTokenRequest, auth_service: AuthService = Depends(get_auth_service)
 ):
-    tokens = auth_service.refresh_access_token(refresh_token=request.refresh_token)
+    try:
+        tokens = auth_service.refresh_access_token(refresh_token=request.refresh_token)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
     return TokenResponse(
         access_token=tokens["access_token"],
@@ -91,38 +108,40 @@ def get_me(current_user: UserResponse = Depends(get_current_user)):
 def verify_email(
     request: VerifyEmailRequest, auth_service: AuthService = Depends(get_auth_service)
 ):
-    success = auth_service.verify_email(token=request.token)
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=I18nKeys.INVALID_VERIFICATION_TOKEN.value,
-        )
+    try:
+        auth_service.verify_email(token=request.token)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 @router.post("/resend-verification", status_code=status.HTTP_204_NO_CONTENT)
 def resend_verification(
     request: ResendVerificationRequest, auth_service: AuthService = Depends(get_auth_service)
 ):
-    auth_service.resend_verification_email(email=request.email)
+    try:
+        auth_service.resend_verification_email(email=request.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 @router.post("/forgot-password", status_code=status.HTTP_204_NO_CONTENT)
 def forgot_password(
     request: ForgotPasswordRequest, auth_service: AuthService = Depends(get_auth_service)
 ):
-    auth_service.send_password_reset_email(email=request.email)
+    try:
+        auth_service.send_password_reset_email(email=request.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
 def reset_password(
     request: ResetPasswordRequest, auth_service: AuthService = Depends(get_auth_service)
 ):
-    success = auth_service.reset_password(token=request.token, new_password=request.new_password)
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=I18nKeys.INVALID_RESET_TOKEN.value,
-        )
+    try:
+        auth_service.reset_password(token=request.token, new_password=request.new_password)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 @router.get("/oauth/google", response_model=dict)
