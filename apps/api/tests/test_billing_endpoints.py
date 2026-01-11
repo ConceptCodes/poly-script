@@ -1,9 +1,16 @@
 import uuid
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
+# Direct imports that work
+from poly_core.services.billing import BillingService
+from poly_core.constants import I18nKeys
+from poly_db.database import get_db_session
+
+# Import app from main module
 from main import app
 
 client = TestClient(app)
