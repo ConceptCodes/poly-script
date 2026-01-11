@@ -32,6 +32,15 @@
     }
   },
   "notifications": {
-    "invitation_subject": "You have been invited to join team {team_name}"
+    "verification_email_subject": "Vérifier votre adresse e-mail",
+    "password_reset_email_subject": "Réinitialiser votre mot de passe",
+    "invitation_email_subject": "Vous avez été invité à rejoindre l'équipe {team_name}",
+    "invitation_expires_in": "Cette invitation expirera dans {days} jours.",
+    "verification_link_expires_in": "Ce lien expirera dans {hours} heures.",
+    "password_reset_link_expires_in": "Ce lien expirera dans {hours} heures."
+  },
+  "oauth": {
+    "pkce_required": "Les paramètres PKCE (code_challenge) sont requis pour OAuth",
+    "invalid_code_verifier": "Code_verifier invalide fourni"
   }
 }

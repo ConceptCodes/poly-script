@@ -32,6 +32,15 @@
     }
   },
   "notifications": {
-    "invitation_subject": "You have been invited to join team {team_name}"
+    "verification_email_subject": "メールアドレスを確認",
+    "password_reset_email_subject": "パスワードをリセット",
+    "invitation_email_subject": "{team_name}チームへの招待を受け取りました",
+    "invitation_expires_in": "この招待は{days}日後に期限切れになります。",
+    "verification_link_expires_in": "このリンクは{hours}時間後に期限切れになります。",
+    "password_reset_link_expires_in": "このリンクは{hours}時間後に期限切れになります。"
+  },
+  "oauth": {
+    "pkce_required": "OAuthにはPKCEパラメータ（code_challenge）が必要です",
+    "invalid_code_verifier": "無効なcode_verifierが提供されました"
   }
 }
