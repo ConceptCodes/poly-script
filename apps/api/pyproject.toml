@@ -6,16 +6,20 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "poly-db",
-    "fastapi[standard]>=0.127.0",
     "poly-redis",
     "poly-stt",
+    "poly-core",
+    "fastapi[standard]>=0.127.0",
     "pydantic-settings>=2.12.0",
     "python-multipart>=0.0.21",
     "slowapi>=0.1.9",
     "stripe>=14.1.0",
     "uvicorn[standard]>=0.40.0",
     "sqlalchemy>=2.0.45",
-    "poly-core",
+    "sse-starlette>=3.1.2",
+    "librosa>=0.10.0",
+    "soundfile>=0.12.0",
+    "requests>=2.31.0",
 ]
 
 [dependency-groups]
@@ -62,13 +66,15 @@ select = [
     "FLY",
     "RUF",
 ]
+
 ignore = [
     "E501",
     "PLR2004",
+    "S101",
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["poly_core", "poly_db", "poly_redis"]
+known-first-party = ["poly-core", "poly-db", "poly-redis", "poly-stt"]
 
 [tool.ruff.format]
 indent-style = "space"
