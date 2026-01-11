@@ -57,7 +57,19 @@ async def stripe_webhook(
         or event["type"] == "customer.subscription.deleted"
     ):
         subscription = event["data"]["object"]
-        billing_service.sync_subscription(subscription["id"])
+        if event["type"] == "customer.subscription.deleted":
+            # Explicitly set team plan to FREE when subscription is deleted
+            customer_id = subscription.get("customer")
+            team = team_repo.get_by_stripe_customer_id(customer_id)
+            if team:
+                from poly_db.models.teams import PlanType
+                team_repo.update(team.id, plan=PlanType.FREE)
+                # Also delete local subscription record
+                local_sub = sub_repo.get_by_team_id(team.id)
+                if local_sub:
+                    sub_repo.delete(local_sub.id)
+        else:
+            billing_service.sync_subscription(subscription["id"])
 
     elif event["type"] == "invoice.paid":
         invoice = event["data"]["object"]

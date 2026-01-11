@@ -3,11 +3,15 @@ from enum import StrEnum
 
 
 class ProgressStage(StrEnum):
+    STARTING = "starting"
     DOWNLOADING = "downloading"
+    DECODING = "decoding"
     TRANSCRIBING = "transcribing"
+    FORMATTING = "formatting"
     SAVING = "saving"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELED = "canceled"
 
 
 class WorkerStatus(StrEnum):

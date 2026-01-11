@@ -217,14 +217,14 @@ def cancel_invitation(
         )
 
 
-@router.post("/invitations/accept", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/invitations/{token}/accept", status_code=status.HTTP_204_NO_CONTENT)
 def accept_invitation(
-    request: AcceptInvitationRequest,
+    token: str,
     invitation_service: InvitationService = Depends(get_invitation_service),
     current_user: dict = Depends(get_current_user),
 ):
     success = invitation_service.accept_invitation(
-        token=request.token,
+        token=token,
         user_id=current_user["id"],
     )
     if not success:

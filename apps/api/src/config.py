@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     REDIS_URL: str
     JWT_SECRET: str
-    JWT_EXPIRY: str = "24h"
+    JWT_EXPIRY: str = "15m"  # 15 minutes as per user requirement
     ADMIN_JWT_SECRET: str
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str | None = None
 
     # Email
-    SMTP_HOST: str = "localhost"
-    SMTP_PORT: int = 1025
+    SMTP_HOST: str = "smtp.gmail.com"  # Gmail SMTP as per user requirement
+    SMTP_PORT: int = 587  # TLS port for Gmail
     SMTP_USER: str | None = None
     SMTP_PASSWORD: str | None = None
     SMTP_FROM: str = "noreply@polyscript.io"
@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     STRIPE_PRICE_ID_STANDARD: str
     STRIPE_PRICE_ID_PRO: str
     CREDIT_PRICE_PER_UPLOAD: int = 100
+    STRIPE_CHECKOUT_SUCCESS_URL: str = "/checkout/success"
+    STRIPE_CHECKOUT_CANCEL_URL: str = "/checkout/cancel"
 
     # OAuth
     GOOGLE_CLIENT_ID: str | None = None
