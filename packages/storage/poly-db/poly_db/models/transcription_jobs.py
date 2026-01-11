@@ -27,6 +27,9 @@ class TranscriptionJob(Base, TimestampMixin):
     engine: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     options: Mapped[dict] = mapped_column(JSON, default=dict)
 
+    # Progress tracking
+    progress_stage: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+
     # Error info
     error_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)

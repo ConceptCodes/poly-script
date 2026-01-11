@@ -5,7 +5,7 @@ from sqlalchemy.pool import StaticPool
 from poly_db.models import Base
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def engine():
     """Create an in-memory SQLite database for testing."""
     engine = create_engine(

@@ -5,6 +5,7 @@ from poly_db.repositories import (
     PasswordResetRepository,
     RefreshTokenRepository,
 )
+import uuid
 
 
 def test_auth_repositories(session):
@@ -58,3 +59,83 @@ def test_auth_repositories(session):
     assert refresh_repo.list_by_user_id(user.id)[0].id == refresh.id
     deleted_tokens = refresh_repo.delete_revoked()
     assert revoked_refresh.id in [t.id for t in deleted_tokens]
+
+
+def test_auth_repositories_negative_cases(session):
+    user = User(email="auth2@example.com", hashed_password="pw", is_verified=True)
+    session.add(user)
+    session.commit()
+
+    oauth_repo = OAuthAccountRepository(session)
+    assert oauth_repo.get_by_provider("google", "nonexistent") is None
+    assert oauth_repo.get_by_user_id(user.id) == []
+
+    reset_repo = PasswordResetRepository(session)
+    assert reset_repo.get_by_token("nonexistent") is None
+    assert reset_repo.get_active_by_token("nonexistent") is None
+
+    active_reset = PasswordReset(
+        user_id=user.id,
+        token="active-reset",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        used_at=datetime.now(timezone.utc),
+    )
+    session.add(active_reset)
+    session.commit()
+
+    assert reset_repo.get_by_token("active-reset").id == active_reset.id
+    assert reset_repo.get_active_by_token("active-reset") is None
+
+    refresh_repo = RefreshTokenRepository(session)
+    assert refresh_repo.get_by_token("nonexistent") is None
+    assert refresh_repo.get_active_by_token("nonexistent") is None
+    assert refresh_repo.list_by_user_id(user.id) == []
+
+    assert refresh_repo.delete_revoked() == []
+
+
+def test_auth_repositories_base_methods(session):
+    user = User(email="auth3@example.com", hashed_password="pw", is_verified=True)
+    session.add(user)
+    session.commit()
+
+    oauth_repo = OAuthAccountRepository(session)
+    new_oauth = oauth_repo.create(
+        user_id=user.id,
+        provider="github",
+        provider_user_id="github-123",
+    )
+    assert new_oauth.id is not None
+
+    updated_oauth = oauth_repo.update(new_oauth.id, provider_user_id="github-456")
+    assert updated_oauth.provider_user_id == "github-456"
+
+    assert oauth_repo.delete(new_oauth.id) is True
+    assert oauth_repo.get(new_oauth.id) is None
+
+    reset_repo = PasswordResetRepository(session)
+    new_reset = reset_repo.create(
+        user_id=user.id,
+        token="new-reset-token",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=2),
+    )
+    assert new_reset.id is not None
+
+    updated_reset = reset_repo.update(new_reset.id, used_at=datetime.now(timezone.utc))
+    assert updated_reset.used_at is not None
+
+    assert reset_repo.delete(new_reset.id) is True
+
+    refresh_repo = RefreshTokenRepository(session)
+    new_refresh = refresh_repo.create(
+        user_id=user.id,
+        token="new-refresh-token",
+        expires_at=datetime.now(timezone.utc) + timedelta(days=14),
+        revoked=False,
+    )
+    assert new_refresh.id is not None
+
+    updated_refresh = refresh_repo.update(new_refresh.id, revoked=True)
+    assert updated_refresh.revoked is True
+
+    assert refresh_repo.delete(new_refresh.id) is True

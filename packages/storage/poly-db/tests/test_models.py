@@ -1,26 +1,29 @@
 from poly_db.models import User, Team, PlanType, TeamMember, TeamRole
+import uuid
 
 
 def test_create_user(session):
     """Test creating a user."""
-    user = User(email="test@example.com", hashed_password="hashed_pw", is_verified=True)
+    unique_email = f"{uuid.uuid4()}@example.com"
+    user = User(email=unique_email, hashed_password="hashed_pw", is_verified=True)
     session.add(user)
     session.commit()
 
     assert user.id is not None
-    assert user.email == "test@example.com"
+    assert user.email == unique_email
     assert user.is_verified is True
     assert user.is_active is True
 
 
 def test_create_team(session):
     """Test creating a team."""
-    team = Team(name="Test Team", plan=PlanType.FREE, host_language="en")
+    unique_name = f"Test Team {uuid.uuid4()}"
+    team = Team(name=unique_name, plan=PlanType.FREE, host_language="en")
     session.add(team)
     session.commit()
 
     assert team.id is not None
-    assert team.name == "Test Team"
+    assert team.name == unique_name
     assert team.plan == PlanType.FREE
     assert team.monthly_upload_count == 0
     assert team.extra_credits == 0
@@ -28,8 +31,10 @@ def test_create_team(session):
 
 def test_create_team_member(session):
     """Test creating a team member relationship."""
-    user = User(email="user@example.com", is_verified=True)
-    team = Team(name="Team 1", plan=PlanType.STANDARD)
+    unique_email = f"{uuid.uuid4()}@example.com"
+    user = User(email=unique_email, is_verified=True)
+    unique_name = f"Team {uuid.uuid4()}"
+    team = Team(name=unique_name, plan=PlanType.STANDARD)
     session.add_all([user, team])
     session.commit()
 
@@ -45,7 +50,8 @@ def test_create_team_member(session):
 
 def test_soft_delete(session):
     """Test soft delete functionality via TimestampMixin."""
-    user = User(email="delete@example.com", is_verified=True)
+    unique_email = f"{uuid.uuid4()}@example.com"
+    user = User(email=unique_email, is_verified=True)
     session.add(user)
     session.commit()
 
