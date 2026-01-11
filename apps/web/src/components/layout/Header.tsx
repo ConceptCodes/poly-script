@@ -37,6 +37,9 @@ export function Header() {
         <Link to="/upload" className="text-sm font-medium hover:text-primary transition-colors">
           Upload
         </Link>
+        <Link to="/jobs/pending" className="text-sm font-medium hover:text-primary transition-colors">
+          Jobs
+        </Link>
         <Link to="/billing" className="text-sm font-medium hover:text-primary transition-colors">
           Billing
         </Link>

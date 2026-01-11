@@ -11,12 +11,19 @@ import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
 
 import { OnboardingPage } from "./pages/onboarding/OnboardingPage";
 
+import { CheckoutSuccessPage } from "./pages/checkout/CheckoutSuccessPage";
+import { CheckoutCancelPage } from "./pages/checkout/CheckoutCancelPage";
+
 import { DashboardPage } from "./pages/dashboard/DashboardPage";
 import { TeamSettingsPage } from "./pages/settings/TeamSettingsPage";
 import { UserSettingsPage } from "./pages/settings/UserSettingsPage";
 
 import { BillingPage } from "./pages/billing/index";
 import { UploadPage } from "./pages/upload/index";
+
+import { PendingJobsPage } from "./pages/jobs/pending";
+import { LiveTranscriptViewerPage } from "./pages/jobs/[jobId]/live";
+import { CompletedJobsPage } from "./pages/jobs/completed";
 
 import { NotFoundPage } from "./pages/errors/NotFoundPage";
 import { ForbiddenPage } from "./pages/errors/ForbiddenPage";
@@ -43,6 +50,9 @@ function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
 
               <Route path="/onboarding" element={<OnboardingPage />} />
+
+              <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
+              <Route path="/checkout/cancel" element={<CheckoutCancelPage />} />
 
               <Route
                 path="/dashboard"
@@ -82,6 +92,31 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <BillingPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/jobs/pending"
+                element={
+                  <ProtectedRoute>
+                    <PendingJobsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/jobs/completed"
+                element={
+                  <ProtectedRoute>
+                    <CompletedJobsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/jobs/:jobId/live"
+                element={
+                  <ProtectedRoute>
+                    <LiveTranscriptViewerPage />
                   </ProtectedRoute>
                 }
               />

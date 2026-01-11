@@ -1,18 +1,24 @@
 import { useForm } from "@tanstack/react-form";
 import {
   Button,
-  Input,
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
   CardContent,
+  RadioGroup,
+  RadioGroupItem,
   Label,
 } from "@poly/ui";
 import { useState } from "react";
-import { purchaseCreditsSchema } from "../../schemas";
 import { ConfirmPurchaseModal } from "../modals/ConfirmPurchaseModal";
 import { usePurchaseCredits } from "../../../../hooks/useBilling";
+
+const CREDIT_BUNDLES = [
+  { value: 10, label: "10 Credits", price: 10 },
+  { value: 50, label: "50 Credits", price: 50 },
+  { value: 100, label: "100 Credits", price: 100 },
+];
 
 export function PurchaseCreditsForm() {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -31,11 +37,7 @@ export function PurchaseCreditsForm() {
   });
 
   const handleConfirm = () => {
-    purchaseCredits.mutate({
-      amount: pendingAmount,
-      success_url: window.location.origin + "/billing?success=true",
-      cancel_url: window.location.origin + "/billing?canceled=true",
-    });
+    purchaseCredits.mutate({ amount: pendingAmount });
   };
 
   return (
@@ -43,7 +45,8 @@ export function PurchaseCreditsForm() {
       <CardHeader>
         <CardTitle>Purchase Credits</CardTitle>
         <CardDescription>
-          Buy extra credits to upload more files beyond your plan limit. $1.00 per credit.
+          Buy extra credits to upload more files beyond your plan limit. $1.00 per
+          credit.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -57,30 +60,36 @@ export function PurchaseCreditsForm() {
         >
           <form.Field
             name="amount"
-            validators={{
-              onChange: ({ value }) => {
-                const result = purchaseCreditsSchema.shape.amount.safeParse(value);
-                return result.success ? undefined : result.error.issues[0].message;
-              },
-            }}
             children={(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Amount</Label>
-                <div className="flex space-x-2">
-                  <Input
-                    id={field.name}
-                    type="number"
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.valueAsNumber)}
-                  />
-                  <div className="flex items-center text-sm text-muted-foreground whitespace-nowrap">
-                    = ${(field.state.value * 1).toFixed(2)}
-                  </div>
-                </div>
-                {field.state.meta.errors ? (
-                  <p className="text-sm text-destructive">{field.state.meta.errors.join(", ")}</p>
-                ) : null}
+              <div className="space-y-4">
+                <Label>Credit Package</Label>
+                <RadioGroup
+                  value={String(field.state.value)}
+                  onValueChange={(value) =>
+                    field.handleChange(parseInt(value, 10))
+                  }
+                >
+                  {CREDIT_BUNDLES.map((bundle) => (
+                    <div
+                      key={bundle.value}
+                      className="flex items-center space-x-3 rounded-md border p-4"
+                    >
+                      <RadioGroupItem
+                        value={String(bundle.value)}
+                        id={`bundle-${bundle.value}`}
+                      />
+                      <Label
+                        htmlFor={`bundle-${bundle.value}`}
+                        className="flex-1 cursor-pointer"
+                      >
+                        <div className="font-medium">{bundle.label}</div>
+                        <div className="text-sm text-muted-foreground">
+                          ${bundle.price.toFixed(2)}
+                        </div>
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
               </div>
             )}
           />

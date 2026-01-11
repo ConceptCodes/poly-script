@@ -61,7 +61,7 @@ export function BillingPage() {
   } : null;
 
   const handleManageBilling = () => {
-    createPortalSession.mutate(window.location.href);
+    createPortalSession.mutate();
   };
 
   const initiatePlanChange = (plan: string) => {
@@ -74,11 +74,7 @@ export function BillingPage() {
 
     if (data.plan === "FREE") {
       // Free -> Paid (Checkout)
-      upgradeSubscription.mutate({
-        plan: targetPlan,
-        success_url: window.location.origin + "/billing?success=true",
-        cancel_url: window.location.origin + "/billing?canceled=true",
-      });
+      upgradeSubscription.mutate({ plan: targetPlan });
     } else {
       // Paid -> Paid (Modify)
       downgradeSubscription.mutate(targetPlan, {

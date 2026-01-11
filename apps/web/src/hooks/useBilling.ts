@@ -65,10 +65,10 @@ export function useUsageHistory() {
 // Mutations
 export function useCreatePortalSession() {
   return useMutation({
-    mutationFn: (returnUrl: string) =>
+    mutationFn: (returnUrl?: string) =>
       apiFetch<PortalResponse>("/billing/portal", {
         method: "POST",
-        body: { return_url: returnUrl },
+        body: { return_url: returnUrl || window.location.origin + "/billing" },
       }),
     onSuccess: (data) => {
       window.location.href = data.url;
@@ -78,16 +78,16 @@ export function useCreatePortalSession() {
 
 export function useUpgradeSubscription() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (params: {
-      plan: string;
-      success_url: string;
-      cancel_url: string;
-    }) =>
+    mutationFn: (params: { plan: string }) =>
       apiFetch<CheckoutResponse>("/billing/subscription/upgrade", {
         method: "POST",
-        body: params,
+        body: {
+          plan: params.plan,
+          success_url: window.location.origin + "/checkout/success?type=subscription",
+          cancel_url: window.location.origin + "/checkout/cancel?type=subscription",
+        },
       }),
     onSuccess: (data) => {
       window.location.href = data.checkout_url;
@@ -142,14 +142,14 @@ export function useReactivateSubscription() {
 
 export function usePurchaseCredits() {
   return useMutation({
-    mutationFn: (params: {
-      amount: number;
-      success_url: string;
-      cancel_url: string;
-    }) =>
+    mutationFn: (params: { amount: number }) =>
       apiFetch<CheckoutResponse>("/billing/credits/purchase", {
         method: "POST",
-        body: params,
+        body: {
+          amount: params.amount,
+          success_url: window.location.origin + "/checkout/success?type=credits",
+          cancel_url: window.location.origin + "/checkout/cancel?type=credits",
+        },
       }),
     onSuccess: (data) => {
       window.location.href = data.checkout_url;
