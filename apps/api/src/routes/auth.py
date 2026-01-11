@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -146,23 +147,41 @@ def reset_password(
 
 @router.get("/oauth/google", response_model=dict)
 def get_oauth_auth_url(
-    request: OAuthAuthURLRequest, oauth_service: OAuthService = Depends(get_oauth_service)
+    redirect_url: str | None = None,
+    state: str | None = None,
+    code_challenge: str | None = None,
+    code_challenge_method: str | None = None,
+    oauth_service: OAuthService = Depends(get_oauth_service),
 ):
     auth_url = oauth_service.get_google_auth_url(
-        redirect_url=request.redirect_url,
-        state=request.state,
+        redirect_url=redirect_url,
+        state=state,
+        code_challenge=code_challenge,
+        code_challenge_method=code_challenge_method,
     )
     return {"auth_url": auth_url}
 
 
-@router.post("/oauth/google/callback", response_model=TokenResponse)
+@router.get("/oauth/google/callback", response_model=TokenResponse)
 def oauth_callback(
-    request: OAuthCallbackRequest, oauth_service: OAuthService = Depends(get_oauth_service)
+    code: str,
+    state: str | None = None,
+    code_verifier: str | None = None,
+    oauth_service: OAuthService = Depends(get_oauth_service),
+    auth_service: AuthService = Depends(get_auth_service),
 ):
-    tokens = oauth_service.exchange_google_code(code=request.code, state=request.state)
+    # Handle complete OAuth flow: exchange code → find/create user → generate JWTs
+    user_data = oauth_service.handle_google_oauth_callback(
+        code=code, state=state, code_verifier=code_verifier
+    )
+
+    # Generate JWTs for the user
+    user_id = uuid.UUID(user_data["user_id"])
+    access_token = auth_service.create_access_token(user_id)
+    refresh_token = auth_service.create_refresh_token(user_id)
 
     return TokenResponse(
-        access_token=tokens["access_token"],
-        refresh_token=tokens["refresh_token"],
+        access_token=access_token,
+        refresh_token=refresh_token,
         token_type="bearer",
     )

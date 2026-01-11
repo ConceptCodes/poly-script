@@ -65,8 +65,11 @@ class ResetPasswordRequest(BaseModel):
 class OAuthAuthURLRequest(BaseModel):
     redirect_url: str | None = None
     state: str | None = None
+    code_challenge: str | None = None
+    code_challenge_method: str | None = None
 
 
 class OAuthCallbackRequest(BaseModel):
     code: str
     state: str | None = None
+    code_verifier: str | None = None
