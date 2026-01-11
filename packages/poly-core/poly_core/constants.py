@@ -47,7 +47,7 @@ PLAN_STRIPE_IDS: dict[PlanType, str] = {
 }
 
 CREDIT_PRICE_CENTS = 100
-CREDIT_AMOUNT = 10
+CREDIT_BUNDLES: list[int] = [10, 50, 100]
 
 
 class I18nKeys(StrEnum):

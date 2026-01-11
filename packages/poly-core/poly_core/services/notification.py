@@ -86,13 +86,13 @@ class NotificationService:
         token: str,
         role: str,
     ) -> None:
-        accept_url = f"{self.app_url}/accept-invitation?token={token}"
+        invitation_url = f"{self.app_url}/accept-invitation?token={token}"
         context: EmailTemplateContext = {
             "invitee_name": invitee_email.split("@")[0],
             "inviter_name": inviter_name,
             "team_name": team_name,
-            "accept_url": accept_url,
+            "invitation_url": invitation_url,
             "role": role,
         }
-        html_content = self._render_template("invitation_email.html", context)
+        html_content = self._render_template("team_invitation_email.html", context)
         self._send_email(invitee_email, f"Invitation to join {team_name}", html_content)

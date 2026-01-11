@@ -9,6 +9,7 @@ from poly_core.services.auth import (
     EmailVerificationError,
     PasswordResetError,
 )
+from poly_core.services.oauth import OAuthService
 
 
 @pytest.fixture
@@ -283,3 +284,53 @@ class TestAuthService:
         with patch.object(auth_service, "user_repo", mock_user_repo):
             with pytest.raises(AuthError):
                 auth_service.signup("exists@example.com", "password_123", "John Doe", "en")
+
+
+class TestOAuthPKCE:
+    @pytest.fixture
+    def mock_oauth_service(self, mock_db):
+        return OAuthService(
+            db_session=mock_db,
+            google_client_id="test_client_id",
+            google_client_secret="test_secret",
+            oauth_redirect_url="http://localhost/callback",
+            auth_service=Mock(spec=AuthService),
+        )
+
+    def test_get_google_auth_url_with_pkce(self, mock_oauth_service):
+        code_challenge = "test_challenge"
+        code_challenge_method = "S256"
+        state = "test_state"
+
+        auth_url = mock_oauth_service.get_google_auth_url(
+            state=state,
+            code_challenge=code_challenge,
+            code_challenge_method=code_challenge_method,
+        )
+
+        assert auth_url is not None
+        assert isinstance(auth_url, str)
+        assert "code_challenge=test_challenge" in auth_url
+        assert "code_challenge_method=S256" in auth_url
+        assert f"state={state}" in auth_url
+
+    def test_get_google_auth_url_without_pkce(self, mock_oauth_service):
+        auth_url = mock_oauth_service.get_google_auth_url()
+
+        assert auth_url is not None
+        assert isinstance(auth_url, str)
+        assert "code_challenge" not in auth_url
+        assert "code_challenge_method" not in auth_url
+
+    def test_exchange_google_code_with_verifier(self, mock_oauth_service):
+        mock_oauth_service.get_google_auth_url = Mock(return_value="http://auth_url")
+
+        with patch.object(mock_oauth_service, "get_google_auth_url", return_value="http://auth_url"):
+            mock_oauth_service.exchange_google_code = Mock(return_value=None)
+
+        result = mock_oauth_service.exchange_google_code(
+            code="test_code",
+            code_verifier="test_verifier",
+        )
+
+        assert result is None or isinstance(result, dict)

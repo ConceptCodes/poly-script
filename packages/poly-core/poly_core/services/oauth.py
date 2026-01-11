@@ -35,7 +35,11 @@ class OAuthService:
         self.oauth_repo = OAuthAccountRepository(db_session)
 
     def get_google_auth_url(
-        self, redirect_url: Optional[str] = None, state: Optional[str] = None
+        self,
+        redirect_url: Optional[str] = None,
+        state: Optional[str] = None,
+        code_challenge: Optional[str] = None,
+        code_challenge_method: Optional[str] = None,
     ) -> str:
         redirect_uri = redirect_url or self.oauth_redirect_url
         flow = Flow.from_client_config(
@@ -52,14 +56,25 @@ class OAuthService:
         )
         flow.redirect_uri = redirect_uri
 
+        # PKCE support: pass code_challenge and code_challenge_method
+        authorization_url_params = {}
         if state:
-            authorization_url, _ = flow.authorization_url(state=state)
+            authorization_url_params["state"] = state
+        if code_challenge:
+            authorization_url_params["code_challenge"] = code_challenge
+        if code_challenge_method:
+            authorization_url_params["code_challenge_method"] = code_challenge_method
+
+        if authorization_url_params:
+            authorization_url, _ = flow.authorization_url(**authorization_url_params)
         else:
             authorization_url, _ = flow.authorization_url()
 
         return authorization_url
 
-    def exchange_google_code(self, code: str, state: Optional[str] = None) -> Optional[GoogleUserInfo]:
+    def exchange_google_code(
+        self, code: str, state: Optional[str] = None, code_verifier: Optional[str] = None
+    ) -> Optional[GoogleUserInfo]:
         try:
             flow = Flow.from_client_config(
                 client_config={
@@ -75,7 +90,12 @@ class OAuthService:
             )
             flow.redirect_uri = self.oauth_redirect_url
 
-            flow.fetch_token(code=code)
+            # PKCE support: pass code_verifier if provided
+            token_kwargs = {"code": code}
+            if code_verifier:
+                token_kwargs["code_verifier"] = code_verifier
+
+            flow.fetch_token(**token_kwargs)
             credentials = flow.credentials
 
             response = requests.get(
@@ -160,3 +180,34 @@ class OAuthService:
             .filter(Team.id == member.team_id, Team.deleted_at.is_(None))
             .first()
         )
+
+    def handle_google_oauth_callback(
+        self, code: str, state: str | None = None, code_verifier: str | None = None
+    ) -> dict:
+        """Handle complete Google OAuth callback flow:
+        - Exchange code for user info
+        - Find or create user
+        - Get default team (if any)
+        - Return user data for JWT generation
+
+        Returns:
+            dict: User data including user_id, email, default_team_id
+        """
+        google_info = self.exchange_google_code(code=code, state=state, code_verifier=code_verifier)
+        if not google_info:
+            raise ValueError("Failed to exchange OAuth code")
+
+        user = self.find_or_create_oauth_user(google_info)
+        if not user:
+            raise ValueError("Failed to create or find user")
+
+        # Get default team for user
+        default_team = self.get_default_team_for_user(user.id)
+
+        return {
+            "user_id": str(user.id),
+            "email": user.email,
+            "full_name": user.full_name,
+            "is_verified": user.is_verified,
+            "default_team_id": str(default_team.id) if default_team else None,
+        }

@@ -132,8 +132,17 @@ class BillingService:
     ) -> stripe.checkout.Session:
         """Creates a Stripe Checkout session for a subscription upgrade."""
         team = self.team_repo.get(team_id)
-        if not team or not team.stripe_customer_id:
-            raise ValueError("Team or Stripe customer not found")
+        if not team:
+            raise ValueError("Team not found")
+
+        # Lazily create Stripe customer on first payment
+        if not team.stripe_customer_id:
+            customer = stripe.Customer.create(
+                email="",  # Will be filled by Stripe checkout
+                metadata={"team_id": str(team_id)}
+            )
+            self.team_repo.update(team_id, stripe_customer_id=customer.id)
+            team.stripe_customer_id = customer.id
 
         price_id = PLAN_STRIPE_IDS.get(plan_type.value)
         if not price_id:
@@ -155,8 +164,17 @@ class BillingService:
     ) -> stripe.checkout.Session:
         """Creates a Stripe Checkout session for purchasing credits."""
         team = self.team_repo.get(team_id)
-        if not team or not team.stripe_customer_id:
-            raise ValueError("Team or Stripe customer not found")
+        if not team:
+            raise ValueError("Team not found")
+
+        # Lazily create Stripe customer on first payment
+        if not team.stripe_customer_id:
+            customer = stripe.Customer.create(
+                email="",  # Will be filled by Stripe checkout
+                metadata={"team_id": str(team_id)}
+            )
+            self.team_repo.update(team_id, stripe_customer_id=customer.id)
+            team.stripe_customer_id = customer.id
 
         # In a real app, you might have a specific price_id for credits,
         # or use ad-hoc line items if permitted.
@@ -437,3 +455,33 @@ class BillingService:
         stripe.Customer.modify(
             team.stripe_customer_id, invoice_settings={"default_payment_method": payment_method_id}
         )
+
+    def check_language_available(
+        self, team_id: uuid.UUID, language: Optional[str]
+    ) -> bool:
+        """Check if language is available in team's plan.
+
+        Args:
+            team_id: Team ID
+            language: Requested language code (None = auto-detect)
+
+        Returns:
+            True if language is available, False otherwise
+        """
+        if language is None:
+            return True
+
+        team = self.team_repo.get(team_id)
+        if not team:
+            return False
+
+        limits = PLAN_LIMITS.get(team.plan.value, PLAN_LIMITS[PlanType.FREE])
+        max_languages = limits["languages"]
+
+        if max_languages == 5:
+            return True
+
+        if max_languages >= len(team.allowed_languages or []):
+            return True
+
+        return language in (team.allowed_languages or [])

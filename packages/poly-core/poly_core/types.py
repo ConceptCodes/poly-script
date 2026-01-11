@@ -23,7 +23,7 @@ class GoogleUserInfo(TypedDict):
     full_name: Required[str]
     access_token: Required[str]
     refresh_token: Required[str]
-    expires_at: NotRequired[str | None]
+    expires_at: NotRequired[str]
 
 
 class EmailTemplateContext(TypedDict, total=False):
