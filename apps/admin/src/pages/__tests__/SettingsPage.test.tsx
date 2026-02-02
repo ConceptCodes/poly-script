@@ -1,0 +1,43 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { SettingsPage } from "../SettingsPage";
+
+vi.mock("../../lib/api", () => ({
+  apiFetch: vi.fn().mockResolvedValue({ administrators: [], system: {} }),
+}));
+
+describe("SettingsPage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders settings page title", () => {
+    render(<SettingsPage />);
+    expect(screen.getByText("System Settings")).toBeInTheDocument();
+  });
+
+  it("renders administrators section", () => {
+    render(<SettingsPage />);
+    expect(screen.getByText("Administrators")).toBeInTheDocument();
+  });
+
+  it("renders settings tabs", () => {
+    render(<SettingsPage />);
+    expect(screen.getByText("Engines")).toBeInTheDocument();
+    expect(screen.getByText("Storage")).toBeInTheDocument();
+    expect(screen.getByText("Rate Limits")).toBeInTheDocument();
+    expect(screen.getByText("Email")).toBeInTheDocument();
+    expect(screen.getByText("Advanced")).toBeInTheDocument();
+  });
+
+  it("renders save settings button", () => {
+    render(<SettingsPage />);
+    expect(screen.getByText("Save Settings")).toBeInTheDocument();
+  });
+
+  it("renders advanced tab with JSON editor", async () => {
+    render(<SettingsPage />);
+    screen.getByText("Advanced: Direct JSON Editor");
+    expect(screen.getByText("Save JSON")).toBeInTheDocument();
+  });
+});
