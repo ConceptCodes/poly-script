@@ -17,7 +17,9 @@ yarn-error.log*
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
+*.pyc
+*.pyo
+*.pyd
 .venv/
 venv/
 ENV/
@@ -42,3 +44,23 @@ __tasks__/
 
 # IDE
 .vscode
+
+# Testing
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+.mypy_cache/
+*.prof
+.tox/
+.hypothesis/
+
+# Logs
+*.log
+logs/
+
+# Sisyphus (AI tool)
+.sisyphus/
+
+# Ignore
+.ignore
