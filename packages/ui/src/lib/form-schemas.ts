@@ -1,10 +1,5 @@
 import { z } from 'zod';
 
-// at least 8 characters
-// at least one uppercase
-// at least one lowercase
-// at least one number
-// at least one special character
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 export const loginSchema = z.object({

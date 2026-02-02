@@ -15,3 +15,6 @@ export * from "./src/components/ui/avatar";
 export * from "./src/components/ui/form";
 export * from "./src/components/ui/skeleton";
 export * from "./src/components/ui/switch";
+export * from "./src/components/ui/alert";
+export * from "./src/components/ui/checkbox";
+export * from "./src/components/ui/separator";
