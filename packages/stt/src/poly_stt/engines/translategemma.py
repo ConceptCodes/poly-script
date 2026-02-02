@@ -218,11 +218,11 @@ class TranslateGemmaEngine:
             new_text = current_text + " " + seg.text if current_text else seg.text
             
             if self._should_chunk(new_text):
-            if current_chunk:
-                translated = self._translate_segments_single(
-                    current_chunk, target_language, source_language
-                )
-                translated_segments.extend(translated)
+                if current_chunk:
+                    translated = self._translate_segments_single(
+                        current_chunk, target_language, source_language
+                    )
+                    translated_segments.extend(translated)
 
                 current_chunk = [seg]
                 current_text = seg.text
