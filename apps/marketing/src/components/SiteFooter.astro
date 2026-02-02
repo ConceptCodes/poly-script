@@ -1,0 +1,32 @@
+---
+import { getCopy } from "../lib/i18n";
+const { lang } = Astro.props;
+const t = getCopy(lang);
+---
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div>
+      <div class="brand">
+        <span class="brand-mark">PS</span>
+        <span>PolyScript</span>
+      </div>
+      <p class="muted">{t.footer.tagline}</p>
+    </div>
+    <div class="footer-links">
+      <a href={`/${lang}/features`}>Features</a>
+      <a href={`/${lang}/pricing`}>Pricing</a>
+      <a href={`/${lang}/docs`}>Docs</a>
+      <a href={`/${lang}/blog`}>Blog</a>
+      <a href={`/${lang}/contact`}>Contact</a>
+    </div>
+    <div class="footer-cta">
+      <div class="tag">Status: All systems nominal</div>
+      <a class="btn primary" href="https://app.polyscript.io/signup">Start free</a>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© 2026 PolyScript.</span>
+    <span class="muted">{t.footer.rights}</span>
+  </div>
+</footer>

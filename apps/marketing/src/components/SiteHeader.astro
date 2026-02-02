@@ -1,0 +1,38 @@
+---
+import { locales, getCopy } from "../lib/i18n";
+const { lang } = Astro.props;
+const t = getCopy(lang);
+---
+
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href={`/${lang}`}>
+      <span class="brand-mark">PS</span>
+      <span>PolyScript</span>
+    </a>
+    <nav class="nav-links">
+      <a href={`/${lang}/features`}>{t.nav.features}</a>
+      <a href={`/${lang}/pricing`}>{t.nav.pricing}</a>
+      <a href={`/${lang}/docs`}>{t.nav.docs}</a>
+      <a href={`/${lang}/blog`}>{t.nav.blog}</a>
+      <a href={`/${lang}/contact`}>{t.nav.contact}</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="btn ghost" href="https://app.polyscript.io">
+        Sign in
+      </a>
+      <a class="btn primary" href="https://app.polyscript.io/signup">
+        {t.nav.cta}
+      </a>
+      <div class="lang">
+        <select onchange="location = this.value;">
+          {locales.map((locale) => (
+            <option value={`/${locale}`} selected={locale === lang}>
+              {locale.toUpperCase()}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,39 @@
+---
+import "../../styles/global.css";
+import SiteLayout from "../../components/SiteLayout.astro";
+import { getStaticPaths, getCopy } from "../../lib/i18n";
+
+export { getStaticPaths };
+
+const { lang } = Astro.params;
+const t = getCopy(lang);
+---
+
+<SiteLayout lang={lang} title="PolyScript — Features">
+  <section class="container">
+    <h1 class="hero-title">{t.features.title}</h1>
+    <p class="hero-subtitle">
+      Everything you need to run transcription as a dependable internal service.
+    </p>
+    <div class="grid cols-3" style="margin-top:32px;">
+      {t.features.items.map((item) => (
+        <div class="card">
+          <h3>{item.title}</h3>
+          <p class="muted">{item.body}</p>
+        </div>
+      ))}
+      <div class="card">
+        <h3>Exports everywhere</h3>
+        <p class="muted">TXT, JSON, SRT, and VTT downloads are always one click away.</p>
+      </div>
+      <div class="card">
+        <h3>Multi‑tenant isolation</h3>
+        <p class="muted">Every job is scoped to a team with enforced access boundaries.</p>
+      </div>
+      <div class="card">
+        <h3>Admin visibility</h3>
+        <p class="muted">Audit logs, queue telemetry, and user management for internal ops.</p>
+      </div>
+    </div>
+  </section>
+</SiteLayout>

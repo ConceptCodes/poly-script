@@ -1,0 +1,35 @@
+---
+import "../../styles/global.css";
+import SiteLayout from "../../components/SiteLayout.astro";
+import { getStaticPaths } from "../../lib/i18n";
+
+export { getStaticPaths };
+
+const { lang } = Astro.params;
+---
+
+<SiteLayout lang={lang} title="PolyScript — Blog">
+  <section class="container">
+    <h1 class="hero-title">Updates & Insights</h1>
+    <p class="hero-subtitle">
+      Notes from the PolyScript team on transcription, reliability, and product ops.
+    </p>
+    <div class="grid cols-3" style="margin-top:32px;">
+      <div class="card">
+        <div class="tag">Launch</div>
+        <h3>Building a multi-tenant STT pipeline</h3>
+        <p class="muted">How we designed job isolation, retries, and export workflows.</p>
+      </div>
+      <div class="card">
+        <div class="tag">Ops</div>
+        <h3>Monitoring transcription at scale</h3>
+        <p class="muted">Our approach to SSE progress streams and queue metrics.</p>
+      </div>
+      <div class="card">
+        <div class="tag">Product</div>
+        <h3>Designing for editing and export</h3>
+        <p class="muted">Patterns for clean, fast transcript review loops.</p>
+      </div>
+    </div>
+  </section>
+</SiteLayout>

@@ -1,0 +1,32 @@
+---
+import "../../styles/global.css";
+import SiteLayout from "../../components/SiteLayout.astro";
+import { getStaticPaths } from "../../lib/i18n";
+
+export { getStaticPaths };
+
+const { lang } = Astro.params;
+---
+
+<SiteLayout lang={lang} title="PolyScript — Docs">
+  <section class="container">
+    <h1 class="hero-title">Documentation</h1>
+    <p class="hero-subtitle">
+      Everything you need to integrate PolyScript into your workflow.
+    </p>
+    <div class="grid cols-3" style="margin-top:32px;">
+      <div class="card">
+        <h3>API Quickstart</h3>
+        <p class="muted">Create jobs, stream progress, and retrieve results with the REST API.</p>
+      </div>
+      <div class="card">
+        <h3>Webhooks</h3>
+        <p class="muted">Sync billing and subscriptions with Stripe webhooks.</p>
+      </div>
+      <div class="card">
+        <h3>Exports</h3>
+        <p class="muted">Generate TXT, JSON, SRT, and VTT exports programmatically.</p>
+      </div>
+    </div>
+  </section>
+</SiteLayout>

@@ -1,0 +1,88 @@
+---
+import "../../styles/global.css";
+import SiteLayout from "../../components/SiteLayout.astro";
+import { getStaticPaths, getCopy } from "../../lib/i18n";
+
+export { getStaticPaths };
+
+const { lang } = Astro.params;
+const t = getCopy(lang);
+---
+
+<SiteLayout lang={lang} title="PolyScript — Transcription">
+  <section class="container hero">
+    <div>
+      <div class="eyebrow">{t.hero.eyebrow}</div>
+      <h1 class="hero-title">{t.hero.title}</h1>
+      <p class="hero-subtitle">{t.hero.subtitle}</p>
+      <div style="display:flex; gap:12px; margin-top:20px; flex-wrap:wrap;">
+        <a class="btn primary" href="https://app.polyscript.io/upload">{t.hero.primary}</a>
+        <a class="btn ghost" href="https://app.polyscript.io">{t.hero.secondary}</a>
+      </div>
+      <p class="muted" style="margin-top:16px;">{t.trust}</p>
+    </div>
+    <div class="hero-card">
+      <div class="tag">Queue depth: 12</div>
+      <h3 style="margin-top:16px;">Live pipeline snapshot</h3>
+      <p class="muted">
+        Uploads stream into Redis, workers pull jobs, and results are written back to the team
+        workspace.
+      </p>
+      <div class="grid" style="margin-top:16px;">
+        <div class="card">
+          <strong>97%</strong>
+          <div class="muted">Jobs succeeded in last 24h</div>
+        </div>
+        <div class="card">
+          <strong>4.2m</strong>
+          <div class="muted">Median processing time</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container" style="margin-top:80px;">
+    <h2>{t.features.title}</h2>
+    <div class="grid cols-3" style="margin-top:24px;">
+      {t.features.items.map((item) => (
+        <div class="card">
+          <h3>{item.title}</h3>
+          <p class="muted">{item.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="container" style="margin-top:80px;">
+    <h2>{t.workflow.title}</h2>
+    <div class="grid cols-3" style="margin-top:24px;">
+      {t.workflow.steps.map((step, index) => (
+        <div class="card">
+          <div class="tag">Step {index + 1}</div>
+          <h3 style="margin-top:12px;">{step.title}</h3>
+          <p class="muted">{step.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="container" style="margin-top:80px;">
+    <h2>{t.pricing.title}</h2>
+    <p class="muted">{t.pricing.subtitle}</p>
+    <div class="pricing" style="margin-top:24px;">
+      {t.pricing.plans.map((plan) => (
+        <div class="card">
+          <div class="tag">{plan.name}</div>
+          <h3>{plan.summary}</h3>
+          <strong>{plan.price}</strong>
+          <ul>
+            {plan.bullets.map((bullet) => (
+              <li>{bullet}</li>
+            ))}
+          </ul>
+          <a class="btn primary" href="https://app.polyscript.io/signup">Choose plan</a>
+        </div>
+      ))}
+    </div>
+  </section>
+</SiteLayout>

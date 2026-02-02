@@ -1,0 +1,22 @@
+---
+import Header from "./SiteHeader.astro";
+import Footer from "./SiteFooter.astro";
+const { lang, title } = Astro.props;
+---
+
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content="PolyScript — multi-language transcription service" />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <Header lang={lang} />
+    <main class="page">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>
