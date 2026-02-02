@@ -1,59 +1,23 @@
 [project]
 name = "poly-worker"
 version = "0.1.0"
-description = "Transcription worker service"
+description = "Background job processing worker with Redis queue"
 requires-python = ">=3.11"
 dependencies = [
-    "redis>=4.0.0",
+  "redis>=5.0.0",
+  "pydantic>=2.0.0",
+  "pydantic-settings>=2.0.0",
+  "sqlalchemy>=2.0.0",
+  "faster-whisper>=1.0.0",
+  "python-multipart>=0.0.6",
 ]
+
+[project.scripts]
+run = "python -m main"
 
 [dependency-groups]
 dev = [
-    "pytest>=9.0.2",
-    "pytest-asyncio>=0.26.0",
-    "ruff>=0.14.10",
+  "pytest>=9.0.0",
+  "pytest-asyncio>=0.26.0",
+  "ruff>=0.14.10",
 ]
-
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-
-[tool.ruff.lint]
-select = [
-    "E",
-    "F",
-    "W",
-    "I",
-    "N",
-    "UP",
-    "B",
-    "C4",
-    "DTZ",
-    "T",
-    "PGH",
-    "PLC",
-    "PIE",
-    "SIM",
-    "TID",
-    "TCH",
-    "ARG",
-    "PTH",
-    "PD",
-    "ERA",
-    "PLR",
-    "FLY",
-    "RUF",
-]
-ignore = [
-    "E501",
-    "PLR2004",
-]
-
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]
-
-[tool.ruff.format]
-indent-style = "space"
-quote-style = "double"
-skip-magic-trailing-comma = false
-line-ending = "lf"

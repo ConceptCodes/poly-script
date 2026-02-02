@@ -8,6 +8,7 @@ import json
 import logging
 import threading
 import time
+import asyncio
 from typing import Optional
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
@@ -16,7 +17,6 @@ from poly_redis.queue import TranscriptionQueue
 from poly_db.models.transcription_jobs import JobStatus, TranscriptionJob
 from poly_db.repositories import TranscriptionJobRepository
 from poly_db.database import get_db_session
-from poly_core.services.storage_service import get_storage_backend
 from .processor import JobProcessor
 from .progress import ProgressPublisher
 
@@ -29,6 +29,7 @@ class TranscriptionConsumer:
     def __init__(
         self,
         queue: TranscriptionQueue,
+        storage_backend,
         max_retries: int =3,
         retry_backoff: int = 2,
     ):
@@ -41,6 +42,7 @@ class TranscriptionConsumer:
             retry_backoff: Exponential backoff base (default: 2)
         """
         self.queue = queue
+        self.storage_backend = storage_backend
         self.max_retries = max_retries
         self.retry_backoff = retry_backoff
 
@@ -83,23 +85,40 @@ class TranscriptionConsumer:
             logger.info("Consumer thread stopped")
 
     def _run(self) -> None:
-        """Main consumer loop."""
-        logger.info("Consumer loop started")
-
+        """Main consumer loop with dedicated event loop."""
+        logger.info("Consumer loop started with dedicated event loop")
+        
+        # Create and run dedicated event loop for this thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            # Run the consumer loop in the event loop
+            loop.run_until_complete(self._run_with_event_loop())
+        finally:
+            # Clean up event loop
+            loop.close()
+            logger.info("Consumer event loop closed")
+        
+        logger.info("Consumer loop exited")
+    
+    async def _run_with_event_loop(self) -> None:
+        """Async consumer loop running in dedicated event loop."""
+        logger.info("Async consumer loop running")
+        
         while not self._shutdown.is_set():
             try:
-                # Dequeue with timeout to check shutdown flag
-                work_item = self.queue.dequeue(timeout=1)
+                # Run dequeue in thread pool to avoid blocking event loop
+                work_item = await asyncio.to_thread(self.queue.dequeue, timeout=1)
 
                 if work_item:
-                    self._process_work_item(work_item)
+                    # Process work item
+                    await asyncio.to_thread(self._process_work_item, work_item)
 
             except Exception as e:
                 logger.error(f"Error in consumer loop: {e}", exc_info=True)
                 # Sleep briefly to avoid tight error loop
-                time.sleep(1)
-
-        logger.info("Consumer loop exited")
+                await asyncio.sleep(1)
 
     def _process_work_item(self, work_item: dict) -> None:
         """
@@ -123,13 +142,10 @@ class TranscriptionConsumer:
 
         try:
             with get_db_session() as session:
-                # Get storage backend
-                storage_backend = get_storage_backend()
-
                 # Create processor
                 processor = JobProcessor(
                     session=session,
-                    storage_backend=storage_backend,
+                    storage_backend=self.storage_backend,
                     progress_publisher=self.progress_publisher,
                 )
 

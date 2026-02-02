@@ -105,6 +105,7 @@ class ProgressPublisher:
             "decoding": 20,
             "transcribing": 90,
             "formatting": 95,
+            "translating": 98,
             "saving": 100,
             "completed": 100,
             "failed": 0,

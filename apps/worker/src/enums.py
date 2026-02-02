@@ -7,6 +7,7 @@ class ProgressStage(StrEnum):
     DOWNLOADING = "downloading"
     DECODING = "decoding"
     TRANSCRIBING = "transcribing"
+    TRANSLATING = "translating"
     FORMATTING = "formatting"
     SAVING = "saving"
     COMPLETED = "completed"
