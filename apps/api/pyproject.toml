@@ -31,10 +31,10 @@ dev = [
 ]
 
 [tool.uv.sources]
-poly-db = { path = "../../packages/storage/poly-db", editable = true }
-poly-redis = { path = "../../packages/storage/redis", editable = true }
-poly-stt = { path = "../../packages/stt", editable = true }
-poly-core = { path = "../../packages/poly-core", editable = true }
+poly-db = { workspace = true }
+poly-redis = { workspace = true }
+poly-stt = { workspace = true }
+poly-core = { workspace = true }
 
 [tool.ruff]
 line-length = 100
@@ -74,7 +74,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["poly-core", "poly-db", "poly-redis", "poly-stt"]
+known-first-party = ["poly_core", "poly_db", "poly_redis", "poly_stt"]
 
 [tool.ruff.format]
 indent-style = "space"

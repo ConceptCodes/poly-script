@@ -1,3 +1,4 @@
+
 from pathlib import Path
 from contextlib import asynccontextmanager
 
@@ -6,6 +7,7 @@ from fastapi import Depends, FastAPI
 from poly_core.constants import I18nKeys
 from poly_core.services.i18n import I18nService
 from src.middleware.setup import setup_middleware
+from src.logging import setup_logging
 
 # Direct imports from route modules (avoid src package issues)
 from src.routes.auth import auth_router
@@ -16,13 +18,13 @@ from src.routes.onboarding import onboarding_router
 from src.routes.teams import teams_router
 from src.routes.webhooks import webhooks_router
 from src.routes.transcripts import transcripts_router
+from src.routes.engines import router as engines_router
+from src.routes.admin import router as admin_router
+from src.routes.contact import router as contact_router
+from src.routes.dashboard import router as dashboard_router
+from src.routes.settings import router as settings_router
 
-# Import worker service
-from src.worker.service import WorkerService
-
-# Global worker service instance
-worker_service = WorkerService()
-
+from poly_stt.bootstrap import initialize_engines
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,21 +32,20 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting PolyScript API...")
 
-    # Start worker thread
-    worker_service.start()
-    print("✅ Worker started")
+    # Initialize STT engines (needed for engine capabilities endpoint)
+    initialize_engines()
+
+    # Note: Worker service runs as a separate process (apps/worker)
+    # Start it independently with: cd apps/worker && python main.py
 
     yield
 
     # Shutdown
     print("🛑 Shutting down PolyScript API...")
 
-    # Stop worker thread
-    worker_service.stop()
-    print("✅ Worker stopped")
-
 
 def create_app() -> FastAPI:
+    setup_logging()
     app = FastAPI(
         title="PolyScript API",
         version="0.1.0",
@@ -68,6 +69,11 @@ def create_app() -> FastAPI:
     app.include_router(webhooks_router)
     app.include_router(jobs_router)
     app.include_router(transcripts_router)
+    app.include_router(engines_router)
+    app.include_router(admin_router)
+    app.include_router(contact_router)
+    app.include_router(dashboard_router)
+    app.include_router(settings_router)
 
     @app.get("/v1/debug/i18n")
     async def debug_i18n(locale: str):
@@ -85,7 +91,6 @@ def create_app() -> FastAPI:
             "name": "PolyScript API",
             "version": "0.1.0",
             "status": "running",
-            "worker": "active" if worker_service.is_running else "inactive",
         }
 
     return app

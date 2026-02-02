@@ -21,6 +21,7 @@ from schemas.auth import (
     TokenResponse,
     UserResponse,
     VerifyEmailRequest,
+    VerifyEmailCodeRequest,
 )
 
 router = APIRouter(prefix="/v1/auth", tags=["Auth"])
@@ -111,6 +112,19 @@ def verify_email(
 ):
     try:
         auth_service.verify_email(token=request.token)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.post("/verify-email-code", status_code=status.HTTP_204_NO_CONTENT)
+def verify_email_code(
+    request: VerifyEmailCodeRequest, auth_service: AuthService = Depends(get_auth_service)
+):
+    """Verify email using a 6-digit code (simplified version using token as code)."""
+    try:
+        # For now, treat the code as the verification token
+        # In production, you would generate a separate 6-digit code
+        auth_service.verify_email(token=request.code)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 

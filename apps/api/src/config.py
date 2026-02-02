@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_MB: int = 100
     QUEUE_MAX_RETRIES: int = 3
     QUEUE_RETRY_BACKOFF: int = 2
+    RATE_LIMIT_PER_MINUTE: int = 60
 
     # Stripe
     STRIPE_SECRET_KEY: str

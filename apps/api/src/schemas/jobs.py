@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 
 
 class CreateJobOptions(BaseModel):
-    language: Optional[str] = None
+    language: Optional[str] = None  # Source language for ASR
+    target_language: Optional[str] = Field(None, pattern=r"^[a-z]{2}(-[A-Z]{2})?$")  # Target language for translation (e.g., es, fr, de)
     engine: Optional[str] = None
     timestamps: bool = True
     diarization: bool = False
@@ -63,6 +64,7 @@ class JobDetailResponse(BaseModel):
     started_at: Optional[datetime]
     finished_at: Optional[datetime]
     audio_duration_seconds: Optional[float]
+    target_language: Optional[str]  # Target language for translation
 
 
 class SegmentResponse(BaseModel):
@@ -75,6 +77,7 @@ class SegmentResponse(BaseModel):
 
 class JobResultResponse(BaseModel):
     job_id: uuid.UUID
+    translation: Optional[Dict[str, Any]] = None  # Translation artifact if available
     transcript_id: uuid.UUID
     text: str
     language: str

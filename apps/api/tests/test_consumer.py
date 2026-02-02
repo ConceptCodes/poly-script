@@ -203,7 +203,7 @@ class TestTranscriptionConsumer:
     def test_consumer_initialization(self, mock_queue):
         """Test consumer initializes correctly."""
         consumer = TranscriptionConsumer(
-            queue=mock_queue, max_retries=3, retry_backoff=2
+            queue=mock_queue, storage_backend=Mock(), max_retries=3, retry_backoff=2
         )
 
         assert consumer.queue == mock_queue
@@ -214,7 +214,7 @@ class TestTranscriptionConsumer:
 
     def test_consumer_starts_thread(self, mock_queue):
         """Test consumer starts thread."""
-        consumer = TranscriptionConsumer(queue=mock_queue)
+        consumer = TranscriptionConsumer(queue=mock_queue, storage_backend=Mock())
 
         consumer.start()
 
@@ -229,7 +229,7 @@ class TestTranscriptionConsumer:
 
     def test_consumer_stops_gracefully(self, mock_queue):
         """Test consumer stops gracefully."""
-        consumer = TranscriptionConsumer(queue=mock_queue)
+        consumer = TranscriptionConsumer(queue=mock_queue, storage_backend=Mock())
         consumer.start()
 
         # Stop consumer

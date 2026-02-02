@@ -6,8 +6,8 @@ def test_core_imports():
     from poly_core.constants import I18nKeys
     from poly_core.services.billing import BillingService
 
-# Test that poly_db imports work
-def test_poly_db_imports():
+# Test that db imports work
+def test_db_imports():
     from poly_db.repositories import TeamRepository
     from poly_db.models.teams import Team
 

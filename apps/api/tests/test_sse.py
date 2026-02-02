@@ -47,7 +47,7 @@ class TestSSEEndpoint:
         with patch("src.dependencies.get_current_team_id") as mock_team:
             mock_team.return_value = "team-123"
 
-            with patch("poly_db.repositories.TranscriptionJobRepository") as mock_repo_class:
+            with patch("db.repositories.TranscriptionJobRepository") as mock_repo_class:
                 mock_repo = Mock()
                 mock_repo.return_value.get.return_value.id = job_id
                 mock_repo.return_value.get.return_value.team_id = "team-123"
@@ -72,7 +72,7 @@ class TestSSEEndpoint:
         with patch("src.dependencies.get_current_team_id") as mock_team:
             mock_team.return_value = "team-123"
 
-            with patch("poly_db.repositories.TranscriptionJobRepository") as mock_repo_class:
+            with patch("db.repositories.TranscriptionJobRepository") as mock_repo_class:
                 mock_repo = Mock()
                 mock_repo.return_value.get.return_value.id = job_id
                 mock_repo.return_value.get.return_value.team_id = "team-123"
@@ -114,7 +114,7 @@ class TestSSEEndpoint:
         with patch("src.dependencies.get_current_team_id") as mock_team:
             mock_team.return_value = "team-123"
 
-            with patch("poly_db.repositories.TranscriptionJobRepository") as mock_repo_class:
+            with patch("db.repositories.TranscriptionJobRepository") as mock_repo_class:
                 mock_repo = Mock()
                 mock_repo.return_value.get.return_value = None
 
@@ -133,7 +133,7 @@ class TestSSEEndpoint:
         with patch("src.dependencies.get_current_team_id") as mock_team:
             mock_team.return_value = "team-456"  # Different team
 
-            with patch("poly_db.repositories.TranscriptionJobRepository") as mock_repo_class:
+            with patch("db.repositories.TranscriptionJobRepository") as mock_repo_class:
                 mock_repo = Mock()
                 mock_repo.return_value.get.return_value.id = job_id
                 mock_repo.return_value.get.return_value.team_id = "team-123"  # Wrong team
@@ -154,7 +154,7 @@ class TestSSEEndpoint:
         with patch("src.dependencies.get_current_team_id") as mock_team:
             mock_team.return_value = "team-123"
 
-            with patch("poly_db.repositories.TranscriptionJobRepository") as mock_repo_class:
+            with patch("db.repositories.TranscriptionJobRepository") as mock_repo_class:
                 mock_repo = Mock()
                 mock_repo.return_value.get.return_value.id = job_id
                 mock_repo.return_value.get.return_value.team_id = "team-123"

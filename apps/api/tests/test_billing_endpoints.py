@@ -30,7 +30,7 @@ def mock_db_session():
 
 def test_get_subscription_not_found(mock_db_session):
     # Mock return value of get_by_team_id to None
-    with patch("poly_db.repositories.SubscriptionRepository.get_by_team_id", return_value=None):
+    with patch("db.repositories.SubscriptionRepository.get_by_team_id", return_value=None):
         response = client.get("/v1/billing/subscription")
         assert response.status_code == 200
         assert response.json()["status"] == "active"

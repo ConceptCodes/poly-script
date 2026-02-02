@@ -2,16 +2,30 @@ import uuid
 import json
 import asyncio
 from typing import AsyncGenerator
+from urllib.parse import urlparse
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form, RedirectResponse
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 from poly_db.repositories import TranscriptionJobRepository, TranscriptRepository, AudioAssetRepository
 from poly_db.models.transcription_jobs import JobStatus
 from poly_db.database import get_db_session
-from src.dependencies import get_current_team_id
-from src.schemas.jobs import JobSummary, JobListResponse, JobDetailResponse, JobResultResponse, CancelJobResponse
+from src.dependencies import get_current_team_id, get_current_user_id
+from src.schemas.jobs import (
+    JobSummary,
+    JobListResponse,
+    JobDetailResponse,
+    JobResultResponse,
+    CancelJobResponse,
+    CreateJobFromUrlRequest,
+    CreateJobResponse,
+)
 from poly_redis.client import get_redis_client
+from poly_redis.queue import TranscriptionQueue
+from poly_core.services.billing import BillingService
+from poly_core.services.job_manager import JobManagerService
+from poly_core.services.storage_service import get_storage_backend
+from src.config import get_settings
 
 router = APIRouter(prefix="/v1/jobs", tags=["jobs"])
 
@@ -23,12 +37,16 @@ async def job_progress_streamer(
 ) -> AsyncGenerator[dict, None]:
     redis_client = get_redis_client()
     channel = f"job:{job_id}:progress"
+    pubsub = redis_client.pubsub()
+    pubsub.subscribe(channel)
 
     try:
         while True:
-            message = redis_client.blpop(channel, timeout=5)
-            if message:
-                data = json.loads(message)
+            message = await asyncio.to_thread(
+                pubsub.get_message, ignore_subscribe_messages=True, timeout=1.0
+            )
+            if message and message.get("data"):
+                data = json.loads(message["data"])
 
                 if cancel_flag and data.get("job_id") == str(job_id):
                     return
@@ -48,6 +66,8 @@ async def job_progress_streamer(
             "event": "error",
             "data": {"error": str(e)},
         }
+    finally:
+        pubsub.close()
 
 
 @router.get("/{job_id}/live")
@@ -82,7 +102,7 @@ async def stream_job_progress(
     return EventSourceResponse(event_stream())
 
 
-@router.get("")
+@router.get("", response_model=JobListResponse)
 async def list_jobs(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -134,7 +154,7 @@ async def list_jobs(
         )
 
 
-@router.get("/pending")
+@router.get("/pending", response_model=JobListResponse)
 async def list_pending_jobs(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -183,7 +203,7 @@ async def list_pending_jobs(
         )
 
 
-@router.get("/completed")
+@router.get("/completed", response_model=JobListResponse)
 async def list_completed_jobs(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -228,12 +248,12 @@ async def list_completed_jobs(
         return JobListResponse(
             jobs=job_summaries,
             total=total,
-            page=page_size,
-            page=page_size,
+            page=page,
+            page_size=page_size,
         )
 
 
-@router.get("/{job_id}")
+@router.get("/{job_id}", response_model=JobDetailResponse)
 async def get_job_detail(
     job_id: uuid.UUID,
     team_id: uuid.UUID = Depends(get_current_team_id),
@@ -278,7 +298,7 @@ async def get_job_detail(
         )
 
 
-@router.get("/{job_id}/result")
+@router.get("/{job_id}/result", response_model=JobResultResponse)
 async def get_job_result(
     job_id: uuid.UUID,
     team_id: uuid.UUID = Depends(get_current_team_id),
@@ -286,6 +306,7 @@ async def get_job_result(
     with get_db_session() as session:
         job_repo = TranscriptionJobRepository(session)
         transcript_repo = TranscriptRepository(session)
+        translation_repo = TranslationArtifactRepository(session)
 
         job = job_repo.get_by_id(job_id)
 
@@ -308,6 +329,8 @@ async def get_job_result(
             )
 
         transcript = transcript_repo.get_by_job_id(team_id, job_id)
+        translation_repo = TranslationArtifactRepository(session)
+        translation = translation_repo.get_by_job_id(team_id, job_id)
 
         if not transcript:
             raise HTTPException(
@@ -328,6 +351,16 @@ async def get_job_result(
             for idx, seg in enumerate(segments_data)
         ]
 
+        translation_data = None
+        if translation and translation.status.value == "SUCCEEDED":
+            translation_data = {
+                "target_language": translation.target_language,
+                "text": translation.text,
+                "segments": translation.segments,
+                "engine": translation.engine,
+                "engine_version": translation.engine_version,
+            }
+
         return JobResultResponse(
             job_id=job.id,
             transcript_id=transcript.id,
@@ -335,10 +368,11 @@ async def get_job_result(
             language=transcript.language,
             segments=segments,
             engine=transcript.engine_version,
+            translation=translation_data,
         )
 
 
-@router.post("/{job_id}/cancel")
+@router.post("/{job_id}/cancel", response_model=CancelJobResponse)
 async def cancel_job(
     job_id: uuid.UUID,
     team_id: uuid.UUID = Depends(get_current_team_id),
@@ -377,3 +411,121 @@ async def cancel_job(
         job_repo.update(job_id, status=JobStatus.CANCELED)
 
         return CancelJobResponse(message="Job cancellation requested")
+
+
+def _build_job_manager(session: Session) -> JobManagerService:
+    settings = get_settings()
+    storage_backend = get_storage_backend(
+        backend_type=settings.STORAGE_BACKEND,
+        storage_path=settings.STORAGE_PATH,
+        bucket=settings.AWS_S3_BUCKET,
+        region=settings.AWS_REGION,
+        access_key=settings.AWS_ACCESS_KEY_ID,
+        secret_key=settings.AWS_SECRET_ACCESS_KEY,
+    )
+    billing_service = BillingService(session, settings.STRIPE_SECRET_KEY)
+    queue = TranscriptionQueue(get_redis_client())
+    return JobManagerService(
+        session=session,
+        storage_backend=storage_backend,
+        billing_service=billing_service,
+        queue=queue,
+    )
+
+
+def _filename_from_url(url: str) -> str:
+    parsed = urlparse(url)
+    name = parsed.path.split("/")[-1]
+    return name or "audio"
+
+
+@router.post("", response_model=CreateJobResponse, status_code=status.HTTP_201_CREATED)
+async def create_job_from_upload(
+    file: UploadFile = File(...),
+    language: str | None = Form(None),
+    engine: str | None = Form(None),
+    timestamps: bool = Form(True),
+    diarization: bool = Form(False),
+    target_language: str | None = Form(None),
+    team_id: uuid.UUID = Depends(get_current_team_id),
+    user_id: str = Depends(get_current_user_id),
+):
+    settings = get_settings()
+    file_content = await file.read()
+    file_size = len(file_content)
+
+    max_size_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    if file_size > max_size_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Upload exceeds maximum size",
+        )
+
+    with get_db_session() as session:
+        manager = _build_job_manager(session)
+        try:
+            job = manager.create_job_from_upload(
+                team_id=team_id,
+                user_id=uuid.UUID(user_id),
+                file_content=file_content,
+                filename=file.filename or "audio",
+                mime_type=file.content_type or "audio/mpeg",
+                file_size=file_size,
+                options={
+                    "language": language,
+                    "engine": engine,
+                    "timestamps": timestamps,
+                    "diarization": diarization,
+                    "target_language": target_language,
+                },
+            )
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail=str(e),
+            )
+        except RuntimeError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
+
+    return CreateJobResponse(
+        job_id=job.id,
+        status=job.status.value,
+        message="Job created",
+    )
+
+
+@router.post("/url", response_model=CreateJobResponse, status_code=status.HTTP_201_CREATED)
+async def create_job_from_url(
+    request: CreateJobFromUrlRequest,
+    team_id: uuid.UUID = Depends(get_current_team_id),
+    user_id: str = Depends(get_current_user_id),
+):
+    with get_db_session() as session:
+        manager = _build_job_manager(session)
+        try:
+            job = manager.create_job_from_url(
+                team_id=team_id,
+                user_id=uuid.UUID(user_id),
+                url=request.url,
+                filename=_filename_from_url(request.url),
+                options=request.options.model_dump(),
+            )
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail=str(e),
+            )
+        except RuntimeError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
+
+    return CreateJobResponse(
+        job_id=job.id,
+        status=job.status.value,
+        message="Job created",
+    )

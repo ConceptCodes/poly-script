@@ -4,7 +4,8 @@ from typing import Optional
 
 from poly_redis.client import get_redis_client
 from poly_redis.queue import TranscriptionQueue
-from .consumer import TranscriptionConsumer
+from poly_core.services.storage_service import get_storage_backend
+from apps.worker.src.consumer import TranscriptionConsumer
 from src.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -38,9 +39,20 @@ class WorkerService:
         redis_client = get_redis_client()
         queue = TranscriptionQueue(redis_client)
 
+        # Initialize storage backend
+        storage_backend = get_storage_backend(
+            backend_type=self._settings.STORAGE_BACKEND,
+            storage_path=self._settings.STORAGE_PATH,
+            bucket=self._settings.AWS_S3_BUCKET,
+            region=self._settings.AWS_REGION,
+            access_key=self._settings.AWS_ACCESS_KEY_ID,
+            secret_key=self._settings.AWS_SECRET_ACCESS_KEY,
+        )
+
         # Create and start consumer
         self._consumer = TranscriptionConsumer(
             queue=queue,
+            storage_backend=storage_backend,
             max_retries=max_retries,
             retry_backoff=retry_backoff,
         )

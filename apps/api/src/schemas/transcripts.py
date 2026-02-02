@@ -47,6 +47,11 @@ class TranscriptListResponse(BaseModel):
     page_size: int
 
 
+class SegmentsResponse(BaseModel):
+    """Response model for transcript segments."""
+    segments: List[SegmentResponse]
+
+
 class UpdateTranscriptRequest(BaseModel):
     """Request model for updating full transcript text."""
     text: str = Field(..., min_length=1, max_length=100000)
@@ -96,6 +101,54 @@ class ExportResponse(BaseModel):
     message: str
     format: str
     content_length: int
+
+class SplitSegmentRequest(BaseModel):
+    """Request model for splitting a segment at a timestamp."""
+    split_at_ms: int = Field(
+        ...,
+        description="Timestamp in milliseconds to split at (must be within segment range)",
+        gt=0
+    )
+
+
+class SplitSegmentResponse(BaseModel):
+    """Response model for split segment operation."""
+    message: str
+    original_segment_id: int
+    new_segment_ids: List[int] = Field(..., min_items=2, max_items=2)
+
+
+class MergeSegmentsRequest(BaseModel):
+    """Request model for merging consecutive segments."""
+    segment_ids: List[int] = Field(
+        ...,
+        min_length=2,
+        description="List of consecutive segment IDs to merge"
+    )
+
+
+class MergeSegmentsResponse(BaseModel):
+    """Response model for merge segments operation."""
+    message: str
+    merged_segment_id: int
+    removed_segment_ids: List[int]
+
+
+class UpdateSegmentTimestampsRequest(BaseModel):
+    """Request model for updating segment timestamps."""
+    start_ms: int = Field(..., gt=0, description="New start time in milliseconds")
+    end_ms: int = Field(
+        ...,
+        gt=0,
+        description="New end time in milliseconds"
+    )
+
+
+class UpdateSegmentTimestampsResponse(BaseModel):
+    """Response model for updating segment timestamps."""
+    message: str
+    segment: SegmentResponse
+
 
 
 class TranscriptError(BaseModel):
