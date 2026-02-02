@@ -496,3 +496,6 @@ async def export_transcript(
                 "Content-Length": str(content_length),
             },
         )
+
+transcripts_router = router
+transcripts_router = router

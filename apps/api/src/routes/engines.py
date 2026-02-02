@@ -23,3 +23,5 @@ async def list_engines():
         "engines": engines,
         "default": EngineRegistry._default,
     }
+
+engines_router = router

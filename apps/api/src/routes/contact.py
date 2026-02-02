@@ -17,3 +17,5 @@ async def submit_contact(
         extra={"contact_email": request.email, "contact_name": request.name},
     )
     return ContactResponse(status="received")
+
+contact_router = router

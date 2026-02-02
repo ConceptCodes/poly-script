@@ -111,3 +111,6 @@ async def stripe_webhook(
 
     session.commit()
     return {"status": "success"}
+
+webhooks_router = router
+webhooks_router = router

@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from dependencies import get_current_user, get_auth_service
+from src.dependencies import get_current_user, get_auth_service
 from poly_core.constants import I18nKeys, PlanType
 from poly_core.services.team import TeamService
 from poly_core.services.onboarding import OnboardingService
 from poly_db.database import get_db_session
-from schemas.onboarding import CompleteOnboardingRequest, OnboardingResponse
+from src.schemas.onboarding import CompleteOnboardingRequest, OnboardingResponse
 
 router = APIRouter(prefix="/v1/onboarding", tags=["Onboarding"])
 
@@ -56,3 +56,6 @@ def complete_onboarding(
         host_language=team.host_language,
         plan=team.plan.value,
     )
+
+onboarding_router = router
+onboarding_router = router

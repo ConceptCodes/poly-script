@@ -26,7 +26,7 @@ from poly_core.schemas.billing import (
 from poly_core.services.billing import BillingService
 from poly_db.database import get_db_session
 from ..config import get_settings
-from dependencies import get_current_team_id
+from src.dependencies import get_current_team_id
 
 router = APIRouter(prefix="/v1/billing", tags=["billing"])
 
@@ -249,3 +249,6 @@ async def get_credits(
 @router.get("/pricing", response_model=PricingResponse)
 async def get_pricing(billing_service: BillingService = Depends(get_billing_service)):
     return billing_service.get_pricing()
+
+billing_router = router
+billing_router = router

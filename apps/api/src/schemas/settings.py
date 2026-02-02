@@ -11,6 +11,9 @@ class UserSettingsResponse(BaseModel):
     is_verified: bool
     is_active: bool
     created_at: str
+    host_language: str
+    theme: str
+    notifications: dict
 
 
 class UpdateUserProfileRequest(BaseModel):
@@ -20,6 +23,15 @@ class UpdateUserProfileRequest(BaseModel):
 
 class UpdateEmailRequest(BaseModel):
     new_email: EmailStr
+
+
+class UpdateUserPreferencesRequest(BaseModel):
+    host_language: Optional[str] = None
+    theme: Optional[str] = None
+
+
+class UpdateUserNotificationsRequest(BaseModel):
+    notifications: dict
 
 
 class UpdatePasswordRequest(BaseModel):

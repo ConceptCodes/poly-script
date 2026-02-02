@@ -23,12 +23,16 @@ import importlib
 def _setup_python_path():
     # Support running this script from repo root without installing packages
     script_dir = pathlib.Path(__file__).resolve()
+    # root is parent of apps
+    root = script_dir.parent.parent.parent.parent
+    
     # Path to core package (where AdminAuthService lives)
-    core_pkg = script_dir.parent.parent.parent / "packages" / "core"
+    core_pkg = root / "packages" / "core"
     if core_pkg.exists():
         sys.path.insert(0, str(core_pkg))
+    
     # Path to db (db layer with get_db_session)
-    db_path = script_dir.parent.parent.parent / "packages" / "storage" / "db"
+    db_path = root / "packages" / "storage" / "db"
     if db_path.exists():
         sys.path.insert(0, str(db_path))
 

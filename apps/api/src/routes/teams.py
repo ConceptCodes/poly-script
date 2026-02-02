@@ -3,12 +3,12 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from dependencies import get_current_user
+from src.dependencies import get_current_user
 from poly_core.constants import I18nKeys
 from poly_core.services.invitation import InvitationService
 from poly_core.services.team import TeamService
 from poly_db.database import get_db_session
-from schemas.teams import (
+from src.schemas.teams import (
     AcceptInvitationRequest,
     CreateInvitationRequest,
     CreateTeamRequest,
@@ -232,3 +232,6 @@ def accept_invitation(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=I18nKeys.INVALID_INVITATION_TOKEN.value,
         )
+
+teams_router = router
+teams_router = router

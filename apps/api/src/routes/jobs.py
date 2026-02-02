@@ -4,7 +4,8 @@ import asyncio
 from typing import AsyncGenerator
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form, RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 from poly_db.repositories import TranscriptionJobRepository, TranscriptRepository, AudioAssetRepository
@@ -529,3 +530,6 @@ async def create_job_from_url(
         status=job.status.value,
         message="Job created",
     )
+
+jobs_router = router
+jobs_router = router

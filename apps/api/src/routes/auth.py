@@ -2,12 +2,13 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from dependencies import get_current_user, get_auth_service
+from src.dependencies import get_current_user, get_auth_service
 from poly_core.services.auth import AuthService
 from poly_core.services.oauth import OAuthService
 from poly_core.services.team import TeamService
+from poly_db.database import get_db_session
 from src.config import get_settings
-from schemas.auth import (
+from src.schemas.auth import (
     ForgotPasswordRequest,
     LoginRequest,
     LogoutRequest,
@@ -28,7 +29,7 @@ router = APIRouter(prefix="/v1/auth", tags=["Auth"])
 
 
 def get_oauth_service(
-    db: Session, auth_service: AuthService = Depends(get_auth_service)
+    db: Session = Depends(get_db_session), auth_service: AuthService = Depends(get_auth_service)
 ) -> OAuthService:
     settings = get_settings()
     return OAuthService(
@@ -40,7 +41,7 @@ def get_oauth_service(
     )
 
 
-def get_team_service(db: Session) -> TeamService:
+def get_team_service(db: Session = Depends(get_db_session)) -> TeamService:
     return TeamService(db)
 
 
@@ -199,3 +200,6 @@ def oauth_callback(
         refresh_token=refresh_token,
         token_type="bearer",
     )
+
+auth_router = router
+auth_router = router

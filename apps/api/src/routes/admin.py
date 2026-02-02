@@ -870,3 +870,5 @@ async def admin_job_volume_analytics(
             pass
     
     return service.job_volume_analytics(start_date=start, end_date=end)
+
+admin_router = router

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
-from dependencies import get_current_user, get_team_context
+from src.dependencies import get_current_user, get_team_context
 from poly_core.services.dashboard import DashboardService
 from poly_db.database import get_db_session
-from schemas.dashboard import (
+from src.schemas.dashboard import (
     DashboardStatsResponse,
     RecentJobItem,
     ActivityItem,
@@ -94,3 +94,5 @@ def get_usage(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(exc),
         )
+
+dashboard_router = router
