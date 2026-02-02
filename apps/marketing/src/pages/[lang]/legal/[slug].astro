@@ -1,0 +1,53 @@
+---
+import "../../../styles/global.css";
+import SiteLayout from "../../../components/SiteLayout.astro";
+import { getCollection } from "astro:content";
+import { getStaticPaths } from "../../../lib/i18n";
+
+export async function getStaticPaths() {
+  const docs = await getCollection("legal");
+  return docs.map((doc) => ({
+    params: { lang: doc.data.lang, slug: doc.slug },
+    props: { doc },
+  }));
+}
+
+const { lang, slug } = Astro.params;
+const { doc } = Astro.props;
+const { Content } = await doc.render();
+---
+
+<SiteLayout lang={lang} title={`${doc.data.title} — PolyScript`}>
+  <section class="container" style="max-width: 800px;">
+    <a class="muted" href={`/${lang}/legal`} style="display:inline-flex;align-items:center;gap:8px;margin-bottom:24px;">
+      ← Back to legal
+    </a>
+    <div class="muted" style="margin-bottom:16px;">Last updated: {doc.data.lastUpdated.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+    <h1 class="hero-title" style="margin-top:16px;">{doc.data.title}</h1>
+    <div class="post-content" style="margin-top:32px;">
+      <Content />
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .post-content :global(h2) {
+    font-size: 24px;
+    margin: 28px 0 14px;
+  }
+  .post-content :global(h3) {
+    font-size: 20px;
+    margin: 20px 0 10px;
+  }
+  .post-content :global(p) {
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .post-content :global(ul), .post-content :global(ol) {
+    padding-left: 24px;
+    margin-bottom: 12px;
+  }
+  .post-content :global(li) {
+    margin-bottom: 6px;
+  }
+</style>

@@ -6,8 +6,9 @@ type Copy = {
     features: string;
     pricing: string;
     docs: string;
-    blog: string;
+    blog: string;    legal: string;
     contact: string;
+    legal: string;
     cta: string;
   };
   hero: {
@@ -54,6 +55,7 @@ const copy: Record<Locale, Copy> = {
       docs: "Docs",
       blog: "Blog",
       contact: "Contact",
+    legal: "Legal",
       cta: "Start Free",
     },
     hero: {
@@ -135,6 +137,7 @@ const copy: Record<Locale, Copy> = {
       docs: "Docs",
       blog: "Blog",
       contact: "Kontakt",
+    legal: "Rechtliches",
       cta: "Kostenlos starten",
     },
     hero: {
@@ -216,6 +219,7 @@ const copy: Record<Locale, Copy> = {
       docs: "Docs",
       blog: "Blog",
       contact: "Contacto",
+    legal: "Legal",
       cta: "Empezar gratis",
     },
     hero: {
@@ -297,6 +301,7 @@ const copy: Record<Locale, Copy> = {
       docs: "Docs",
       blog: "Blog",
       contact: "Contact",
+    legal: "Legal",
       cta: "Commencer gratuitement",
     },
     hero: {
@@ -378,6 +383,7 @@ const copy: Record<Locale, Copy> = {
       docs: "ドキュメント",
       blog: "ブログ",
       contact: "お問い合わせ",
+    legal: "法的情報",
       cta: "無料で開始",
     },
     hero: {

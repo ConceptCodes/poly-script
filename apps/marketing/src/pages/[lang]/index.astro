@@ -11,6 +11,7 @@ const t = getCopy(lang);
 
 <SiteLayout lang={lang} title="PolyScript — Transcription">
   <section class="container hero">
+    <div class="hero-content">
     <div>
       <div class="eyebrow">{t.hero.eyebrow}</div>
       <h1 class="hero-title">{t.hero.title}</h1>
@@ -20,6 +21,7 @@ const t = getCopy(lang);
         <a class="btn ghost" href="https://app.polyscript.io">{t.hero.secondary}</a>
       </div>
       <p class="muted" style="margin-top:16px;">{t.trust}</p>
+    </div>
     </div>
     <div class="hero-card">
       <div class="tag">Queue depth: 12</div>
@@ -42,7 +44,7 @@ const t = getCopy(lang);
   </section>
 
   <section class="container" style="margin-top:80px;">
-    <h2>{t.features.title}</h2>
+    <h2 class="section-title">{t.features.title}</h2>
     <div class="grid cols-3" style="margin-top:24px;">
       {t.features.items.map((item) => (
         <div class="card">
@@ -54,7 +56,7 @@ const t = getCopy(lang);
   </section>
 
   <section class="container" style="margin-top:80px;">
-    <h2>{t.workflow.title}</h2>
+    <h2 class="section-title">{t.workflow.title}</h2>
     <div class="grid cols-3" style="margin-top:24px;">
       {t.workflow.steps.map((step, index) => (
         <div class="card">
@@ -67,7 +69,7 @@ const t = getCopy(lang);
   </section>
 
   <section class="container" style="margin-top:80px;">
-    <h2>{t.pricing.title}</h2>
+    <h2 class="section-title">{t.pricing.title}</h2>
     <p class="muted">{t.pricing.subtitle}</p>
     <div class="pricing" style="margin-top:24px;">
       {t.pricing.plans.map((plan) => (
@@ -85,4 +87,53 @@ const t = getCopy(lang);
       ))}
     </div>
   </section>
+
+  <!-- JSON-LD SoftwareApplication -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "PolyScript",
+    "description": "Multi-language transcription service for teams",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Free",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      {
+        "@type": "Offer",
+        "name": "Standard",
+        "price": "10",
+        "priceCurrency": "USD",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "10",
+          "priceCurrency": "USD",
+          "billingIncrement": "P1M"
+        }
+      },
+      {
+        "@type": "Offer",
+        "name": "Pro",
+        "price": "30",
+        "priceCurrency": "USD",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "30",
+          "priceCurrency": "USD",
+          "billingIncrement": "P1M"
+        }
+      }
+    ],
+    "featureList": [
+      "Live job telemetry",
+      "Normalized outputs",
+      "Team-ready workflows",
+      "Multi-tenant isolation",
+      "Real-time progress via SSE"
+    ]
+  })} />
 </SiteLayout>

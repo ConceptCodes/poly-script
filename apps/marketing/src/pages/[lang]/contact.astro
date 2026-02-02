@@ -12,14 +12,14 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/v1";
 
 <SiteLayout lang={lang} title="PolyScript — Contact">
   <section class="container">
-    <h1 class="hero-title">{t.contact.title}</h1>
+    <h1 class="hero-title section-title">{t.contact.title}</h1>
     <p class="hero-subtitle">{t.contact.subtitle}</p>
     <div class="card" style="max-width: 720px; margin-top: 28px;">
       <form
         id="contact-form"
         method="post"
         action={`${apiUrl}/contact`}
-        style="display:grid; gap:16px;"
+        style="display:grid; gap:20px;"
       >
         <label>
           {t.contact.name}

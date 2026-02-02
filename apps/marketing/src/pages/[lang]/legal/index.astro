@@ -1,0 +1,30 @@
+---
+import "../../../styles/global.css";
+import SiteLayout from "../../../components/SiteLayout.astro";
+import { getStaticPaths } from "../../../lib/i18n";
+import { getCollection } from "astro:content";
+
+export { getStaticPaths };
+
+const { lang } = Astro.params;
+
+const allLegal = await getCollection("legal");
+const legalDocs = allLegal.filter(doc => doc.data.lang === lang || (doc.data.lang === "en" && !allLegal.some(l => l.data.lang === lang && l.slug === doc.slug)));
+---
+
+<SiteLayout lang={lang} title="PolyScript — Legal">
+  <section class="container">
+    <h1 class="hero-title section-title">Legal</h1>
+    <p class="hero-subtitle">
+      Terms of service and privacy policy.
+    </p>
+    <div class="grid cols-2" class="grid-container" style="margin-top:40px;">
+      {legalDocs.map((doc) => (
+        <a class="card" href={`/${lang}/legal/${doc.slug}`} style="display:block;">
+          <h3>{doc.data.title}</h3>
+          <p class="muted">Last updated: {doc.data.lastUpdated.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+</SiteLayout>

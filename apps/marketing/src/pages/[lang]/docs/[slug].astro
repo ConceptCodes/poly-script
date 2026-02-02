@@ -1,0 +1,87 @@
+---
+import "../../../styles/global.css";
+import SiteLayout from "../../../components/SiteLayout.astro";
+import { getCollection } from "astro:content";
+import { getStaticPaths } from "../../../lib/i18n";
+
+export async function getStaticPaths() {
+  const docs = await getCollection("docs");
+  return docs.map((doc) => ({
+    params: { lang: doc.data.lang, slug: doc.slug },
+    props: { doc },
+  }));
+}
+
+const { lang, slug } = Astro.params;
+const { doc } = Astro.props;
+const { Content } = await doc.render();
+---
+
+<SiteLayout lang={lang} title={`${doc.data.title} — PolyScript Docs`}>
+  <section class="container post-header">
+    <a class="muted" href={`/${lang}/docs`} style="display:inline-flex;align-items:center;gap:8px;margin-bottom:24px;">
+      ← Back to docs
+    </a>
+    <h1 class="hero-title" style="margin-top:16px;">{doc.data.title}</h1>
+    <p class="hero-subtitle">{doc.data.description}</p>
+    <div class="post-content" style="margin-top:32px;">
+      <Content />
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .post-content :global(h2) {
+    font-size: 28px;
+    margin: 32px 0 16px;
+  }
+  .post-content :global(h3) {
+    font-size: 22px;
+    margin: 24px 0 12px;
+  }
+  .post-content :global(h4) {
+    font-size: 18px;
+    margin: 20px 0 10px;
+  }
+  .post-content :global(p) {
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .post-content :global(ul), .post-content :global(ol) {
+    padding-left: 24px;
+    margin-bottom: 16px;
+  }
+  .post-content :global(li) {
+    margin-bottom: 8px;
+  }
+  .post-content :global(code) {
+    background: var(--surface-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  .post-content :global(pre) {
+    background: var(--surface-2);
+    padding: 16px;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+  }
+  .post-content :global(pre code) {
+    background: transparent;
+    padding: 0;
+  }
+  .post-content :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+  }
+  .post-content :global(th), .post-content :global(td) {
+    border: 1px solid var(--border);
+    padding: 12px;
+    text-align: left;
+  }
+  .post-content :global(th) {
+    background: var(--surface-2);
+  }
+</style>

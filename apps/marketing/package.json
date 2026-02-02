@@ -6,10 +6,21 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "bun run test:unit && bun run test:e2e && bun run test:lighthouse && bun run test:links",
+    "test:unit": "bun run astro check",
+    "test:e2e": "playwright test",
+    "test:lighthouse": "lhci autorun",
+    "test:links": "lychee dist --verbose --exclude-mail"
   },
   "dependencies": {
     "@astrojs/tailwind": "^6.0.2",
-    "astro": "^5.16.6"
+    "astro": "^5.16.6",
+    "@astrojs/mdx": "^4.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@lhci/cli": "^0.12.0",
+    "lychee-cli": "^0.14.0"
   }
 }

@@ -2,34 +2,32 @@
 import "../../styles/global.css";
 import SiteLayout from "../../components/SiteLayout.astro";
 import { getStaticPaths } from "../../lib/i18n";
+import { getCollection } from "astro:content";
 
 export { getStaticPaths };
 
 const { lang } = Astro.params;
+
+const allPosts = await getCollection("blog");
+const posts = allPosts
+  .filter(post => post.data.lang === lang || (post.data.lang === "en" && !allPosts.some(p => p.data.lang === lang && p.slug === post.slug)))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 
 <SiteLayout lang={lang} title="PolyScript — Blog">
   <section class="container">
-    <h1 class="hero-title">Updates & Insights</h1>
+    <h1 class="hero-title section-title">Updates & Insights</h1>
     <p class="hero-subtitle">
       Notes from the PolyScript team on transcription, reliability, and product ops.
     </p>
-    <div class="grid cols-3" style="margin-top:32px;">
-      <div class="card">
-        <div class="tag">Launch</div>
-        <h3>Building a multi-tenant STT pipeline</h3>
-        <p class="muted">How we designed job isolation, retries, and export workflows.</p>
-      </div>
-      <div class="card">
-        <div class="tag">Ops</div>
-        <h3>Monitoring transcription at scale</h3>
-        <p class="muted">Our approach to SSE progress streams and queue metrics.</p>
-      </div>
-      <div class="card">
-        <div class="tag">Product</div>
-        <h3>Designing for editing and export</h3>
-        <p class="muted">Patterns for clean, fast transcript review loops.</p>
-      </div>
+    <div class="grid cols-3" class="grid-container" style="margin-top:40px;">
+      {posts.map((post) => (
+        <a class="card" href={`/${lang}/blog/${post.slug}`} style="display:block;">
+          <div class="tag">{post.data.pubDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+          <h3 style="margin-top:12px;">{post.data.title}</h3>
+          <p class="muted">{post.data.description}</p>
+        </a>
+      ))}
     </div>
   </section>
 </SiteLayout>

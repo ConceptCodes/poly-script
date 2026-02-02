@@ -1,16 +1,85 @@
 ---
 import Header from "./SiteHeader.astro";
 import Footer from "./SiteFooter.astro";
-const { lang, title } = Astro.props;
+import { locales } from "../lib/i18n";
+
+interface Props {
+  lang: string;
+  title: string;
+  description?: string;
+  image?: string;
+  type?: string;
+}
+
+const { 
+  lang, 
+  title, 
+  description = "PolyScript — multi-language transcription service for teams", 
+  image = "/og-default.png",
+  type = "website"
+} = Astro.props;
+
+const canonicalUrl = new URL(Astro.url.pathname, "https://polyscript.io").href;
+const localeAlternates = locales.map(l => ({
+  lang: l,
+  url: new URL(Astro.url.pathname.replace(/^\/[a-z]{2}/, `/${l}`) || `/${l}`, "https://polyscript.io").href
+}));
 ---
 
 <html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="description" content="PolyScript — multi-language transcription service" />
-    <title>{title}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonicalUrl} />
+    {localeAlternates.map(alt => (
+      <link rel="alternate" hreflang={alt.lang} href={alt.url} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={localeAlternates.find(a => a.lang === "en")?.url} />
+    
+    <meta name="description" content={description} />
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={new URL(image, "https://polyscript.io").href} />
+    <meta property="og:locale" content={lang} />
+    {localeAlternates.filter(a => a.lang !== lang).map(alt => (
+      <meta property="og:locale:alternate" content={alt.lang} />
+    ))}
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL(image, "https://polyscript.io").href} />
+    
+    <!-- JSON-LD Organization -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "PolyScript",
+      "url": "https://polyscript.io",
+      "description": "Multi-language transcription service for teams",
+      "logo": "https://polyscript.io/logo.png"
+    })} />
+    
+    <!-- JSON-LD WebSite -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "PolyScript",
+      "url": "https://polyscript.io",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://polyscript.io/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    })} />
+    
+    <title>{title}</title>
   </head>
   <body>
     <Header lang={lang} />

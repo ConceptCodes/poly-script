@@ -1,0 +1,71 @@
+---
+import "../../../styles/global.css";
+import SiteLayout from "../../../components/SiteLayout.astro";
+import { getCollection } from "astro:content";
+import { getStaticPaths } from "../../../lib/i18n";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  return posts.map((post) => ({
+    params: { lang: post.data.lang, slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { lang, slug } = Astro.params;
+const { post } = Astro.props;
+const { Content } = await post.render();
+---
+
+<SiteLayout lang={lang} title={`${post.data.title} — PolyScript`}>
+  <section class="container post-header">
+    <a class="muted" href={`/${lang}/blog`} class="post-meta">
+      ← Back to blog
+    </a>
+    <div class="tag" style="color:#38bdf8;">{post.data.pubDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+    <h1 class="hero-title" style="margin-top:16px;">{post.data.title}</h1>
+    <p class="hero-subtitle">{post.data.description}</p>
+    <div class="post-content" style="margin-top:32px;">
+      <Content />
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .post-content :global(h2) {
+    font-size: 28px;
+    margin: 32px 0 16px;
+  }
+  .post-content :global(h3) {
+    font-size: 22px;
+    margin: 24px 0 12px;
+  }
+  .post-content :global(p) {
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .post-content :global(ul), .post-content :global(ol) {
+    padding-left: 24px;
+    margin-bottom: 16px;
+  }
+  .post-content :global(li) {
+    margin-bottom: 8px;
+  }
+  .post-content :global(code) {
+    background: var(--surface-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  .post-content :global(pre) {
+    background: var(--surface-2);
+    padding: 16px;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+  }
+  .post-content :global(pre code) {
+    background: transparent;
+    padding: 0;
+  }
+</style>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://polyscript.io/sitemap-index.xml

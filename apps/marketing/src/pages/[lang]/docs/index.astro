@@ -1,0 +1,32 @@
+---
+import "../../../styles/global.css";
+import SiteLayout from "../../../components/SiteLayout.astro";
+import { getStaticPaths } from "../../../lib/i18n";
+import { getCollection } from "astro:content";
+
+export { getStaticPaths };
+
+const { lang } = Astro.params;
+
+const allDocs = await getCollection("docs");
+const docs = allDocs
+  .filter(doc => doc.data.lang === lang || (doc.data.lang === "en" && !allDocs.some(d => d.data.lang === lang && d.slug === doc.slug)))
+  .sort((a, b) => (a.data.order || 0) - (b.data.order || 0));
+---
+
+<SiteLayout lang={lang} title="PolyScript — Docs">
+  <section class="container">
+    <h1 class="hero-title section-title">Documentation</h1>
+    <p class="hero-subtitle">
+      Everything you need to integrate PolyScript into your workflow.
+    </p>
+    <div class="grid cols-3" class="grid-container" style="margin-top:40px;">
+      {docs.map((doc) => (
+        <a class="card" href={`/${lang}/docs/${doc.slug}`} style="display:block;">
+          <h3>{doc.data.title}</h3>
+          <p class="muted">{doc.data.description}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+</SiteLayout>

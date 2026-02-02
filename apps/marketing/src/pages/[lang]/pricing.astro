@@ -11,7 +11,7 @@ const t = getCopy(lang);
 
 <SiteLayout lang={lang} title="PolyScript — Pricing">
   <section class="container">
-    <h1 class="hero-title">{t.pricing.title}</h1>
+    <h1 class="hero-title section-title">{t.pricing.title}</h1>
     <p class="hero-subtitle">{t.pricing.subtitle}</p>
     <div class="pricing" style="margin-top:32px;">
       {t.pricing.plans.map((plan) => (
@@ -29,4 +29,24 @@ const t = getCopy(lang);
       ))}
     </div>
   </section>
+
+  <!-- JSON-LD PriceSpecification -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "PriceSpecification",
+    "name": "PolyScript Pricing",
+    "description": "Subscription plans for PolyScript transcription service",
+    "priceComponent": t.pricing.plans.map(plan => ({
+      "@type": "UnitPriceSpecification",
+      "name": plan.name,
+      "price": plan.price.replace(/[^\d]/g, ''),
+      "priceCurrency": plan.price.includes('€') ? 'EUR' : 'USD',
+      "billingIncrement": "P1M",
+      "referenceQuantity": {
+        "@type": "QuantitativeValue",
+        "value": "1",
+        "unitCode": "MON"
+      }
+    }))
+  })} />
 </SiteLayout>
