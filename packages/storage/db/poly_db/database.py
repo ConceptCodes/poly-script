@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+from contextlib import contextmanager
 
 
 class DatabaseSettings(BaseSettings):
@@ -25,6 +26,7 @@ def get_session_factory():
     return sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
+@contextmanager
 def get_db_session() -> Session:
     factory = get_session_factory()
     with factory() as session:

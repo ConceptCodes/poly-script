@@ -26,6 +26,13 @@ class SettingsService:
         if not user:
             raise ValueError("User not found")
         
+        settings = user.settings
+        if not settings:
+            from poly_db.models.user_settings import UserSettings
+            settings = UserSettings(user_id=user_id)
+            self.db_session.add(settings)
+            self.db_session.commit()
+        
         return {
             "id": user.id,
             "email": user.email,
@@ -33,6 +40,9 @@ class SettingsService:
             "is_verified": user.is_verified,
             "is_active": user.is_active,
             "created_at": user.created_at.isoformat(),
+            "host_language": settings.host_language,
+            "theme": settings.theme,
+            "notifications": settings.notifications,
         }
     
     def update_user_profile(
@@ -100,6 +110,62 @@ class SettingsService:
         user.updated_at = datetime.now(timezone.utc)
         
         return self.user_repo.update(user)
+    
+    def update_user_preferences(
+        self,
+        user_id: uuid.UUID,
+        host_language: Optional[str] = None,
+        theme: Optional[str] = None,
+    ) -> dict:
+        """Update user preferences (language, theme)."""
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            raise ValueError("User not found")
+        
+        settings = user.settings
+        if not settings:
+            from poly_db.models.user_settings import UserSettings
+            settings = UserSettings(user_id=user_id)
+            self.db_session.add(settings)
+            
+        if host_language is not None:
+            settings.host_language = host_language
+        if theme is not None:
+            settings.theme = theme
+        
+        settings.updated_at = datetime.now(timezone.utc)
+        self.db_session.commit()
+        
+        return {
+            "host_language": settings.host_language,
+            "theme": settings.theme,
+        }
+
+    def update_user_notifications(
+        self,
+        user_id: uuid.UUID,
+        notifications: dict,
+    ) -> dict:
+        """Update user notification settings."""
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            raise ValueError("User not found")
+        
+        settings = user.settings
+        if not settings:
+            from poly_db.models.user_settings import UserSettings
+            settings = UserSettings(user_id=user_id)
+            self.db_session.add(settings)
+        
+        # Merge notifications
+        current = settings.notifications or {}
+        current.update(notifications)
+        settings.notifications = current
+        
+        settings.updated_at = datetime.now(timezone.utc)
+        self.db_session.commit()
+        
+        return settings.notifications
     
     def get_team_settings(self, team_id: uuid.UUID, user_id: uuid.UUID) -> dict:
         """Get team settings."""

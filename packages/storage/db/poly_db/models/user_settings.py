@@ -15,7 +15,12 @@ class UserSettings(Base, TimestampMixin):
         ForeignKey("users.id", ondelete="CASCADE"), unique=True
     )
     host_language: Mapped[str] = mapped_column(String(10), default="en")
-    notifications: Mapped[dict] = mapped_column(JSON, default=lambda: {"email": True})
+    theme: Mapped[str] = mapped_column(String(20), default="system")
+    notifications: Mapped[dict] = mapped_column(JSON, default=lambda: {
+        "email": True,
+        "job_completion": True,
+        "in_app": True
+    })
 
     user: Mapped["User"] = relationship(back_populates="settings")
 
