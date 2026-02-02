@@ -2,8 +2,16 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@poly/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@poly/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@poly/ui/card";
 import { Button } from "@poly/ui/button";
+import { api } from "../../lib/api";
 import { useUsage, usePricing } from "../../hooks/useBilling";
 import { useTeamSettings } from "../../hooks/useTeamSettings";
 import { UploadDropzone } from "./components/UploadDropzone";
@@ -21,7 +29,8 @@ const LANGUAGES = [
 ];
 
 // URL validation regex patterns
-const YOUTUBE_REGEX = /^(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+)$/;
+const YOUTUBE_REGEX =
+  /^(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+)$/;
 const S3_REGEX = /^https?:\/\/[^\s]+\.s3[\w-]*\.amazonaws\.com\/[^\s]+$/;
 const DIRECT_URL_REGEX = /^https?:\/\/[^\s]+$/;
 
@@ -35,7 +44,8 @@ export default function UploadPage() {
 
   const { data: usage, isLoading: usageLoading } = useUsage();
   const { data: pricing, isLoading: pricingLoading } = usePricing();
-  const { data: teamSettings, isLoading: teamSettingsLoading } = useTeamSettings();
+  const { data: teamSettings, isLoading: teamSettingsLoading } =
+    useTeamSettings();
 
   const loading = usageLoading || pricingLoading || teamSettingsLoading;
 
@@ -56,7 +66,8 @@ export default function UploadPage() {
   })();
 
   const memberCount = teamSettings?.members_count ?? 0;
-  const isMemberLimitReached = memberLimit !== "inf" && memberCount >= memberLimit;
+  const isMemberLimitReached =
+    memberLimit !== "inf" && memberCount >= memberLimit;
 
   const languageLimit = (() => {
     if (!usage || !pricing) return "inf";
@@ -69,7 +80,9 @@ export default function UploadPage() {
 
   const isLanguageRestricted = (code: string) => {
     if (languageLimit === "inf") return false;
-    return LANGUAGES.findIndex((l) => l.code === code) >= (languageLimit as number);
+    return (
+      LANGUAGES.findIndex((l) => l.code === code) >= (languageLimit as number)
+    );
   };
 
   const validateUrl = (url: string): string | null => {
@@ -122,18 +135,8 @@ export default function UploadPage() {
         formData.append("diarization", values.diarization.toString());
         formData.append("target_language", values.target_language || "");
 
-        const response = await fetch("/api/v1/jobs", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          navigate(`/jobs/${data.job_id}/live`);
-        } else {
-          const error = await response.json();
-          console.error("Upload failed:", error);
-        }
+        const data = await api.createJob(formData);
+        navigate(`/jobs/${data.job_id}/live`);
       } else {
         // URL submission
         const urlValidationError = validateUrl(urlInput);
@@ -143,40 +146,31 @@ export default function UploadPage() {
           return;
         }
 
-        const response = await fetch("/api/v1/jobs/url", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            url: urlInput,
-            options: {
-              language: values.language || undefined,
-              engine: values.engine || undefined,
-              timestamps: values.timestamps,
-              diarization: values.diarization,
-              target_language: values.target_language || undefined,
-            },
-          }),
+        const data = await api.createJobFromUrl(urlInput, {
+          language: values.language || undefined,
+          engine: values.engine || undefined,
+          timestamps: values.timestamps,
+          diarization: values.diarization,
+          target_language: values.target_language || undefined,
         });
-
-        if (response.ok) {
-          const data = await response.json();
-          navigate(`/jobs/${data.job_id}/live`);
-        } else {
-          const error = await response.json();
-          console.error("URL submission failed:", error);
-        }
+        navigate(`/jobs/${data.job_id}/live`);
       }
-    } catch (error) {
-      console.error("Upload error:", error);
+    } catch (error: any) {
+      if (error.status === 402) {
+        // Handle plan limit reached
+        navigate("/billing?reason=limit_reached");
+      } else {
+        console.error("Upload error:", error);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   if (loading) {
-    return <div className="p-6 text-center text-muted-foreground">Loading...</div>;
+    return (
+      <div className="p-6 text-center text-muted-foreground">Loading...</div>
+    );
   }
 
   const uploadDisabled = isLimitReached || isMemberLimitReached || isSubmitting;
@@ -186,16 +180,20 @@ export default function UploadPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Upload Audio</h1>
         {usage && (
-          <Button variant="outline" size="sm" onClick={() => navigate("/billing")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/billing")}
+          >
             Billing
           </Button>
         )}
       </div>
 
-      {isLimitReached && (
+      {isLimitReached && usage && (
         <PlanLimitCard
           monthlyUploadCount={usage.monthly_upload_count}
-          monthlyLimit={usage.monthly_limit}
+          monthlyLimit={usage.monthly_limit as number}
           extraCredits={usage.extra_credits}
           plan={usage.plan}
           onUpgrade={() => navigate("/billing")}
@@ -215,11 +213,16 @@ export default function UploadPage() {
       <Card className={uploadDisabled ? "opacity-50 pointer-events-none" : ""}>
         <CardHeader>
           <CardTitle>Transcribe Audio</CardTitle>
-          <CardDescription>Upload a file or provide a URL to transcribe.</CardDescription>
+          <CardDescription>
+            Upload a file or provide a URL to transcribe.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "url")}>
+            <Tabs
+              value={uploadMode}
+              onValueChange={(v) => setUploadMode(v as "file" | "url")}
+            >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="file">Upload File</TabsTrigger>
                 <TabsTrigger value="url">From URL</TabsTrigger>
@@ -255,7 +258,8 @@ export default function UploadPage() {
                       <p className="text-sm text-destructive">{urlError}</p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Supported: YouTube URLs, S3 URLs, or direct HTTPS file URLs
+                      Supported: YouTube URLs, S3 URLs, or direct HTTPS file
+                      URLs
                     </p>
                   </div>
                 </div>
@@ -263,7 +267,9 @@ export default function UploadPage() {
             </Tabs>
 
             <UploadForm
-              languageLimit={languageLimit}
+              languageLimit={
+                typeof languageLimit === "number" ? languageLimit : undefined
+              }
               isLanguageRestricted={isLanguageRestricted}
               isSubmitting={isSubmitting}
               onSubmit={handleSubmit}

@@ -1,122 +1,51 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/v1";
 
-interface ApiOptions extends Omit<RequestInit, 'body'> {
-  body?: Record<string, unknown> | null;
+interface ApiOptions extends Omit<RequestInit, "body"> {
+  body?: Record<string, unknown> | FormData | null;
 }
 
-export async function apiFetch<T = unknown>(endpoint: string, options: ApiOptions = {}): Promise<T> {
+export async function apiFetch<T = unknown>(
+  endpoint: string,
+  options: ApiOptions = {},
+): Promise<T> {
   const token = localStorage.getItem("access_token");
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
-  
+    ...((options.headers as Record<string, string>) || {}),
+  };
 
-  // Segment operations
-  async splitSegment(transcriptId: string, segmentId: number, splitAtMs: number) {
-    return apiFetch<{
-      message: string;
-      original_segment_id: number;
-      new_segment_ids: number[];
-    }>(`/transcripts/${transcriptId}/segments/${segmentId}/split`, {
-      method: "POST",
-      body: { split_at_ms: splitAtMs },
-    });
-  },
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
 
-  async mergeSegments(transcriptId: string, segmentIds: number[]) {
-    return apiFetch<{
-      message: string;
-      merged_segment_id: number;
-      removed_segment_ids: number[];
-    }>(`/transcripts/${transcriptId}/segments/merge`, {
-      method: "POST",
-      body: { segment_ids: segmentIds },
-    });
-  },
-
-  async updateSegmentTimestamps(transcriptId: string, segmentId: number, startMs: number, endMs: number) {
-    return apiFetch<{
-      message: string;
-      segment: {
-        id: number;
-        start_ms: number;
-        end_ms: number;
-        text: string;
-        speaker: string | null;
-      };
-    }>(`/transcripts/${transcriptId}/segments/${segmentId}/timestamps`, {
-      method: "PATCH",
-      body: { start_ms: startMs, end_ms: endMs },
-    });
-  },
-
-  // Convenience aliases
-  async updateTranscript(transcriptId: string, text: string) {
-    return this.updateTranscriptFullText(transcriptId, text);
-  },
-}
   if (token && !headers.Authorization) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const body = options.body && typeof options.body === 'object'
-    ? JSON.stringify(options.body)
-    : undefined;
+  let body: BodyInit | undefined;
+  if (options.body instanceof FormData) {
+    body = options.body;
+  } else if (options.body && typeof options.body === "object") {
+    body = JSON.stringify(options.body);
+  }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
-    body: body as BodyInit,
+    body,
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: "An unknown error occurred" }));
-    const errorObj = { ...error, status: response.status, code: error.code || null 
-
-  // Segment operations
-  async splitSegment(transcriptId: string, segmentId: number, splitAtMs: number) {
-    return apiFetch<{
-      message: string;
-      original_segment_id: number;
-      new_segment_ids: number[];
-    }>(`/transcripts/${transcriptId}/segments/${segmentId}/split`, {
-      method: "POST",
-      body: { split_at_ms: splitAtMs },
-    });
-  },
-
-  async mergeSegments(transcriptId: string, segmentIds: number[]) {
-    return apiFetch<{
-      message: string;
-      merged_segment_id: number;
-      removed_segment_ids: number[];
-    }>(`/transcripts/${transcriptId}/segments/merge`, {
-      method: "POST",
-      body: { segment_ids: segmentIds },
-    });
-  },
-
-  async updateSegmentTimestamps(transcriptId: string, segmentId: number, startMs: number, endMs: number) {
-    return apiFetch<{
-      message: string;
-      segment: {
-        id: number;
-        start_ms: number;
-        end_ms: number;
-        text: string;
-        speaker: string | null;
-      };
-    }>(`/transcripts/${transcriptId}/segments/${segmentId}/timestamps`, {
-      method: "PATCH",
-      body: { start_ms: startMs, end_ms: endMs },
-    });
-  },
-
-  // Convenience aliases
-  async updateTranscript(transcriptId: string, text: string) {
-    return this.updateTranscriptFullText(transcriptId, text);
-  },
-}
+    let error;
+    try {
+      error = await response.json();
+    } catch (e) {
+      error = { detail: "An unknown error occurred" };
+    }
+    const errorObj = {
+      ...error,
+      status: response.status,
+      code: error.code || null,
+    };
     throw errorObj;
   }
 
@@ -125,10 +54,16 @@ export async function apiFetch<T = unknown>(endpoint: string, options: ApiOption
 }
 
 export const api = {
-  async getJobs(params?: { page?: number; page_size?: number; status?: string }) {
+  // Jobs API
+  async getJobs(params?: {
+    page?: number;
+    page_size?: number;
+    status?: string;
+  }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
+    if (params?.page_size)
+      queryParams.append("page_size", params.page_size.toString());
     if (params?.status) queryParams.append("status_filter", params.status);
 
     return apiFetch<{
@@ -152,7 +87,8 @@ export const api = {
   async getPendingJobs(params?: { page?: number; page_size?: number }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
+    if (params?.page_size)
+      queryParams.append("page_size", params.page_size.toString());
 
     return apiFetch<{
       jobs: Array<{
@@ -172,10 +108,15 @@ export const api = {
     }>(`/jobs/pending?${queryParams.toString()}`);
   },
 
-  async getCompletedJobs(params?: { page?: number; page_size?: number; status?: string }) {
+  async getCompletedJobs(params?: {
+    page?: number;
+    page_size?: number;
+    status?: string;
+  }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
+    if (params?.page_size)
+      queryParams.append("page_size", params.page_size.toString());
     if (params?.status) queryParams.append("status_filter", params.status);
 
     return apiFetch<{
@@ -234,6 +175,26 @@ export const api = {
     }>(`/jobs/${jobId}/result`);
   },
 
+  async createJob(formData: FormData) {
+    return apiFetch<{ job_id: string; status: string; message: string }>(
+      "/jobs",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+  },
+
+  async createJobFromUrl(url: string, options: Record<string, unknown>) {
+    return apiFetch<{ job_id: string; status: string; message: string }>(
+      "/jobs/url",
+      {
+        method: "POST",
+        body: { url, options },
+      },
+    );
+  },
+
   async cancelJob(jobId: string) {
     return apiFetch<{ message: string }>(`/jobs/${jobId}/cancel`, {
       method: "POST",
@@ -242,16 +203,21 @@ export const api = {
 
   async getJobLiveStream(jobId: string): Promise<EventSource> {
     const token = localStorage.getItem("access_token");
-    const url = `${API_URL}/jobs/${jobId}/live`;
-    const eventSource = new EventSource(url);
-    return eventSource;
+    const url = `${API_URL}/jobs/${jobId}/live?access_token=${token}`;
+    return new EventSource(url);
   },
 
   // Transcripts API
-  async getTranscripts(params?: { page?: number; page_size?: number; language?: string; search?: string }) {
+  async getTranscripts(params?: {
+    page?: number;
+    page_size?: number;
+    language?: string;
+    search?: string;
+  }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
+    if (params?.page_size)
+      queryParams.append("page_size", params.page_size.toString());
     if (params?.language) queryParams.append("language", params.language);
     if (params?.search) queryParams.append("search", params.search);
 
@@ -324,7 +290,11 @@ export const api = {
     }>(`/transcripts/${transcriptId}/segments`);
   },
 
-  async updateTranscriptSegment(transcriptId: string, segmentId: number, text: string) {
+  async updateTranscriptSegment(
+    transcriptId: string,
+    segmentId: number,
+    text: string,
+  ) {
     return apiFetch<{
       id: number;
       start_ms: number;
@@ -359,29 +329,39 @@ export const api = {
       {
         method: "POST",
         body: { confirm: true },
-      }
+      },
     );
   },
 
-  async exportTranscript(transcriptId: string, format: "txt" | "json" | "srt" | "vtt" = "txt"): Promise<Blob> {
+  async exportTranscript(
+    transcriptId: string,
+    format: "txt" | "json" | "srt" | "vtt" = "txt",
+  ): Promise<Blob> {
     const token = localStorage.getItem("access_token");
-    const response = await fetch(`${API_URL}/transcripts/${transcriptId}/export?format=${format}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const response = await fetch(
+      `${API_URL}/transcripts/${transcriptId}/export?format=${format}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: "Export failed" }));
+      const error = await response
+        .json()
+        .catch(() => ({ detail: "Export failed" }));
       throw new Error(error.detail || "Export failed");
     }
 
     return response.blob();
   },
 
-
-  // Segment operations
-  async splitSegment(transcriptId: string, segmentId: number, splitAtMs: number) {
+  async splitSegment(
+    transcriptId: string,
+    segmentId: number,
+    splitAtMs: number,
+  ) {
     return apiFetch<{
       message: string;
       original_segment_id: number;
@@ -403,7 +383,12 @@ export const api = {
     });
   },
 
-  async updateSegmentTimestamps(transcriptId: string, segmentId: number, startMs: number, endMs: number) {
+  async updateSegmentTimestamps(
+    transcriptId: string,
+    segmentId: number,
+    startMs: number,
+    endMs: number,
+  ) {
     return apiFetch<{
       message: string;
       segment: {
@@ -419,8 +404,7 @@ export const api = {
     });
   },
 
-  // Convenience aliases
   async updateTranscript(transcriptId: string, text: string) {
     return this.updateTranscriptFullText(transcriptId, text);
   },
-}
+};

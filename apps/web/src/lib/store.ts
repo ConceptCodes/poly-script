@@ -7,10 +7,13 @@ export interface User {
   name: string;
   verified: boolean;
   createdAt: string;
-  // Extended user preferences and localization
-  language: string;
-  email_notifications: boolean;
-  in_app_notifications: boolean;
+  host_language: string;
+  theme: "light" | "dark" | "system";
+  notifications: {
+    email: boolean;
+    job_completion: boolean;
+    in_app: boolean;
+  };
   lastLogin?: string;
 }
 
@@ -79,7 +82,9 @@ interface AppState {
   setOnboardingStep: (step: number) => void;
   setOnboardingLanguage: (language: string) => void;
   setOnboardingTeamName: (teamName: string) => void;
-  setOnboardingInviteMembers: (inviteMembers: Array<{ email: string; role: "ADMIN" | "MEMBER" }>) => void;
+  setOnboardingInviteMembers: (
+    inviteMembers: Array<{ email: string; role: "ADMIN" | "MEMBER" }>,
+  ) => void;
   resetOnboarding: () => void;
   setLanguage: (language: string) => void;
   initializeFromAuth: (user: User, team: Team) => void;
@@ -111,7 +116,8 @@ export const useAppStore = create<AppState>((set, get) => {
     setAuth: (authData: Partial<AuthState>) =>
       set((state) => ({
         auth: { ...state.auth, ...authData },
-        isAuthenticated: !!authData.isAuthenticated || state.auth.isAuthenticated,
+        isAuthenticated:
+          !!authData.isAuthenticated || state.auth.isAuthenticated,
         user: authData.user ?? state.user,
         team: authData.team ?? state.team,
         members: authData.members ?? state.members,
@@ -189,7 +195,9 @@ export const useAppStore = create<AppState>((set, get) => {
       set((state) => ({
         onboarding: { ...state.onboarding, teamName },
       })),
-    setOnboardingInviteMembers: (inviteMembers: Array<{ email: string; role: "ADMIN" | "MEMBER" }>) =>
+    setOnboardingInviteMembers: (
+      inviteMembers: Array<{ email: string; role: "ADMIN" | "MEMBER" }>,
+    ) =>
       set((state) => ({
         onboarding: { ...state.onboarding, inviteMembers },
       })),

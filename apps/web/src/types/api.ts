@@ -53,11 +53,13 @@ export interface PricingPlan {
 
 export interface PricingData {
   credit_price?: number;
-  plans: PricingPlan[] | {
-    FREE: { price: number; limit: number };
-    STANDARD: { price: number; limit: number };
-    PRO: { price: number; limit: number };
-  };
+  plans:
+    | PricingPlan[]
+    | {
+        FREE: { price: number; limit: number };
+        STANDARD: { price: number; limit: number };
+        PRO: { price: number; limit: number };
+      };
 }
 
 export interface User {
@@ -65,10 +67,15 @@ export interface User {
   email: string;
   name: string;
   role: "owner" | "admin" | "member";
-  language?: string;
-  email_notifications?: boolean;
-  in_app_notifications?: boolean;
+  host_language: string;
+  theme: "light" | "dark" | "system";
+  notifications: {
+    email: boolean;
+    job_completion: boolean;
+    in_app: boolean;
+  };
   created_at: string;
+  last_login?: string;
 }
 
 export interface TeamMember {

@@ -5,22 +5,53 @@ import { useForm } from "@tanstack/react-form";
 import { Button } from "@poly/ui";
 import { Input } from "@poly/ui";
 import { Label } from "@poly/ui";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@poly/ui";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@poly/ui";
 import { Switch } from "@poly/ui";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@poly/ui";
 import { Alert, AlertDescription } from "@poly/ui";
 import { Badge } from "@poly/ui";
 import { useAppStore } from "../../lib/store";
 import { apiFetch } from "../../lib/api";
 import { Trash2 } from "lucide-react";
 
-function Dialog({ open, onOpenChange, children }: { open: boolean; onOpenChange: (v: boolean) => void; children: React.ReactNode }) {
+function Dialog({
+  open,
+  onOpenChange,
+  children,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  children: React.ReactNode;
+}) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-label="Dialog" onClick={() => onOpenChange(false)}>
-      <div className="fixed inset-0 bg-black/50" onClick={(e) => e.stopPropagation()} />
+    <div
+      className="fixed inset-0 z-50"
+      role="dialog"
+      aria-label="Dialog"
+      onClick={() => onOpenChange(false)}
+    >
+      <div
+        className="fixed inset-0 bg-black/50"
+        onClick={(e) => e.stopPropagation()}
+      />
       <div className="flex items-center justify-center h-full">
-        <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-md"
+          onClick={(e) => e.stopPropagation()}
+        >
           {children}
         </div>
       </div>
@@ -40,7 +71,12 @@ function DialogFooter({ children }: { children: React.ReactNode }) {
   return <div className="flex justify-end gap-2 mt-4">{children}</div>;
 }
 
-type Invitation = { id: string; email: string; role: string; created_at: string };
+type Invitation = {
+  id: string;
+  email: string;
+  role: string;
+  created_at: string;
+};
 
 export function TeamSettingsPage() {
   const { t } = useTranslation();
@@ -49,7 +85,11 @@ export function TeamSettingsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteRole, setInviteRole] = useState("MEMBER");
+  const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>(
+    [],
+  );
 
   const { auth } = useAppStore();
   const { user, team } = auth;
@@ -72,7 +112,9 @@ export function TeamSettingsPage() {
 
   const loadPendingInvitations = async () => {
     try {
-      const data = await apiFetch(`/v1/teams/${team!.id}/invitations`) as { invitations: Invitation[] };
+      const data = (await apiFetch(`/v1/teams/${team!.id}/invitations`)) as {
+        invitations: Invitation[];
+      };
       setPendingInvitations(data.invitations || []);
     } catch (error) {
       console.error("Failed to load invitations:", error);
@@ -83,7 +125,10 @@ export function TeamSettingsPage() {
     if (!isAdmin) return;
     setIsLoading(true);
     setSuccessMessage("");
-    const value = form.state.values as { teamName: string; defaultLanguage: string };
+    const value = form.state.values as {
+      teamName: string;
+      defaultLanguage: string;
+    };
     try {
       await apiFetch(`/v1/teams/${team!.id}`, {
         method: "PATCH",
@@ -103,9 +148,11 @@ export function TeamSettingsPage() {
     try {
       await apiFetch(`/v1/teams/${team!.id}/invitations`, {
         method: "POST",
-        body: { email: inviteEmail, role: "MEMBER" },
+        body: { email: inviteEmail, role: inviteRole },
       });
       setInviteEmail("");
+      setInviteRole("MEMBER");
+      setInviteModalOpen(false);
       setSuccessMessage(t("teamSettings.inviteSuccess"));
       await loadPendingInvitations();
     } catch (error: any) {
@@ -197,7 +244,9 @@ export function TeamSettingsPage() {
             <form.Field name="teamName">
               {(field) => (
                 <div>
-                  <Label htmlFor={field.name}>{t("teamSettings.teamNameLabel")}</Label>
+                  <Label htmlFor={field.name}>
+                    {t("teamSettings.teamNameLabel")}
+                  </Label>
                   <Input
                     id={field.name}
                     value={field.state.value}
@@ -211,14 +260,20 @@ export function TeamSettingsPage() {
             <form.Field name="defaultLanguage">
               {(field) => (
                 <div>
-                  <Label htmlFor={field.name}>{t("teamSettings.defaultLanguageLabel")}</Label>
+                  <Label htmlFor={field.name}>
+                    {t("teamSettings.defaultLanguageLabel")}
+                  </Label>
                   <Select
                     value={field.state.value}
                     onValueChange={field.handleChange}
                     disabled={!isAdmin || isLoading}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder={t("teamSettings.defaultLanguagePlaceholder")} />
+                      <SelectValue
+                        placeholder={t(
+                          "teamSettings.defaultLanguagePlaceholder",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="en">English</SelectItem>
@@ -244,38 +299,37 @@ export function TeamSettingsPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">{t("teamSettings.members.invite")}</h3>
+              <h3 className="text-lg font-semibold">
+                {t("teamSettings.members.title")}
+              </h3>
               {isAdmin && (
-                <Button variant="outline" size="sm" onClick={() => setInviteEmail("")}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setInviteModalOpen(true)}
+                >
                   {t("teamSettings.members.invite")}
                 </Button>
               )}
             </div>
 
-            {isAdmin && inviteEmail && (
-              <div className="flex gap-2 mb-4">
-                <Input
-                  placeholder={t("teamSettings.inviteModal.emailPlaceholder")}
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleInviteMember()}
-                />
-                <Button onClick={handleInviteMember} disabled={isLoading}>
-                  {t("common.send")}
-                </Button>
-              </div>
-            )}
-
             <div className="space-y-4">
               {team.members?.map((member) => (
-                <div key={member.id} className="flex items-center justify-between py-3 border-b">
+                <div
+                  key={member.id}
+                  className="flex items-center justify-between py-3 border-b"
+                >
                   <div className="flex items-center space-x-3">
                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
                       {member.email[0].toUpperCase()}
                     </div>
                     <div>
                       <p className="font-medium">{member.email}</p>
-                      <Badge variant={member.role === "ADMIN" ? "default" : "secondary"}>
+                      <Badge
+                        variant={
+                          member.role === "ADMIN" ? "default" : "secondary"
+                        }
+                      >
                         {member.role}
                       </Badge>
                     </div>
@@ -284,16 +338,24 @@ export function TeamSettingsPage() {
                     <div className="flex items-center space-x-2">
                       <Select
                         defaultValue={member.role}
-                        onValueChange={(value) => handleChangeMemberRole(member.id, value)}
+                        onValueChange={(value) =>
+                          handleChangeMemberRole(member.id, value)
+                        }
                         disabled={isLoading}
                       >
                         <SelectTrigger className="w-[120px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ADMIN">{t("teamSettings.roles.admin")}</SelectItem>
-                          <SelectItem value="MEMBER">{t("teamSettings.roles.member")}</SelectItem>
-                          <SelectItem value="VIEWER">{t("teamSettings.roles.viewer")}</SelectItem>
+                          <SelectItem value="ADMIN">
+                            {t("teamSettings.roles.admin")}
+                          </SelectItem>
+                          <SelectItem value="MEMBER">
+                            {t("teamSettings.roles.member")}
+                          </SelectItem>
+                          <SelectItem value="VIEWER">
+                            {t("teamSettings.roles.viewer")}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <Button
@@ -319,7 +381,10 @@ export function TeamSettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {pendingInvitations.map((invitation) => (
-                <div key={invitation.id} className="flex items-center justify-between py-3 border-b">
+                <div
+                  key={invitation.id}
+                  className="flex items-center justify-between py-3 border-b"
+                >
                   <div>
                     <p className="font-medium">{invitation.email}</p>
                     <Badge variant="outline">{invitation.role}</Badge>
@@ -349,7 +414,10 @@ export function TeamSettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+              <Button
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
                 {t("teamSettings.dangerZone.deleteTeam")}
               </Button>
               <p className="text-sm text-muted-foreground">
@@ -359,17 +427,87 @@ export function TeamSettingsPage() {
           </Card>
         )}
 
+        <Dialog open={inviteModalOpen} onOpenChange={setInviteModalOpen}>
+          <div className="space-y-4">
+            <div>
+              <DialogTitle>{t("teamSettings.members.invite")}</DialogTitle>
+              <DialogDescription>
+                {t("teamSettings.inviteModal.description")}
+              </DialogDescription>
+            </div>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">
+                  {t("teamSettings.inviteModal.emailLabel")}
+                </Label>
+                <Input
+                  id="email"
+                  placeholder={t("teamSettings.inviteModal.emailPlaceholder")}
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">
+                  {t("teamSettings.inviteModal.roleLabel")}
+                </Label>
+                <Select value={inviteRole} onValueChange={setInviteRole}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ADMIN">
+                      {t("teamSettings.roles.admin")}
+                    </SelectItem>
+                    <SelectItem value="MEMBER">
+                      {t("teamSettings.roles.member")}
+                    </SelectItem>
+                    <SelectItem value="VIEWER">
+                      {t("teamSettings.roles.viewer")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setInviteModalOpen(false)}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                onClick={handleInviteMember}
+                disabled={isLoading || !inviteEmail}
+              >
+                {isLoading ? t("common.sending") : t("common.send")}
+              </Button>
+            </DialogFooter>
+          </div>
+        </Dialog>
+
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold">{t("teamSettings.dangerZone.confirmDelete")}</h3>
-              <p className="text-sm text-muted-foreground">{t("teamSettings.dangerZone.confirmMessage")}</p>
+              <h3 className="text-lg font-semibold">
+                {t("teamSettings.dangerZone.confirmDelete")}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {t("teamSettings.dangerZone.confirmMessage")}
+              </p>
             </div>
             <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteDialogOpen(false)}
+              >
                 {t("common.cancel")}
               </Button>
-              <Button variant="destructive" onClick={handleDeleteTeam} disabled={isLoading}>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteTeam}
+                disabled={isLoading}
+              >
                 {isLoading ? t("common.deleting") : t("common.delete")}
               </Button>
             </div>
