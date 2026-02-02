@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly-ui/card";
-import { Button } from "@poly-ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Button } from "@poly/ui/button";
 import { Play, Pause, Volume2 } from "lucide-react";
 
 interface AudioPlayerCardProps {

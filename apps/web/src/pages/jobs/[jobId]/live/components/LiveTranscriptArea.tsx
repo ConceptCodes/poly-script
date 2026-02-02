@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@poly-ui/card";
+import { Card, CardContent } from "@poly/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 

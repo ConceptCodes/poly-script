@@ -1,6 +1,6 @@
-import { Card, CardContent } from "@poly-ui/card";
-import { Badge } from "@poly-ui/badge";
-import { Button } from "@poly-ui/button";
+import { Card, CardContent } from "@poly/ui/card";
+import { Badge } from "@poly/ui/badge";
+import { Button } from "@poly/ui/button";
 import {
   CheckSquare,
   Square,
@@ -28,6 +28,8 @@ interface TranscriptCardProps {
   onView: () => void;
   onExport: (format: "txt" | "json" | "srt" | "vtt") => void;
   onDelete: () => void;
+  audioPreview?: boolean;
+  audioUrl?: string;
 }
 
 export function TranscriptCard({
@@ -74,6 +76,13 @@ export function TranscriptCard({
         <p className="text-sm text-muted-foreground line-clamp-2">
           {transcript.text_preview}
         </p>
+        {audioPreview && audioUrl && (
+          <AudioPreview
+            transcriptId={transcript.id}
+            audioUrl={audioUrl}
+            className="mb-3"
+          />
+        )}
         <div className="flex items-center gap-2 mt-3">
           <Button variant="ghost" size="sm" onClick={onView}>
             <FileText className="w-4 h-4 mr-1" />
@@ -174,6 +183,7 @@ export function TranscriptCard({
         </div>
       </>
     );
+  };
 
   return (
     <Card

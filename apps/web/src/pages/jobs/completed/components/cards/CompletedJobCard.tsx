@@ -1,6 +1,6 @@
-import { Card, CardContent } from "@poly-ui/card";
-import { Button } from "@poly-ui/button";
-import { Badge } from "@poly-ui/badge";
+import { Card, CardContent } from "@poly/ui/card";
+import { Button } from "@poly/ui/button";
+import { Badge } from "@poly/ui/badge";
 import { FileText, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 

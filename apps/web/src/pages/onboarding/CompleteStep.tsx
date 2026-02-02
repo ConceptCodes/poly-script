@@ -8,7 +8,10 @@ import {
   CardTitle,
 } from "@poly/ui";
 
-export function CompleteStep() {
+export function CompleteStep({}
+  : {
+  onNext?: () => void;
+}) {
   const { t } = useTranslation();
 
   return (

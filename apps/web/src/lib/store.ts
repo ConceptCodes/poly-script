@@ -7,6 +7,10 @@ export interface User {
   name: string;
   verified: boolean;
   createdAt: string;
+  // Extended user preferences and localization
+  language: string;
+  email_notifications: boolean;
+  in_app_notifications: boolean;
   lastLogin?: string;
 }
 
@@ -15,6 +19,8 @@ export interface Team {
   name: string;
   defaultLanguage: string;
   createdAt: string;
+  // Optional: list of current team members (not always loaded in this slice)
+  members?: TeamMember[];
 }
 
 export interface TeamMember {

@@ -1,4 +1,4 @@
-import { Button } from "@poly-ui/button";
+import { Button } from "@poly/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,7 +6,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@poly-ui/dialog";
+} from "@poly/ui/dialog";
 import { FileJson, FileText, Download } from "lucide-react";
 
 interface BulkExportModalProps {

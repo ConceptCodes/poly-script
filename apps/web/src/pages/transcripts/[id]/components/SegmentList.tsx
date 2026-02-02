@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@poly-ui/button";
-import { Textarea } from "@poly-ui/textarea";
+import { Button } from "@poly/ui/button";
+import Textarea from "@poly/uitextarea";
 import { Edit2, Save, X, Clock } from "lucide-react";
-import { api } from "../../../lib/api";
+import { api } from "../../../../lib/api";
 
 interface Segment {
   id: number;

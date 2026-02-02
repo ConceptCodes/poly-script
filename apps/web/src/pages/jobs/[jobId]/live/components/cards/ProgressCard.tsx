@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@poly-ui/card";
-import { Progress } from "@poly-ui/progress";
-import { Badge } from "@poly-ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Progress } from "@poly/ui/progress";
+import { Badge } from "@poly/ui/badge";
 import { Clock, FileText, Volume2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 

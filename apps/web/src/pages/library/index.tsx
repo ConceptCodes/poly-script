@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@poly-ui/button";
-import { Input } from "@poly-ui/input";
-import { Card, CardContent } from "@poly-ui/card";
+import { Button } from "@poly/ui/button";
+import { Input } from "@poly/ui/input";
+import { Card, CardContent } from "@poly/ui/card";
 import { Search, Filter, Grid, List as ListIcon, Loader2 } from "lucide-react";
 
 import { api } from "../../lib/api";
 import { TranscriptCard } from "./components/cards/TranscriptCard";
+import { AudioPreview } from "./components/cards/AudioPreview";
 import { LanguageFilter } from "./components/filters/LanguageFilter";
+import { SortFilter } from "./components/filters/SortFilter";
 import { BulkExportModal } from "./components/modals/BulkExportModal";
 import { DeleteConfirmModal } from "./components/modals/DeleteConfirmModal";
 
@@ -26,6 +28,7 @@ export function LibraryPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [language, setLanguage] = useState<string | undefined>();
+  const [sort, setSort] = useState("created_at:desc");
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -40,6 +43,7 @@ export function LibraryPage() {
         page_size: 20,
         search: search || undefined,
         language: language || undefined,
+        sort: sort,
       }),
   });
 
@@ -110,6 +114,8 @@ export function LibraryPage() {
           value={language}
           onChange={setLanguage}
         />
+
+        <SortFilter value={sort} onChange={setSort} />
 
         <div className="flex items-center gap-1 border rounded-lg p-1">
           <button

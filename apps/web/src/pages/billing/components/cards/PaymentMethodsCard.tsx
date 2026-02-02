@@ -8,7 +8,7 @@ import {
   Button,
 } from "@poly/ui";
 import { useEffect, useState } from "react";
-import { apiFetch } from "../../../../lib/api";
+import { apiFetch } from "@/lib/api";
 import { Loader2, Trash2 } from "lucide-react";
 import { AddPaymentMethodForm } from "../forms/AddPaymentMethodForm";
 
@@ -30,7 +30,7 @@ export function PaymentMethodsCard() {
 
   const loadMethods = async () => {
     try {
-      const data = await apiFetch("/billing/payment-methods");
+      const data = await apiFetch<PaymentMethod[]>("/billing/payment-methods");
       setMethods(data);
     } catch (err) {
       console.error(err);

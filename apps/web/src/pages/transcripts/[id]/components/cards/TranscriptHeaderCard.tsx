@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@poly-ui/card";
-import { Badge } from "@poly-ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Badge } from "@poly/ui/badge";
 
 interface TranscriptHeaderCardProps {
   language: string;

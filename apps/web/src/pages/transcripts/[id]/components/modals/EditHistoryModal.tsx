@@ -1,15 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, History, User } from "lucide-react";
 
-import { Button } from "@poly-ui/button";
+import { Button } from "@poly/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@poly-ui/dialog";
-import { api } from "../../../lib/api";
+} from "@poly/ui/dialog";
+import { api } from "../../../../lib/api";
 
 interface EditHistoryModalProps {
   transcriptId: string;

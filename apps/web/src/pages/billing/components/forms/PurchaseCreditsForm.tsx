@@ -6,8 +6,6 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  RadioGroup,
-  RadioGroupItem,
   Label,
 } from "@poly/ui";
 import { useState } from "react";
@@ -58,41 +56,38 @@ export function PurchaseCreditsForm() {
           }}
           className="space-y-4"
         >
-          <form.Field
-            name="amount"
-            children={(field) => (
-              <div className="space-y-4">
-                <Label>Credit Package</Label>
-                <RadioGroup
-                  value={String(field.state.value)}
-                  onValueChange={(value) =>
-                    field.handleChange(parseInt(value, 10))
-                  }
-                >
-                  {CREDIT_BUNDLES.map((bundle) => (
-                    <div
-                      key={bundle.value}
-                      className="flex items-center space-x-3 rounded-md border p-4"
-                    >
-                      <RadioGroupItem
-                        value={String(bundle.value)}
-                        id={`bundle-${bundle.value}`}
-                      />
-                      <Label
-                        htmlFor={`bundle-${bundle.value}`}
-                        className="flex-1 cursor-pointer"
-                      >
-                        <div className="font-medium">{bundle.label}</div>
-                        <div className="text-sm text-muted-foreground">
-                          ${bundle.price.toFixed(2)}
-                        </div>
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            )}
-          />
+           <form.Field
+             name="amount"
+             children={(field) => (
+               <div className="space-y-4">
+                 <Label>Credit Package</Label>
+                 <div className="grid grid-cols-1 gap-3">
+                   {CREDIT_BUNDLES.map((bundle) => (
+                     <button
+                       key={bundle.value}
+                       type="button"
+                       onClick={() => field.handleChange(bundle.value)}
+                       className={`flex items-center justify-between rounded-md border p-4 text-left transition-colors ${
+                         field.state.value === bundle.value
+                           ? "border-primary bg-primary/5"
+                           : "hover:bg-muted/50"
+                       }`}
+                     >
+                       <div>
+                         <div className="font-medium">{bundle.label}</div>
+                         <div className="text-sm text-muted-foreground">
+                           ${bundle.price.toFixed(2)}
+                         </div>
+                       </div>
+                       {field.state.value === bundle.value && (
+                         <div className="h-4 w-4 rounded-full bg-primary" />
+                       )}
+                     </button>
+                   ))}
+                 </div>
+               </div>
+             )}
+           />
           <Button type="submit" disabled={purchaseCredits.isPending} className="w-full">
             {purchaseCredits.isPending ? "Processing..." : "Buy Credits"}
           </Button>

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly-ui/card";
-import { Button } from "@poly-ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@poly-ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly-ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Button } from "@poly/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@poly/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui/select";
 import { Filter } from "lucide-react";
 
 import { CompletedJobCard } from "./components/cards/CompletedJobCard";

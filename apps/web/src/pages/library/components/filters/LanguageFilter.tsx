@@ -4,7 +4,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@poly-ui/select";
+} from "@poly/ui/select";
 
 interface LanguageFilterProps {
   value: string | undefined;

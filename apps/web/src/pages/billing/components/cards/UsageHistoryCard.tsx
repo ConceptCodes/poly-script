@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@poly/ui";
 import { useEffect, useState } from "react";
-import { apiFetch } from "../../../../lib/api";
+import { apiFetch } from "@/lib/api";
 
 interface UsageItem {
   action: string;
@@ -16,7 +16,7 @@ export function UsageHistoryCard() {
   useEffect(() => {
     const loadHistory = async () => {
       try {
-        const data = await apiFetch("/billing/usage/history");
+        const data = await apiFetch<{ items: UsageItem[] }>("/billing/usage/history");
         setItems(data.items || []);
       } catch (err) {
         console.error(err);

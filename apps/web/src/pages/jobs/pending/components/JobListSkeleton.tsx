@@ -1,5 +1,5 @@
-import { Card, CardContent } from "@poly-ui/card";
-import { Skeleton } from "@poly-ui/skeleton";
+import { Card, CardContent } from "@poly/ui/card";
+import { Skeleton } from "@poly/ui/skeleton";
 
 export function JobListSkeleton() {
   return (

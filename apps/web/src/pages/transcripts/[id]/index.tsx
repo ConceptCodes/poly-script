@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@poly-ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly-ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@poly-ui/tabs";
+import { Button } from "@poly/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@poly/ui/tabs";
 import { 
   ArrowLeft, 
   Download, 
@@ -15,7 +15,7 @@ import {
   Loader2
 } from "lucide-react";
 
-import { api } from "../../lib/api";
+import { api } from "../../../../lib/api";
 import { TranscriptHeaderCard } from "./components/cards/TranscriptHeaderCard";
 import { AudioPlayerCard } from "./components/cards/AudioPlayerCard";
 import { FullTextEditor } from "./components/forms/FullTextEditor";

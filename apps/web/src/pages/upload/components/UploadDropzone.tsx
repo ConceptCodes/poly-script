@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { Button } from "@poly/ui/button";
 import { Card, CardContent } from "@poly/ui/card";
+import { Upload, FileAudio } from "lucide-react";
 
 interface UploadDropzoneProps {
   onFileSelected: (file: File) => void;
@@ -88,25 +89,7 @@ export function UploadDropzone({ onFileSelected, disabled = false }: UploadDropz
             <div className="space-y-4">
               <div className="flex items-center justify-center">
                 <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center">
-                  <svg
-                    className="h-8 w-8 text-primary"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19V6l3-3 3 3h2a3 3 0 013 0v6a3 3 0 01-3-3H9z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M14 2H6a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4z"
-                    />
-                  </svg>
+                  <FileAudio className="h-8 w-8 text-primary" />
                 </div>
               </div>
               <p className="text-sm font-medium text-muted-foreground">
@@ -118,26 +101,8 @@ export function UploadDropzone({ onFileSelected, disabled = false }: UploadDropz
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center">
-                <svg
-                  className="h-8 w-8 text-muted-foreground"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16a4 4 0 01-4-4V8a4 4 0 01-4-4H7z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 5v14M5 12h14"
-                  />
-                </svg>
+              <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto">
+                <Upload className="h-8 w-8 text-muted-foreground" />
               </div>
               <p className="text-sm font-medium text-muted-foreground">
                 Drag and drop audio file here, or click to select
@@ -146,6 +111,7 @@ export function UploadDropzone({ onFileSelected, disabled = false }: UploadDropz
                 MP3, WAV, M4A, OGG, WEBM
               </p>
             </div>
+          )}
         </div>
       </CardContent>
     </Card>

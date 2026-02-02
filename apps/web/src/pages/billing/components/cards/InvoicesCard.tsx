@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button } from "@poly/ui";
 import { useEffect, useState } from "react";
-import { apiFetch } from "../../../../lib/api";
+import { apiFetch } from "@/lib/api";
 
 interface Invoice {
   id: string;
@@ -19,7 +19,7 @@ export function InvoicesCard() {
   useEffect(() => {
     const loadInvoices = async () => {
       try {
-        const data = await apiFetch("/billing/invoices");
+        const data = await apiFetch<Invoice[]>("/billing/invoices");
         setInvoices(data);
       } catch (err) {
         console.error(err);

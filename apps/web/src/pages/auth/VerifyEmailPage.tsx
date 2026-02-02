@@ -88,10 +88,10 @@ export function VerifyEmailPage() {
               <p className="text-sm text-center text-gray-600">
                 {t("auth.verifyEmail.success.subtitle")}
               </p>
-              <Button onClick={() => navigate("/auth/login")} className="w-full">
-                {t("auth.verifyEmail.success.login")}
-              </Button>
-            </div>
+              <Button onClick={() => navigate("/auth/login")} className="w-full">{t("auth.verifyEmail.success.login")}</Button>
+              <div className="pt-4">
+                <Link to="/auth/signup" className="text-sm text-muted-foreground hover:text-primary">{t("auth.verifyEmail.useDifferentEmail") || "Use a different email"}</Link>
+              </div></div>
           )}
 
           {status === "failed" && (

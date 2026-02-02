@@ -1,6 +1,6 @@
 import { AlertTriangle, Loader2 } from "lucide-react";
 
-import { Button } from "@poly-ui/button";
+import { Button } from "@poly/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@poly-ui/dialog";
+} from "@poly/ui/dialog";
 
 interface RevertModalProps {
   onClose: () => void;

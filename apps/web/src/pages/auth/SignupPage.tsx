@@ -41,7 +41,7 @@ export function SignupPage() {
           },
         });
         localStorage.setItem("pending_email", value.email);
-        navigate("/auth/verify-email");
+        navigate("/auth/verify-email-code");
       } catch (error: any) {
         console.error("Signup failed:", error);
         throw error;
@@ -61,13 +61,12 @@ export function SignupPage() {
           <CardDescription>{t("auth.signup.subtitle")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form.Provider>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                form.handleSubmit();
-              }}
-              className="space-y-4"
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              form.handleSubmit();
+            }}
+            className="space-y-4"
             >
               <form.Field
                 name="email"
@@ -138,7 +137,7 @@ export function SignupPage() {
                       });
                       return result.success
                         ? undefined
-                        : result.error.formErrors.fieldErrors.confirmPassword?.[0];
+                        : (result.error as any).errors?.find((e: any) => e.path?.includes("confirmPassword"))?.message;
                     })(),
                 }}
               >
@@ -178,7 +177,7 @@ export function SignupPage() {
                     <Checkbox
                       id="terms"
                       checked={field.state.value}
-                      onCheckedChange={field.handleChange}
+                      onCheckedChange={(checked) => field.handleChange(checked === true)}
                     />
                     <div className="grid gap-1.5 leading-none">
                       <Label
@@ -213,9 +212,8 @@ export function SignupPage() {
                     </Alert>
                   )
                 }
-              </form.Subscribe>
+               </form.Subscribe>
             </form>
-          </form.Provider>
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">

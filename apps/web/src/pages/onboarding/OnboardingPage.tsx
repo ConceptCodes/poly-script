@@ -5,11 +5,18 @@ import { Button } from "@poly/ui";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../../lib/store";
 import { apiFetch } from "../../lib/api";
-
 import { LanguageStep } from "./LanguageStep";
 import { TeamNameStep } from "./TeamNameStep";
 import { InviteMembersStep } from "./InviteMembersStep";
+import { PlanSelectionStep } from "./PlanSelectionStep";
 import { CompleteStep } from "./CompleteStep";
+
+type DataType = {
+  language: string;
+  teamName: string;
+  plan: string;
+  members: string[];
+};
 
 export function OnboardingPage() {
   const { t } = useTranslation();
@@ -21,15 +28,17 @@ export function OnboardingPage() {
   const steps = [
     { id: "language", title: t("onboarding.steps.language") },
     { id: "teamName", title: t("onboarding.steps.teamName") },
+    { id: "plan", title: t("onboarding.steps.plan") },
     { id: "inviteMembers", title: t("onboarding.steps.inviteMembers") },
     { id: "complete", title: t("onboarding.steps.complete") },
   ];
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [data, setData] = useState({
-    language: "",
-    teamName: "",
-    members: [],
+  const [data, setData] = useState<DataType>({ 
+    language: "", 
+    teamName: "", 
+    plan: "",
+    members: [] 
   });
 
   const handleNext = () => {
@@ -51,9 +60,10 @@ export function OnboardingPage() {
       await apiFetch("/v1/onboarding/complete", {
         method: "POST",
         body: {
-          language: data.language,
           team_name: data.teamName,
-          invite_members: data.members.filter((m) => m.length > 0),
+          host_language: data.language,
+          plan: data.plan || "FREE",
+          invite_emails: data.members.filter((m) => m.length > 0),
         },
       });
       setOnboardingComplete(true);
@@ -63,13 +73,17 @@ export function OnboardingPage() {
     }
   };
 
-  const updateData = (key, value) => {
+  const updateData = <K extends keyof DataType>(key: K, value: DataType[K]) => {
     setData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const CurrentStepComponent = [LanguageStep, TeamNameStep, InviteMembersStep, CompleteStep][
-    currentStep
-  ];
+  const CurrentStepComponent: any = [
+    LanguageStep, 
+    TeamNameStep, 
+    PlanSelectionStep,
+    InviteMembersStep, 
+    CompleteStep
+  ][currentStep];
 
   return (
     <div className="min-h-screen bg-background py-8">
@@ -102,11 +116,11 @@ export function OnboardingPage() {
             {t("onboarding.back")}
           </Button>
           <Button onClick={handleNext}>
-            {currentStep === steps.length - 1 ? t("onboarding.complete") : t("onboarding.next")}
+            {currentStep === steps.length - 1 ? t("onboarding.completeCta") : t("onboarding.next")}
           </Button>
         </div>
 
-        <CurrentStepComponent data={data} updateData={updateData} onNext={handleNext} />
+        <CurrentStepComponent data={data} updateData={updateData as any} onNext={handleNext} />
       </div>
     </div>
   );

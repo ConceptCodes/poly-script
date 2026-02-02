@@ -9,7 +9,52 @@ export async function apiFetch<T = unknown>(endpoint: string, options: ApiOption
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
-  };
+  
+
+  // Segment operations
+  async splitSegment(transcriptId: string, segmentId: number, splitAtMs: number) {
+    return apiFetch<{
+      message: string;
+      original_segment_id: number;
+      new_segment_ids: number[];
+    }>(`/transcripts/${transcriptId}/segments/${segmentId}/split`, {
+      method: "POST",
+      body: { split_at_ms: splitAtMs },
+    });
+  },
+
+  async mergeSegments(transcriptId: string, segmentIds: number[]) {
+    return apiFetch<{
+      message: string;
+      merged_segment_id: number;
+      removed_segment_ids: number[];
+    }>(`/transcripts/${transcriptId}/segments/merge`, {
+      method: "POST",
+      body: { segment_ids: segmentIds },
+    });
+  },
+
+  async updateSegmentTimestamps(transcriptId: string, segmentId: number, startMs: number, endMs: number) {
+    return apiFetch<{
+      message: string;
+      segment: {
+        id: number;
+        start_ms: number;
+        end_ms: number;
+        text: string;
+        speaker: string | null;
+      };
+    }>(`/transcripts/${transcriptId}/segments/${segmentId}/timestamps`, {
+      method: "PATCH",
+      body: { start_ms: startMs, end_ms: endMs },
+    });
+  },
+
+  // Convenience aliases
+  async updateTranscript(transcriptId: string, text: string) {
+    return this.updateTranscriptFullText(transcriptId, text);
+  },
+}
   if (token && !headers.Authorization) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -26,7 +71,53 @@ export async function apiFetch<T = unknown>(endpoint: string, options: ApiOption
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: "An unknown error occurred" }));
-    throw new Error(error.detail || response.statusText);
+    const errorObj = { ...error, status: response.status, code: error.code || null 
+
+  // Segment operations
+  async splitSegment(transcriptId: string, segmentId: number, splitAtMs: number) {
+    return apiFetch<{
+      message: string;
+      original_segment_id: number;
+      new_segment_ids: number[];
+    }>(`/transcripts/${transcriptId}/segments/${segmentId}/split`, {
+      method: "POST",
+      body: { split_at_ms: splitAtMs },
+    });
+  },
+
+  async mergeSegments(transcriptId: string, segmentIds: number[]) {
+    return apiFetch<{
+      message: string;
+      merged_segment_id: number;
+      removed_segment_ids: number[];
+    }>(`/transcripts/${transcriptId}/segments/merge`, {
+      method: "POST",
+      body: { segment_ids: segmentIds },
+    });
+  },
+
+  async updateSegmentTimestamps(transcriptId: string, segmentId: number, startMs: number, endMs: number) {
+    return apiFetch<{
+      message: string;
+      segment: {
+        id: number;
+        start_ms: number;
+        end_ms: number;
+        text: string;
+        speaker: string | null;
+      };
+    }>(`/transcripts/${transcriptId}/segments/${segmentId}/timestamps`, {
+      method: "PATCH",
+      body: { start_ms: startMs, end_ms: endMs },
+    });
+  },
+
+  // Convenience aliases
+  async updateTranscript(transcriptId: string, text: string) {
+    return this.updateTranscriptFullText(transcriptId, text);
+  },
+}
+    throw errorObj;
   }
 
   const data = await response.json();
@@ -149,7 +240,7 @@ export const api = {
     });
   },
 
-  async getJobLiveStream(jobId: string): EventSource {
+  async getJobLiveStream(jobId: string): Promise<EventSource> {
     const token = localStorage.getItem("access_token");
     const url = `${API_URL}/jobs/${jobId}/live`;
     const eventSource = new EventSource(url);
@@ -287,4 +378,49 @@ export const api = {
 
     return response.blob();
   },
-};
+
+
+  // Segment operations
+  async splitSegment(transcriptId: string, segmentId: number, splitAtMs: number) {
+    return apiFetch<{
+      message: string;
+      original_segment_id: number;
+      new_segment_ids: number[];
+    }>(`/transcripts/${transcriptId}/segments/${segmentId}/split`, {
+      method: "POST",
+      body: { split_at_ms: splitAtMs },
+    });
+  },
+
+  async mergeSegments(transcriptId: string, segmentIds: number[]) {
+    return apiFetch<{
+      message: string;
+      merged_segment_id: number;
+      removed_segment_ids: number[];
+    }>(`/transcripts/${transcriptId}/segments/merge`, {
+      method: "POST",
+      body: { segment_ids: segmentIds },
+    });
+  },
+
+  async updateSegmentTimestamps(transcriptId: string, segmentId: number, startMs: number, endMs: number) {
+    return apiFetch<{
+      message: string;
+      segment: {
+        id: number;
+        start_ms: number;
+        end_ms: number;
+        text: string;
+        speaker: string | null;
+      };
+    }>(`/transcripts/${transcriptId}/segments/${segmentId}/timestamps`, {
+      method: "PATCH",
+      body: { start_ms: startMs, end_ms: endMs },
+    });
+  },
+
+  // Convenience aliases
+  async updateTranscript(transcriptId: string, text: string) {
+    return this.updateTranscriptFullText(transcriptId, text);
+  },
+}

@@ -9,7 +9,13 @@ import {
   CardTitle,
 } from "@poly/ui";
 
-export function LanguageStep() {
+// Adapt to flexible props to support OnboardingPage wiring
+export function LanguageStep({}
+  : {
+  data?: any;
+  updateData?: any;
+  onNext?: () => void;
+}) {
   const { t } = useTranslation();
   const form = useForm({
     defaultValues: {

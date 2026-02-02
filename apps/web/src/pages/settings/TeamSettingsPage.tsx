@@ -1,17 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "@tanstack/react-form";
 import { Button } from "@poly/ui";
 import { Input } from "@poly/ui";
 import { Label } from "@poly/ui";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@poly/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@poly/ui";
 import { Switch } from "@poly/ui";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui";
 import { Alert, AlertDescription } from "@poly/ui";
@@ -20,20 +14,18 @@ import { useAppStore } from "../../lib/store";
 import { apiFetch } from "../../lib/api";
 import { Trash2 } from "lucide-react";
 
-// Simple Dialog components for now since AlertDialog doesn't exist
-function DialogContent({ children }: { children: React.ReactNode }) {
+function Dialog({ open, onOpenChange, children }: { open: boolean; onOpenChange: (v: boolean) => void; children: React.ReactNode }) {
+  if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" />
-      <div className="relative z-50 bg-white rounded-lg p-6 max-w-md w-full shadow-lg">
-        {children}
+    <div className="fixed inset-0 z-50" role="dialog" aria-label="Dialog" onClick={() => onOpenChange(false)}>
+      <div className="fixed inset-0 bg-black/50" onClick={(e) => e.stopPropagation()} />
+      <div className="flex items-center justify-center h-full">
+        <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+          {children}
+        </div>
       </div>
     </div>
   );
-}
-
-function DialogHeader({ children }: { children: React.ReactNode }) {
-  return <div className="mb-4">{children}</div>;
 }
 
 function DialogTitle({ children }: { children: React.ReactNode }) {
@@ -48,6 +40,8 @@ function DialogFooter({ children }: { children: React.ReactNode }) {
   return <div className="flex justify-end gap-2 mt-4">{children}</div>;
 }
 
+type Invitation = { id: string; email: string; role: string; created_at: string };
+
 export function TeamSettingsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -55,33 +49,46 @@ export function TeamSettingsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
 
   const { auth } = useAppStore();
   const { user, team } = auth;
 
-  const [form] = useForm({
+  const form = useForm({
     defaultValues: {
-      teamName: team?.defaultLanguage || "",
-      defaultLanguage: team?.defaultLanguage || "en",
+      teamName: team?.name ?? "",
+      defaultLanguage: team?.defaultLanguage ?? "en",
     },
   });
 
-  const isAdmin = user?.role === "ADMIN";
+  const currentMembership = team?.members?.find((m) => m.id === user?.id);
+  const isAdmin = currentMembership?.role === "ADMIN";
 
-  const handleUpdateTeam = async ({ value }) => {
+  useEffect(() => {
+    if (isAdmin && team?.id) {
+      loadPendingInvitations();
+    }
+  }, [isAdmin, team?.id]);
+
+  const loadPendingInvitations = async () => {
+    try {
+      const data = await apiFetch(`/v1/teams/${team!.id}/invitations`) as { invitations: Invitation[] };
+      setPendingInvitations(data.invitations || []);
+    } catch (error) {
+      console.error("Failed to load invitations:", error);
+    }
+  };
+
+  const handleUpdateTeam = async () => {
     if (!isAdmin) return;
     setIsLoading(true);
     setSuccessMessage("");
-
+    const value = form.state.values as { teamName: string; defaultLanguage: string };
     try {
-      await apiFetch(`/v1/teams/${team.id}`, {
+      await apiFetch(`/v1/teams/${team!.id}`, {
         method: "PATCH",
-        body: {
-          name: value.teamName,
-          default_language: value.defaultLanguage,
-        },
+        body: { name: value.teamName, default_language: value.defaultLanguage },
       });
-
       setSuccessMessage(t("teamSettings.success"));
     } catch (error: any) {
       console.error("Failed to update team:", error);
@@ -93,20 +100,32 @@ export function TeamSettingsPage() {
   const handleInviteMember = async () => {
     if (!isAdmin || !inviteEmail) return;
     setIsLoading(true);
-
     try {
-      await apiFetch(`/v1/teams/${team.id}/invitations`, {
+      await apiFetch(`/v1/teams/${team!.id}/invitations`, {
         method: "POST",
-        body: {
-          email: inviteEmail,
-          role: "MEMBER",
-        },
+        body: { email: inviteEmail, role: "MEMBER" },
       });
-
       setInviteEmail("");
       setSuccessMessage(t("teamSettings.inviteSuccess"));
+      await loadPendingInvitations();
     } catch (error: any) {
       console.error("Failed to invite member:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChangeMemberRole = async (memberId: string, newRole: string) => {
+    if (!isAdmin) return;
+    setIsLoading(true);
+    try {
+      await apiFetch(`/v1/teams/${team!.id}/members/${memberId}`, {
+        method: "PATCH",
+        body: { role: newRole },
+      });
+      setSuccessMessage(t("teamSettings.success"));
+    } catch (error: any) {
+      console.error("Failed to update member role:", error);
     } finally {
       setIsLoading(false);
     }
@@ -115,9 +134,8 @@ export function TeamSettingsPage() {
   const handleRemoveMember = async (memberId: string) => {
     if (!isAdmin) return;
     setIsLoading(true);
-
     try {
-      await apiFetch(`/v1/teams/${team.id}/members/${memberId}`, {
+      await apiFetch(`/v1/teams/${team!.id}/members/${memberId}`, {
         method: "DELETE",
       });
       setSuccessMessage(t("teamSettings.removeSuccess"));
@@ -128,46 +146,37 @@ export function TeamSettingsPage() {
     }
   };
 
-  const handleChangeMemberRole = async (memberId: string, role: string) => {
+  const handleCancelInvitation = async (invitationId: string) => {
     if (!isAdmin) return;
     setIsLoading(true);
-
     try {
-      await apiFetch(`/v1/teams/${team.id}/members/${memberId}`, {
-        method: "PATCH",
-        body: { role },
+      await apiFetch(`/v1/teams/${team!.id}/invitations/${invitationId}`, {
+        method: "DELETE",
       });
-      setSuccessMessage(t("teamSettings.roleUpdateSuccess"));
+      setSuccessMessage(t("teamSettings.inviteSuccess"));
+      await loadPendingInvitations();
     } catch (error: any) {
-      console.error("Failed to update member role:", error);
+      console.error("Failed to cancel invitation:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteTeam = async () => {
+    if (!isAdmin) return;
     setIsLoading(true);
-
     try {
-      await apiFetch(`/v1/teams/${team.id}`, {
+      await apiFetch(`/v1/teams/${team!.id}`, {
         method: "DELETE",
       });
-      setDeleteDialogOpen(false);
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Failed to delete team:", error);
     } finally {
       setIsLoading(false);
+      setDeleteDialogOpen(false);
     }
   };
-
-  if (!team) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center py-8">
-        <p>{t("teamSettings.notFound")}</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background py-8">
@@ -176,7 +185,7 @@ export function TeamSettingsPage() {
 
         {successMessage && (
           <Alert variant="default" className="mb-6">
-            {successMessage}
+            <AlertDescription>{successMessage}</AlertDescription>
           </Alert>
         )}
 
@@ -184,20 +193,17 @@ export function TeamSettingsPage() {
           <CardHeader>
             <CardTitle>{t("teamSettings.teamInfo")}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <form.Field name="teamName">
               {(field) => (
                 <div>
-                  <Label htmlFor={field.name}>{t("teamSettings.teamName.label")}</Label>
+                  <Label htmlFor={field.name}>{t("teamSettings.teamNameLabel")}</Label>
                   <Input
                     id={field.name}
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    disabled={!isAdmin}
+                    disabled={!isAdmin || isLoading}
                   />
-                  {field.state.meta.errors && (
-                    <p className="text-sm text-red-500">{field.state.meta.errors[0]}</p>
-                  )}
                 </div>
               )}
             </form.Field>
@@ -205,10 +211,14 @@ export function TeamSettingsPage() {
             <form.Field name="defaultLanguage">
               {(field) => (
                 <div>
-                  <Label htmlFor={field.name}>{t("teamSettings.defaultLanguage.label")}</Label>
-                  <Select value={field.state.value} onValueChange={field.handleChange}>
+                  <Label htmlFor={field.name}>{t("teamSettings.defaultLanguageLabel")}</Label>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={field.handleChange}
+                    disabled={!isAdmin || isLoading}
+                  >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder={t("teamSettings.defaultLanguage.placeholder")} />
+                      <SelectValue placeholder={t("teamSettings.defaultLanguagePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="en">English</SelectItem>
@@ -230,7 +240,7 @@ export function TeamSettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{t("teamSettings.members.title")}</CardTitle>
+            <CardTitle>{t("teamSettings.members")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between mb-4">
@@ -245,7 +255,7 @@ export function TeamSettingsPage() {
             {isAdmin && inviteEmail && (
               <div className="flex gap-2 mb-4">
                 <Input
-                  placeholder={t("teamSettings.members.emailPlaceholder")}
+                  placeholder={t("teamSettings.inviteModal.emailPlaceholder")}
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleInviteMember()}
@@ -302,6 +312,35 @@ export function TeamSettingsPage() {
           </CardContent>
         </Card>
 
+        {isAdmin && pendingInvitations.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("teamSettings.invitations")}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {pendingInvitations.map((invitation) => (
+                <div key={invitation.id} className="flex items-center justify-between py-3 border-b">
+                  <div>
+                    <p className="font-medium">{invitation.email}</p>
+                    <Badge variant="outline">{invitation.role}</Badge>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(invitation.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleCancelInvitation(invitation.id)}
+                    disabled={isLoading}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {isAdmin && (
           <Card className="border-destructive">
             <CardHeader>
@@ -320,22 +359,22 @@ export function TeamSettingsPage() {
           </Card>
         )}
 
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t("teamSettings.dangerZone.confirmDelete")}</AlertDialogTitle>
-              <AlertDialogDescription>{t("teamSettings.dangerZone.confirmMessage")}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold">{t("teamSettings.dangerZone.confirmDelete")}</h3>
+              <p className="text-sm text-muted-foreground">{t("teamSettings.dangerZone.confirmMessage")}</p>
+            </div>
+            <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
                 {t("common.cancel")}
               </Button>
               <Button variant="destructive" onClick={handleDeleteTeam} disabled={isLoading}>
                 {isLoading ? t("common.deleting") : t("common.delete")}
               </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+            </div>
+          </div>
+        </Dialog>
       </div>
     </div>
   );

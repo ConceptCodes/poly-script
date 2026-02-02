@@ -61,7 +61,7 @@ export function BillingPage() {
   } : null;
 
   const handleManageBilling = () => {
-    createPortalSession.mutate();
+    createPortalSession.mutate(undefined);
   };
 
   const initiatePlanChange = (plan: string) => {

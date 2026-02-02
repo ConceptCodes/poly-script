@@ -6,6 +6,7 @@ import "./App.css";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { SignupPage } from "./pages/auth/SignupPage";
 import { VerifyEmailPage } from "./pages/auth/VerifyEmailPage";
+import { VerifyEmailCodePage } from "./pages/auth/VerifyEmailCodePage";
 import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
 import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
 
@@ -19,8 +20,9 @@ import { TeamSettingsPage } from "./pages/settings/TeamSettingsPage";
 import { UserSettingsPage } from "./pages/settings/UserSettingsPage";
 
 import { BillingPage } from "./pages/billing/index";
-import { UploadPage } from "./pages/upload/index";
+import UploadPage from "./pages/upload/index";
 
+import { JobsPage } from "./pages/jobs";
 import { PendingJobsPage } from "./pages/jobs/pending";
 import { LiveTranscriptViewerPage } from "./pages/jobs/[jobId]/live";
 import { CompletedJobsPage } from "./pages/jobs/completed";
@@ -46,6 +48,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/verify-email-code" element={<VerifyEmailCodePage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
 
@@ -96,6 +99,14 @@ function App() {
                 }
               />
 
+              <Route
+                path="/jobs"
+                element={
+                  <ProtectedRoute>
+                    <JobsPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/jobs/pending"
                 element={

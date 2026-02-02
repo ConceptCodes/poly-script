@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@poly-ui/button";
+import { Button } from "@poly/ui/button";
 import { AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
 
 import { ProgressCard } from "./components/cards/ProgressCard";
 import { LiveTranscriptArea } from "./components/LiveTranscriptArea";
-import { api } from "../../../lib/api";
+import { api } from "@/lib/api";
 
 interface ProgressData {
   job_id: string;

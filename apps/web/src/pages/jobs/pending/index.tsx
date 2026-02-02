@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly-ui/card";
-import { Button } from "@poly-ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Button } from "@poly/ui/button";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
 import { PendingJobCard } from "./components/cards/PendingJobCard";
 import { JobListSkeleton } from "./components/JobListSkeleton";
-import { api } from "../../lib/api";
+import { api } from "../../../lib/api";
 
 export function PendingJobsPage() {
   const navigate = useNavigate();

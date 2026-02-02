@@ -5,17 +5,11 @@ import { useForm } from "@tanstack/react-form";
 import { Button } from "@poly/ui";
 import { Input } from "@poly/ui";
 import { Label } from "@poly/ui";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@poly/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@poly/ui";
 import { Switch } from "@poly/ui";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui";
 import { Alert, AlertDescription } from "@poly/ui";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@poly/ui";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@poly/ui";
 import { useAppStore } from "../../lib/store";
 import { apiFetch } from "../../lib/api";
 
@@ -26,8 +20,9 @@ export function UserSettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [theme, setTheme] = useState<"light" | "dark" | "system">(user?.theme || "system"));
 
-  const [form] = useForm({
+  const form = useForm({
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
@@ -36,19 +31,17 @@ export function UserSettingsPage() {
       confirmPassword: "",
       language: user?.language || "en",
       emailNotifications: user?.email_notifications ?? true,
+      jobCompletionNotifications: user?.job_completion_notifications ?? true,
       inAppNotifications: user?.in_app_notifications ?? true,
     },
   });
 
   const handleUpdateEmail = async () => {
     setIsLoading(true);
-
     try {
       await apiFetch("/v1/user/email/update", {
         method: "POST",
-        body: {
-          email: form.state.values.email,
-        },
+        body: { email: form.state.values.email },
       });
       setSuccessMessage(t("userSettings.emailUpdateSuccess"));
     } catch (error: any) {
@@ -59,35 +52,29 @@ export function UserSettingsPage() {
   };
 
   const handleUpdatePassword = async () => {
-    if (form.state.values.newPassword !== form.state.values.confirmPassword) {
-      setIsLoading(true);
-
-      try {
-        await apiFetch("/v1/user/password", {
-          method: "POST",
-          body: {
-            current_password: form.state.values.currentPassword,
-            new_password: form.state.values.newPassword,
-          },
-        });
-        setSuccessMessage(t("userSettings.passwordUpdateSuccess"));
-      } catch (error: any) {
-        console.error("Failed to update password:", error);
-      } finally {
-        setIsLoading(false);
-      }
+    setIsLoading(true);
+    try {
+      await apiFetch("/v1/user/password", {
+        method: "POST",
+        body: {
+          current_password: form.state.values.currentPassword,
+          new_password: form.state.values.newPassword,
+        },
+      });
+      setSuccessMessage(t("userSettings.passwordUpdateSuccess"));
+    } catch (error: any) {
+      console.error("Failed to update password:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleUpdatePreferences = async () => {
     setIsLoading(true);
-
     try {
       await apiFetch("/v1/user/preferences", {
         method: "PATCH",
-        body: {
-          language: form.state.values.language,
-        },
+        body: { language: form.state.values.language, theme },
       });
       setSuccessMessage(t("userSettings.preferencesUpdateSuccess"));
     } catch (error: any) {
@@ -99,12 +86,12 @@ export function UserSettingsPage() {
 
   const handleUpdateNotifications = async () => {
     setIsLoading(true);
-
     try {
       await apiFetch("/v1/user/notifications", {
         method: "PATCH",
         body: {
           email_notifications: form.state.values.emailNotifications,
+          job_completion_notifications: form.state.values.jobCompletionNotifications,
           in_app_notifications: form.state.values.inAppNotifications,
         },
       });
@@ -118,7 +105,6 @@ export function UserSettingsPage() {
 
   const handleDeleteAccount = async () => {
     setIsLoading(true);
-
     try {
       await apiFetch("/v1/user", {
         method: "DELETE",
@@ -132,6 +118,14 @@ export function UserSettingsPage() {
     }
   };
 
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="container max-w-4xl mx-auto">
@@ -139,7 +133,7 @@ export function UserSettingsPage() {
 
         {successMessage && (
           <Alert variant="default" className="mb-6">
-            {successMessage}
+            <AlertDescription>{successMessage}</AlertDescription>
           </Alert>
         )}
 
@@ -165,25 +159,50 @@ export function UserSettingsPage() {
               {(field) => (
                 <div>
                   <Label htmlFor={field.name}>{t("userSettings.email.label")}</Label>
-                  <Input id={field.name} value={user.email} disabled />
-                  <p className="text-sm text-muted-foreground">
-                    {t("userSettings.email.readOnly")}
+                  <Input id={field.name} value={field.state.value} disabled />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("userSettings.email.read")}
                   </p>
                 </div>
               )}
             </form.Field>
 
-            <div>
-              <Button variant="outline" onClick={handleUpdateEmail} disabled={isLoading}>
-                {t("userSettings.email.updateButton")}
-              </Button>
-            </div>
+            <Button onClick={handleUpdateEmail} disabled={isLoading}>
+              {t("userSettings.email.updateButton")}
+            </Button>
 
+            <div className="space-y-2 pt-4">
+              <h3 className="font-medium">{t("userSettings.account.title")}</h3>
+              {user?.created_at && (
+                <p className="text-sm text-muted-foreground">
+                  {t("userSettings.account.joined")}: {formatDate(user.created_at)}
+                </p>
+              )}
+              {user?.last_login && (
+                <p className="text-sm text-muted-foreground">
+                  {t("userSettings.account.lastLogin")}: {formatDate(user.last_login)}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("userSettings.password.title")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
             <form.Field name="currentPassword">
               {(field) => (
                 <div>
                   <Label htmlFor={field.name}>{t("userSettings.currentPassword.label")}</Label>
-                  <Input type="password" id={field.name} />
+                  <Input
+                    type="password"
+                    id={field.name}
+                    placeholder={t("userSettings.currentPassword.placeholder")}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
                 </div>
               )}
             </form.Field>
@@ -192,7 +211,13 @@ export function UserSettingsPage() {
               {(field) => (
                 <div>
                   <Label htmlFor={field.name}>{t("userSettings.newPassword.label")}</Label>
-                  <Input type="password" id={field.name} />
+                  <Input
+                    type="password"
+                    id={field.name}
+                    placeholder={t("userSettings.newPassword.placeholder")}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
                 </div>
               )}
             </form.Field>
@@ -201,9 +226,15 @@ export function UserSettingsPage() {
               {(field) => (
                 <div>
                   <Label htmlFor={field.name}>{t("userSettings.confirmPassword.label")}</Label>
-                  <Input type="password" id={field.name} />
-                  {field.state.meta.errors && (
-                    <p className="text-sm text-red-500">{field.state.meta.errors[0]}</p>
+                  <Input
+                    type="password"
+                    id={field.name}
+                    placeholder={t("userSettings.confirmPassword.placeholder")}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
                   )}
                 </div>
               )}
@@ -240,6 +271,20 @@ export function UserSettingsPage() {
               )}
             </form.Field>
 
+            <div className="space-y-2">
+              <Label htmlFor="theme">{t("userSettings.theme.label")}</Label>
+              <Select value={theme} onValueChange={setTheme}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">{t("userSettings.theme.light")}</SelectItem>
+                  <SelectItem value="dark">{t("userSettings.theme.dark")}</SelectItem>
+                  <SelectItem value="system">{t("userSettings.theme.system")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <Button onClick={handleUpdatePreferences} disabled={isLoading}>
               {t("userSettings.preferences.updateButton")}
             </Button>
@@ -251,21 +296,39 @@ export function UserSettingsPage() {
             <CardTitle>{t("userSettings.notifications.title")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center space-x-4">
-              <Label htmlFor="emailNotifications">{t("userSettings.notifications.email")}</Label>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <Label htmlFor="emailNotifications">{t("userSettings.notifications.email")}</Label>
+                <p className="text-xs text-muted-foreground">{t("userSettings.notifications.emailDesc")}</p>
+              </div>
               <Switch
                 id="emailNotifications"
                 checked={form.state.values.emailNotifications}
-                onCheckedChange={(checked) => form.setValue("emailNotifications", checked)}
+                onCheckedChange={(checked) => (form as any).setValue("emailNotifications", checked)}
               />
             </div>
 
-            <div className="flex items-center space-x-4">
-              <Label htmlFor="inAppNotifications">{t("userSettings.notifications.inApp")}</Label>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <Label htmlFor="jobCompletionNotifications">{t("userSettings.notifications.jobComplete")}</Label>
+                <p className="text-xs text-muted-foreground">{t("userSettings.notifications.jobCompleteDesc")}</p>
+              </div>
+              <Switch
+                id="jobCompletionNotifications"
+                checked={form.state.values.jobCompletionNotifications}
+                onCheckedChange={(checked) => (form as any).setValue("jobCompletionNotifications", checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <Label htmlFor="inAppNotifications">{t("userSettings.notifications.inApp")}</Label>
+                <p className="text-xs text-muted-foreground">{t("userSettings.notifications.inAppDesc")}</p>
+              </div>
               <Switch
                 id="inAppNotifications"
                 checked={form.state.values.inAppNotifications}
-                onCheckedChange={(checked) => form.setValue("inAppNotifications", checked)}
+                onCheckedChange={(checked) => (form as any).setValue("inAppNotifications", checked)}
               />
             </div>
 
@@ -289,22 +352,22 @@ export function UserSettingsPage() {
           </CardContent>
         </Card>
 
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t("userSettings.dangerZone.confirmDelete")}</AlertDialogTitle>
-              <AlertDialogDescription>{t("userSettings.dangerZone.confirmMessage")}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("userSettings.dangerZone.confirmDelete")}</DialogTitle>
+              <DialogDescription>{t("userSettings.dangerZone.confirmMessage")}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
               <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
                 {t("common.cancel")}
               </Button>
               <Button variant="destructive" onClick={handleDeleteAccount} disabled={isLoading}>
                 {isLoading ? t("common.deleting") : t("common.delete")}
               </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Button onClick={() => navigate(-1)}>{t("common.back")}</Button>
       </div>
