@@ -24,7 +24,8 @@
     "./switch": "./src/components/ui/switch.tsx",
     "./alert": "./src/components/ui/alert.tsx",
     "./checkbox": "./src/components/ui/checkbox.tsx",
-    "./separator": "./src/components/ui/separator.tsx"
+    "./separator": "./src/components/ui/separator.tsx",
+    "./empty": "./src/components/ui/empty.tsx"
   },
   "devDependencies": {
     "@types/bun": "latest"
