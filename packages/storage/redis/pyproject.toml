@@ -13,9 +13,16 @@ dependencies = [
     "redis>=7.1.0",
 ]
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["poly_redis*"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint.isort]
+known-first-party = ["poly_redis"]
 
 [tool.ruff.lint]
 select = [

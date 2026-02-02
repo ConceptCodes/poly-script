@@ -1,7 +1,7 @@
 import pytest
 import uuid
-from src.queue import TranscriptionQueue, TranscriptionWorkItem
-from src.client import get_redis_client
+from poly_redis.queue import TranscriptionQueue, TranscriptionWorkItem
+from poly_redis.client import get_redis_client
 
 
 @pytest.fixture
