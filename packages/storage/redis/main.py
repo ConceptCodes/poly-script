@@ -1,5 +1,9 @@
+import logging
+
+
 def main():
-    print("Hello from redis!")
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger(__name__).info("Hello from redis!")
 
 
 if __name__ == "__main__":

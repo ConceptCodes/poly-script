@@ -1,14 +1,14 @@
-import pytest
 import uuid
+from unittest.mock import Mock
+
+import pytest
+
 from poly_redis.queue import TranscriptionQueue, TranscriptionWorkItem
-from poly_redis.client import get_redis_client
 
 
 @pytest.fixture
-def redis_client(monkeypatch):
+def redis_client(_monkeypatch):
     """Mock Redis client for testing."""
-    from unittest.mock import Mock
-
     mock_redis = Mock()
     mock_redis.rpush = Mock(return_value=1)
     mock_redis.blpop = Mock(return_value=None)

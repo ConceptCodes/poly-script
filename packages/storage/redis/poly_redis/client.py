@@ -1,6 +1,7 @@
-from redis import Redis, from_url
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from redis import Redis, from_url
 
 
 class RedisSettings(BaseSettings):
