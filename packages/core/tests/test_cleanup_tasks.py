@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 from poly_core.tasks.cleanup_tasks import cleanup_soft_deleted_users
 
 
 def test_cleanup_soft_deleted_users_deletes_old_users():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     old_deleted = Mock(id="old", deleted_at=now - timedelta(days=40))
     recent_deleted = Mock(id="recent", deleted_at=now - timedelta(days=5))
     active = Mock(id="active", deleted_at=None)

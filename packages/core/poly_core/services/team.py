@@ -1,16 +1,14 @@
-from typing import Optional
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
-from poly_db.repositories.teams import TeamRepository, TeamMemberRepository
-from poly_db.repositories.users import UserRepository
-from poly_db.models.teams import Team
+from poly_core.constants import PLAN_LIMITS, PlanType, TeamRole
+from poly_core.types import TeamMemberLimits
 from poly_db.models.team_members import TeamMember
-from poly_db.models.users import User
-
-from ..constants import TeamRole, PlanType, PLAN_LIMITS
-from ..types import TeamMemberLimits
+from poly_db.models.teams import Team
+from poly_db.repositories.teams import TeamMemberRepository, TeamRepository
+from poly_db.repositories.users import UserRepository
 
 
 class TeamError(Exception):
@@ -49,7 +47,7 @@ class TeamService:
         name: str,
         host_language: str = "en",
         plan: PlanType = PlanType.FREE,
-    ) -> Optional[Team]:
+    ) -> Team | None:
         existing = []
         if hasattr(self.team_repo, "get_by_user_id"):
             existing = self.team_repo.get_by_user_id(user_id) or []
@@ -87,7 +85,7 @@ class TeamService:
 
         return created_team
 
-    def get_team(self, team_id: uuid.UUID, user_id: uuid.UUID) -> Optional[Team]:
+    def get_team(self, team_id: uuid.UUID, user_id: uuid.UUID) -> Team | None:
         team = self.team_repo.get(team_id)
         if not team:
             raise TeamError("Team not found")
@@ -103,9 +101,9 @@ class TeamService:
         self,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
-        name: Optional[str] = None,
-        host_language: Optional[str] = None,
-    ) -> Optional[Team]:
+        name: str | None = None,
+        host_language: str | None = None,
+    ) -> Team | None:
         team = self.get_team(team_id, user_id)
 
         if name is not None:
@@ -113,7 +111,7 @@ class TeamService:
         if host_language is not None:
             team.host_language = host_language
 
-        team.updated_at = datetime.now(timezone.utc)
+        team.updated_at = datetime.now(UTC)
         self.db_session.commit()
 
         return team
@@ -121,7 +119,7 @@ class TeamService:
     def delete_team(self, team_id: uuid.UUID, user_id: uuid.UUID) -> bool:
         team = self.get_team(team_id, user_id)
 
-        team.deleted_at = datetime.now(timezone.utc)
+        team.deleted_at = datetime.now(UTC)
         self.db_session.commit()
 
         return True
@@ -154,9 +152,17 @@ class TeamService:
 
         requesting_member = self._get_member(requesting_user_id, team_id)
 
-        requesting_role = getattr(requesting_member, "role", None) if requesting_member is not None else None
-        normalized_requesting_role = self._normalize_role(requesting_role) if requesting_role is not None else None
-        if requesting_member is not None and normalized_requesting_role is not None and normalized_requesting_role != TeamRole.ADMIN:
+        requesting_role = (
+            getattr(requesting_member, "role", None) if requesting_member is not None else None
+        )
+        normalized_requesting_role = (
+            self._normalize_role(requesting_role) if requesting_role is not None else None
+        )
+        if (
+            requesting_member is not None
+            and normalized_requesting_role is not None
+            and normalized_requesting_role != TeamRole.ADMIN
+        ):
             raise TeamError("Only admins can add members")
 
         existing = self._get_member(target_user_id, team_id)
@@ -201,7 +207,7 @@ class TeamService:
         requesting_user_id: uuid.UUID,
         target_user_id: uuid.UUID,
         new_role: TeamRole,
-    ) -> Optional[TeamMember]:
+    ) -> TeamMember | None:
         target_member = self._get_member(target_user_id, team_id)
 
         if not target_member:
@@ -211,7 +217,9 @@ class TeamService:
             new_role = TeamRole(new_role)
 
         current_role = getattr(target_member, "role", None)
-        normalized_current_role = self._normalize_role(current_role) if current_role is not None else None
+        normalized_current_role = (
+            self._normalize_role(current_role) if current_role is not None else None
+        )
 
         if normalized_current_role == TeamRole.ADMIN and new_role != TeamRole.ADMIN:
             admin_count = (
@@ -226,7 +234,7 @@ class TeamService:
             target_member.role = new_role
         else:
             target_member.role = new_role.value
-        target_member.updated_at = datetime.now(timezone.utc)
+        target_member.updated_at = datetime.now(UTC)
         self.db_session.commit()
 
         return target_member
@@ -244,10 +252,7 @@ class TeamService:
 
         requesting_role = getattr(requesting_member, "role", None)
         normalized_requesting_role = self._normalize_role(requesting_role)
-        if (
-            requesting_user_id != target_user_id
-            and normalized_requesting_role != TeamRole.ADMIN
-        ):
+        if requesting_user_id != target_user_id and normalized_requesting_role != TeamRole.ADMIN:
             raise TeamError("Only admins can remove other members")
 
         member = self._get_member(target_user_id, team_id)
@@ -272,8 +277,8 @@ class TeamService:
         )
 
     def check_plan_limits(
-        self, team_id: uuid.UUID, team: Optional[Team] = None
-    ) -> tuple[bool, Optional[str]]:
+        self, team_id: uuid.UUID, team: Team | None = None
+    ) -> tuple[bool, str | None]:
         if team is None:
             team = (
                 self.db_session.query(Team)

@@ -1,16 +1,16 @@
-from typing import Optional, List
-from datetime import datetime, timezone
 import uuid
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
-from poly_db.repositories.users import UserRepository
-from poly_db.repositories.teams import TeamRepository, TeamMemberRepository
-from poly_db.models.users import User
-from poly_db.models.teams import Team
+from poly_core.constants import TeamRole
+from poly_core.services.auth import AuthService
 from poly_db.models.team_members import TeamMember
-
-from ..constants import TeamRole, PlanType
-from ..services.auth import AuthService
+from poly_db.models.teams import Team
+from poly_db.models.user_settings import UserSettings
+from poly_db.models.users import User
+from poly_db.repositories.teams import TeamMemberRepository, TeamRepository
+from poly_db.repositories.users import UserRepository
 
 
 class SettingsService:
@@ -19,20 +19,19 @@ class SettingsService:
         self.user_repo = UserRepository(db_session)
         self.team_repo = TeamRepository(db_session)
         self.member_repo = TeamMemberRepository(db_session)
-    
+
     def get_user_settings(self, user_id: uuid.UUID) -> dict:
         """Get user profile and settings."""
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise ValueError("User not found")
-        
+
         settings = user.settings
         if not settings:
-            from poly_db.models.user_settings import UserSettings
             settings = UserSettings(user_id=user_id)
             self.db_session.add(settings)
             self.db_session.commit()
-        
+
         return {
             "id": user.id,
             "email": user.email,
@@ -44,26 +43,26 @@ class SettingsService:
             "theme": settings.theme,
             "notifications": settings.notifications,
         }
-    
+
     def update_user_profile(
         self,
         user_id: uuid.UUID,
-        full_name: Optional[str] = None,
-        avatar_url: Optional[str] = None,
+        full_name: str | None = None,
+        avatar_url: str | None = None,
     ) -> User:
         """Update user profile."""
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise ValueError("User not found")
-        
+
         if full_name is not None:
             user.full_name = full_name
         if avatar_url is not None:
             user.avatar_url = avatar_url
-        
-        user.updated_at = datetime.now(timezone.utc)
+
+        user.updated_at = datetime.now(UTC)
         return self.user_repo.update(user)
-    
+
     def update_user_email(
         self,
         user_id: uuid.UUID,
@@ -74,23 +73,23 @@ class SettingsService:
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise ValueError("User not found")
-        
+
         # Check if email is already taken
         existing = self.user_repo.get_by_email(new_email)
         if existing and existing.id != user_id:
             raise ValueError("Email already exists")
-        
+
         user.email = new_email
         user.is_verified = False  # Require re-verification
-        user.updated_at = datetime.now(timezone.utc)
-        
+        user.updated_at = datetime.now(UTC)
+
         updated_user = self.user_repo.update(user)
-        
+
         # Generate new verification token
         auth_service.generate_verification_token(user_id)
-        
+
         return updated_user
-    
+
     def update_user_password(
         self,
         user_id: uuid.UUID,
@@ -102,40 +101,39 @@ class SettingsService:
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise ValueError("User not found")
-        
+
         if not auth_service.verify_password(current_password, user.hashed_password):
             raise ValueError("Current password is incorrect")
-        
+
         user.hashed_password = auth_service.hash_password(new_password)
-        user.updated_at = datetime.now(timezone.utc)
-        
+        user.updated_at = datetime.now(UTC)
+
         return self.user_repo.update(user)
-    
+
     def update_user_preferences(
         self,
         user_id: uuid.UUID,
-        host_language: Optional[str] = None,
-        theme: Optional[str] = None,
+        host_language: str | None = None,
+        theme: str | None = None,
     ) -> dict:
         """Update user preferences (language, theme)."""
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise ValueError("User not found")
-        
+
         settings = user.settings
         if not settings:
-            from poly_db.models.user_settings import UserSettings
             settings = UserSettings(user_id=user_id)
             self.db_session.add(settings)
-            
+
         if host_language is not None:
             settings.host_language = host_language
         if theme is not None:
             settings.theme = theme
-        
-        settings.updated_at = datetime.now(timezone.utc)
+
+        settings.updated_at = datetime.now(UTC)
         self.db_session.commit()
-        
+
         return {
             "host_language": settings.host_language,
             "theme": settings.theme,
@@ -150,31 +148,30 @@ class SettingsService:
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise ValueError("User not found")
-        
+
         settings = user.settings
         if not settings:
-            from poly_db.models.user_settings import UserSettings
             settings = UserSettings(user_id=user_id)
             self.db_session.add(settings)
-        
+
         # Merge notifications
         current = settings.notifications or {}
         current.update(notifications)
         settings.notifications = current
-        
-        settings.updated_at = datetime.now(timezone.utc)
+
+        settings.updated_at = datetime.now(UTC)
         self.db_session.commit()
-        
+
         return settings.notifications
-    
+
     def get_team_settings(self, team_id: uuid.UUID, user_id: uuid.UUID) -> dict:
         """Get team settings."""
         team = self._get_team_with_access(team_id, user_id)
         if not team:
             raise ValueError("Access denied")
-        
+
         members = self.member_repo.list_by_team_id(team_id)
-        
+
         return {
             "id": team.id,
             "name": team.name,
@@ -184,19 +181,19 @@ class SettingsService:
             "created_at": team.created_at.isoformat(),
             "members_count": len(members),
         }
-    
+
     def update_team_settings(
         self,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
-        name: Optional[str] = None,
-        host_language: Optional[str] = None,
+        name: str | None = None,
+        host_language: str | None = None,
     ) -> Team:
         """Update team settings."""
         team = self._get_team_with_access(team_id, user_id)
         if not team:
             raise ValueError("Access denied")
-        
+
         member = (
             self.db_session.query(TeamMember)
             .filter(
@@ -205,26 +202,26 @@ class SettingsService:
             )
             .first()
         )
-        
+
         if not member or member.role != TeamRole.ADMIN:
             raise ValueError("Only team admins can update team settings")
-        
+
         if name is not None:
             team.name = name
         if host_language is not None:
             team.host_language = host_language
-        
-        team.updated_at = datetime.now(timezone.utc)
+
+        team.updated_at = datetime.now(UTC)
         return self.team_repo.update(team)
-    
-    def get_team_members(self, team_id: uuid.UUID, user_id: uuid.UUID) -> List[dict]:
+
+    def get_team_members(self, team_id: uuid.UUID, user_id: uuid.UUID) -> list[dict]:
         """Get team members list."""
         team = self._get_team_with_access(team_id, user_id)
         if not team:
             raise ValueError("Access denied")
-        
+
         members = self.member_repo.list_by_team_id(team_id)
-        
+
         return [
             {
                 "id": m.id,
@@ -236,21 +233,21 @@ class SettingsService:
             }
             for m in members
         ]
-    
+
     def get_billing_info(self, team_id: uuid.UUID, user_id: uuid.UUID) -> dict:
         """Get billing information."""
         team = self._get_team_with_access(team_id, user_id)
         if not team:
             raise ValueError("Access denied")
-        
+
         return {
             "plan": team.plan.value,
             "credits_balance": team.credits_balance or 0,
             "stripe_customer_id": team.stripe_customer_id,
             "stripe_subscription_id": team.stripe_subscription_id,
         }
-    
-    def _get_team_with_access(self, team_id: uuid.UUID, user_id: uuid.UUID) -> Optional[Team]:
+
+    def _get_team_with_access(self, team_id: uuid.UUID, user_id: uuid.UUID) -> Team | None:
         """Check if user has access to team and return team if yes."""
         member = (
             self.db_session.query(TeamMember)
@@ -260,8 +257,8 @@ class SettingsService:
             )
             .first()
         )
-        
+
         if not member:
             return None
-        
+
         return self.db_session.query(Team).filter(Team.id == team_id).first()

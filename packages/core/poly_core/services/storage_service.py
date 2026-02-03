@@ -3,7 +3,6 @@
 Supports local filesystem and AWS S3 backends with a unified interface.
 """
 
-import os
 import uuid
 from pathlib import Path
 from typing import Protocol, runtime_checkable
@@ -17,7 +16,9 @@ from botocore.exceptions import ClientError
 class StorageBackend(Protocol):
     """Protocol for storage backends (local, S3)."""
 
-    def save(self, file_content: bytes, filename: str, content_type: str = "audio/mpeg") -> str:
+    def save(
+        self, file_content: bytes, filename: str, _content_type: str = "audio/mpeg"
+    ) -> str:
         """Save file and return storage URI.
 
         Args:
@@ -30,7 +31,7 @@ class StorageBackend(Protocol):
         """
         ...
 
-    def get_url(self, storage_uri: str, expires_in: int = 3600) -> str:
+    def get_url(self, storage_uri: str, _expires_in: int = 3600) -> str:
         """Get accessible URL for file.
 
         Args:
@@ -58,12 +59,14 @@ class LocalStorageBackend:
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
-    def save(self, file_content: bytes, filename: str, content_type: str = "audio/mpeg") -> str:
+    def save(
+        self, file_content: bytes, filename: str, _content_type: str = "audio/mpeg"
+    ) -> str:
         file_extension = Path(filename).suffix
         unique_filename = f"{uuid.uuid4()}{file_extension}"
         file_path = self.storage_path / unique_filename
 
-        with open(file_path, "wb") as f:
+        with file_path.open("wb") as f:
             f.write(file_content)
 
         return f"local://{file_path}"
@@ -108,7 +111,7 @@ class S3StorageBackend:
                 ContentType=content_type,
             )
         except ClientError as e:
-            raise RuntimeError(f"Failed to upload to S3: {e}")
+            raise RuntimeError(f"Failed to upload to S3: {e}") from e
 
         return f"s3://{self.bucket}/{unique_key}"
 
@@ -128,7 +131,7 @@ class S3StorageBackend:
             )
             return url
         except ClientError as e:
-            raise RuntimeError(f"Failed to generate presigned URL: {e}")
+            raise RuntimeError(f"Failed to generate presigned URL: {e}") from e
 
     def delete(self, storage_uri: str) -> None:
         parsed = urlparse(storage_uri)
@@ -141,10 +144,10 @@ class S3StorageBackend:
         try:
             self.s3_client.delete_object(Bucket=bucket, Key=key)
         except ClientError as e:
-            raise RuntimeError(f"Failed to delete from S3: {e}")
+            raise RuntimeError(f"Failed to delete from S3: {e}") from e
 
 
-def get_storage_backend(
+def get_storage_backend(  # noqa: PLR0913
     backend_type: str,
     storage_path: str = "./storage",
     bucket: str | None = None,

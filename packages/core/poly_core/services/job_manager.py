@@ -1,19 +1,20 @@
 """Job Manager service for creating and managing transcription jobs."""
 
 import uuid
+from typing import Any
+
 import requests
-from typing import Optional, Dict, Any
+from poly_redis.queue import TranscriptionQueue, TranscriptionWorkItem
 from sqlalchemy.orm import Session
 
-from poly_db.repositories import (
-    TranscriptionJobRepository,
-    AudioAssetRepository,
-)
-from poly_db.models.transcription_jobs import TranscriptionJob, JobStatus
-from poly_db.models.audio_assets import AudioAsset
+from poly_core.constants import PLAN_LIMITS, SUPPORTED_LANGUAGES, PlanType
+from poly_core.services.storage_service import StorageBackend
 from poly_db.models.teams import Team
-from .storage_service import StorageBackend
-from poly_redis.queue import TranscriptionQueue, TranscriptionWorkItem
+from poly_db.models.transcription_jobs import JobStatus, TranscriptionJob
+from poly_db.repositories import (
+    AudioAssetRepository,
+    TranscriptionJobRepository,
+)
 
 
 class JobManagerService:
@@ -31,15 +32,15 @@ class JobManagerService:
         self.audio_repo = AudioAssetRepository(session)
         self.queue = queue
 
-    def create_job_from_upload(
+    def create_job_from_upload(  # noqa: PLR0913
         self,
         team_id: uuid.UUID,
-        user_id: uuid.UUID,
+        _user_id: uuid.UUID,
         file_content: bytes,
         filename: str,
         mime_type: str,
         file_size: int,
-        options: Dict[str, Any],
+        options: dict[str, Any],
     ) -> TranscriptionJob:
         """Create transcription job from file upload.
 
@@ -100,13 +101,13 @@ class JobManagerService:
 
         return job
 
-    def create_job_from_url(
+    def create_job_from_url(  # noqa: PLR0913
         self,
         team_id: uuid.UUID,
-        user_id: uuid.UUID,
+        _user_id: uuid.UUID,
         url: str,
         filename: str,
-        options: Dict[str, Any],
+        options: dict[str, Any],
     ) -> TranscriptionJob:
         """Create transcription job from URL.
 
@@ -136,7 +137,7 @@ class JobManagerService:
             response.raise_for_status()
             file_content = response.content
         except requests.RequestException as e:
-            raise RuntimeError(f"Failed to download file from URL: {e}")
+            raise RuntimeError(f"Failed to download file from URL: {e}") from e
 
         mime_type = response.headers.get("Content-Type", "audio/mpeg")
         file_size = len(file_content)
@@ -175,9 +176,7 @@ class JobManagerService:
 
         return job
 
-    def _check_language_available(
-        self, team_id: uuid.UUID, language: Optional[str]
-    ) -> bool:
+    def _check_language_available(self, team_id: uuid.UUID, language: str | None) -> bool:
         """Check if language is available in team's plan.
 
         Args:
@@ -193,8 +192,6 @@ class JobManagerService:
         team = self.job_repo.session.query(Team).filter(Team.id == team_id).first()
         if not team:
             return False
-
-        from ..constants import PLAN_LIMITS, PlanType, SUPPORTED_LANGUAGES
 
         if language not in SUPPORTED_LANGUAGES:
             return False

@@ -1,18 +1,18 @@
-
 """
 Test admin role validation (Admin vs Super Admin).
 
 This test file follows TDD: RED -> GREEN -> REFACTOR
 Tests ensure role-based access control is enforced.
 """
-import pytest
+
 import uuid
 from unittest.mock import Mock
 
+import pytest
+
 from poly_db.models.admin_users import AdminUser
-from poly_db.models.users import User
 from poly_db.models.teams import Team
-from poly_core.services.admin import AdminService
+from poly_db.models.users import User
 
 
 @pytest.fixture
@@ -117,10 +117,10 @@ class TestAdminRoleValidation:
         """Only ADMIN and SUPER_ADMIN are valid admin roles."""
         valid_roles = ["ADMIN", "SUPER_ADMIN"]
         invalid_roles = ["USER", "MODERATOR", "OWNER", ""]
-        
+
         for role in valid_roles:
             assert role in ["ADMIN", "SUPER_ADMIN"], f"{role} should be valid"
-        
+
         for role in invalid_roles:
             assert role not in ["ADMIN", "SUPER_ADMIN"], f"{role} should be invalid"
 

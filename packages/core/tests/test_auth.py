@@ -1,11 +1,12 @@
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
+
+import pytest
 from sqlalchemy.orm import Session
 
 from poly_core.services.auth import (
-    AuthService,
     AuthError,
+    AuthService,
     EmailVerificationError,
     PasswordResetError,
 )
@@ -325,7 +326,9 @@ class TestOAuthPKCE:
     def test_exchange_google_code_with_verifier(self, mock_oauth_service):
         mock_oauth_service.get_google_auth_url = Mock(return_value="http://auth_url")
 
-        with patch.object(mock_oauth_service, "get_google_auth_url", return_value="http://auth_url"):
+        with patch.object(
+            mock_oauth_service, "get_google_auth_url", return_value="http://auth_url"
+        ):
             mock_oauth_service.exchange_google_code = Mock(return_value=None)
 
         result = mock_oauth_service.exchange_google_code(

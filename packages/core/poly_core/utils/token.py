@@ -1,5 +1,5 @@
-import secrets
 import base64
+import secrets
 
 
 def generate_token() -> str:

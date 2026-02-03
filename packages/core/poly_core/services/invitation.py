@@ -1,21 +1,19 @@
-from typing import Optional
-import uuid
 import secrets
-from datetime import datetime, timezone, timedelta
+import uuid
+from datetime import UTC, datetime, timedelta
+
 from sqlalchemy.orm import Session
 
-from poly_db.repositories.teams import (
-    TeamRepository,
-    TeamMemberRepository,
-    TeamInvitationRepository,
-)
-from poly_db.models.teams import Team
-from poly_db.models.team_members import TeamMember
+from poly_core.constants import TeamRole
 from poly_db.models.team_invitations import TeamInvitation
+from poly_db.models.team_members import TeamMember
+from poly_db.models.teams import Team
 from poly_db.models.users import User
-
-from ..constants import TeamRole
-from ..types import TeamMemberLimits
+from poly_db.repositories.teams import (
+    TeamInvitationRepository,
+    TeamMemberRepository,
+    TeamRepository,
+)
 
 
 class InvitationService:
@@ -33,7 +31,7 @@ class InvitationService:
         email: str,
         role: TeamRole,
         expires_in_hours: int = 7 * 24,
-    ) -> Optional[TeamInvitation]:
+    ) -> TeamInvitation | None:
         team = (
             self.db_session.query(Team)
             .filter(Team.id == team_id, Team.deleted_at.is_(None))
@@ -66,7 +64,7 @@ class InvitationService:
             return None
 
         token = secrets.token_urlsafe(32)
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
+        expires_at = datetime.now(UTC) + timedelta(hours=expires_in_hours)
 
         invitation = TeamInvitation(
             team_id=team_id,
@@ -122,12 +120,14 @@ class InvitationService:
         self.invitation_repo.delete(invitation_id)
         return True
 
-    def accept_invitation(self, token: str, user_id: uuid.UUID) -> Optional[TeamMember]:
+    def accept_invitation(  # noqa: PLR0911
+        self, token: str, user_id: uuid.UUID
+    ) -> TeamMember | None:
         invitation = self.invitation_repo.get_by_token(token)
         if not invitation:
             return None
 
-        if invitation.expires_at < datetime.now(timezone.utc):
+        if invitation.expires_at < datetime.now(UTC):
             return None
 
         if invitation.accepted_at is not None:
@@ -163,7 +163,7 @@ class InvitationService:
         )
         self.member_repo.create(team_member)
 
-        invitation.accepted_at = datetime.now(timezone.utc)
+        invitation.accepted_at = datetime.now(UTC)
         self.db_session.commit()
 
         return team_member

@@ -1,23 +1,20 @@
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Optional
+from email.mime.text import MIMEText
 from pathlib import Path
-from jinja2 import Template
-from sqlalchemy.orm import Session
 
-from poly_db.repositories import UserRepository
-from ..constants import I18nKeys
-from ..types import EmailTemplateContext
+from jinja2 import Template
+
+from poly_core.types import EmailTemplateContext
 
 
 class NotificationService:
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         smtp_host: str,
         smtp_port: int,
-        smtp_user: Optional[str],
-        smtp_password: Optional[str],
+        smtp_user: str | None,
+        smtp_password: str | None,
         smtp_from: str,
         templates_dir: str,
         app_url: str,
@@ -46,7 +43,7 @@ class NotificationService:
 
     def _render_template(self, template_name: str, context: EmailTemplateContext) -> str:
         template_path = self.templates_dir / template_name
-        with open(template_path) as f:
+        with template_path.open(encoding="utf-8") as f:
             template = Template(f.read())
         return template.render(**context)
 

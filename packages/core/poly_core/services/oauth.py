@@ -1,20 +1,17 @@
-from typing import Optional
 import uuid
+
 import requests
-from sqlalchemy.orm import Session
-from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
-from google.auth.transport.requests import Request
+from sqlalchemy.orm import Session
 
-from poly_db.repositories.auth import OAuthAccountRepository
-from poly_db.models.users import User
+from poly_core.constants import TeamRole
+from poly_core.services.auth import AuthService
+from poly_core.types import GoogleUserInfo
 from poly_db.models.oauth_accounts import OAuthAccount
-from poly_db.models.teams import Team
 from poly_db.models.team_members import TeamMember
-
-from .auth import AuthService
-from ..constants import TeamRole, PlanType
-from ..types import GoogleUserInfo
+from poly_db.models.teams import Team
+from poly_db.models.users import User
+from poly_db.repositories.auth import OAuthAccountRepository
 
 
 class OAuthService:
@@ -36,10 +33,10 @@ class OAuthService:
 
     def get_google_auth_url(
         self,
-        redirect_url: Optional[str] = None,
-        state: Optional[str] = None,
-        code_challenge: Optional[str] = None,
-        code_challenge_method: Optional[str] = None,
+        redirect_url: str | None = None,
+        state: str | None = None,
+        code_challenge: str | None = None,
+        code_challenge_method: str | None = None,
     ) -> str:
         redirect_uri = redirect_url or self.oauth_redirect_url
         flow = Flow.from_client_config(
@@ -73,8 +70,8 @@ class OAuthService:
         return authorization_url
 
     def exchange_google_code(
-        self, code: str, state: Optional[str] = None, code_verifier: Optional[str] = None
-    ) -> Optional[GoogleUserInfo]:
+        self, code: str, _state: str | None = None, code_verifier: str | None = None
+    ) -> GoogleUserInfo | None:
         try:
             flow = Flow.from_client_config(
                 client_config={
@@ -117,7 +114,7 @@ class OAuthService:
         except Exception:
             return None
 
-    def find_or_create_oauth_user(self, google_info: GoogleUserInfo) -> Optional[User]:
+    def find_or_create_oauth_user(self, google_info: GoogleUserInfo) -> User | None:
         existing_oauth = self.oauth_repo.get_by_provider_user_id(
             provider="google", provider_user_id=google_info["google_id"]
         )
@@ -163,10 +160,7 @@ class OAuthService:
         self.oauth_repo.create(oauth_account)
         return user
 
-    def get_default_team_for_user(self, user_id: uuid.UUID) -> Optional[Team]:
-        from poly_db.models.team_members import TeamMember
-        from poly_db.models.teams import Team
-
+    def get_default_team_for_user(self, user_id: uuid.UUID) -> Team | None:
         member = (
             self.db_session.query(TeamMember)
             .filter(TeamMember.user_id == user_id, TeamMember.role == TeamRole.ADMIN)

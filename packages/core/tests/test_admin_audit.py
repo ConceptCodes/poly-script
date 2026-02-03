@@ -1,12 +1,12 @@
-import pytest
-import uuid
-from datetime import datetime, timezone
-from unittest.mock import Mock, patch
+# ruff: noqa: ARG001
 
-from poly_db.models.audit_logs import AuditLog
-from poly_db.models.admin_users import AdminUser
+import uuid
+from unittest.mock import Mock
+
+import pytest
+
 from poly_core.services.admin_auth import AdminAuthService
-from poly_core.services.admin import AdminService
+from poly_db.models.admin_users import AdminUser
 
 
 @pytest.fixture

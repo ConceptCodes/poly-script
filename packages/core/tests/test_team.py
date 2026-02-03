@@ -1,9 +1,10 @@
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 from sqlalchemy.orm import Session
 
-from poly_core.services.team import TeamService, TeamError
 from poly_core.constants import TeamRole
+from poly_core.services.team import TeamError, TeamService
 
 
 @pytest.fixture
@@ -108,8 +109,10 @@ class TestTeamService:
 
         mock_team_member_repo = Mock()
         mock_team_member_repo.get_by_user_and_team.return_value = None
+
         def get_side_effect(user_id):
             return requesting_member if user_id == "admin-id" else target_member
+
         mock_team_member_repo.get.side_effect = get_side_effect
         mock_team_member_repo.list_by_team_id.return_value = []
         mock_team_member_repo.get_by_user_and_team.return_value = Mock()
@@ -203,8 +206,10 @@ class TestTeamService:
 
         mock_team_member_repo = Mock()
         mock_team_member_repo.get_by_user_and_team.return_value = None
+
         def get_side_effect(user_id):
             return requesting_member if user_id == "admin-id" else target_member
+
         mock_team_member_repo.get.side_effect = get_side_effect
         mock_team_member_repo.list_by_team_id.return_value = []
 

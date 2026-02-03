@@ -1,18 +1,20 @@
 """Unit tests for export service."""
-import pytest
-from unittest.mock import Mock, MagicMock
+
 import uuid
 from datetime import datetime
+from unittest.mock import Mock
+
+import pytest
 
 from poly_core.services.export_service import (
-    export_txt,
+    ExportService,
     export_json,
     export_srt,
-    export_vtt,
     export_transcript,
+    export_txt,
+    export_vtt,
     format_timestamp_ms,
     format_timestamp_ms_vtt,
-    ExportService,
 )
 
 
@@ -78,12 +80,12 @@ class TestExportJson:
     def test_export_json_returns_valid_json(self, mock_transcript):
         """Verify export_json returns valid JSON string."""
         import json
-        
+
         result = export_json(mock_transcript)
-        
+
         # Should be valid JSON
         data = json.loads(result)
-        
+
         # Should contain expected fields
         assert data["id"] == str(mock_transcript.id)
         assert data["job_id"] == str(mock_transcript.job_id)
@@ -100,7 +102,7 @@ class TestExportSrt:
         """Verify SRT export follows SubRip format."""
         result = export_srt(mock_transcript)
         lines = result.split("\n")
-        
+
         # SRT format: index, timestamp line, text, empty line
         assert lines[0] == "1"
         assert "-->" in lines[1]
@@ -113,7 +115,7 @@ class TestExportSrt:
     def test_export_srt_timestamps(self, mock_transcript):
         """Verify SRT timestamps are formatted correctly."""
         result = export_srt(mock_transcript)
-        
+
         # First segment: 0ms -> 5500ms
         assert "00:00:00,000 --> 00:00:05,500" in result
         # Second segment: 5500ms -> 10200ms
@@ -127,7 +129,7 @@ class TestExportVtt:
         """Verify VTT export follows WebVTT format."""
         result = export_vtt(mock_transcript)
         lines = result.split("\n")
-        
+
         # VTT format: WEBVTT header, empty line, timestamp line, text
         assert lines[0] == "WEBVTT"
         assert lines[1] == ""  # Empty line after header
@@ -137,7 +139,7 @@ class TestExportVtt:
     def test_export_vtt_timestamps(self, mock_transcript):
         """Verify VTT timestamps are formatted correctly."""
         result = export_vtt(mock_transcript)
-        
+
         # VTT uses dot instead of comma
         assert "00:00:00.000 --> 00:00:05.500" in result
 
@@ -170,7 +172,7 @@ class TestExportTranscript:
         """Verify unsupported format raises ValueError."""
         with pytest.raises(ValueError) as exc_info:
             export_transcript(mock_transcript, "pdf")
-        
+
         assert "Unsupported export format" in str(exc_info.value)
         assert "pdf" in str(exc_info.value)
 
@@ -208,7 +210,7 @@ class TestExportService:
     def test_get_export_filename_contains_attachment(self, mock_transcript):
         """Verify filename includes Content-Disposition header format."""
         filename = ExportService.get_export_filename(mock_transcript, "json")
-        assert filename.startswith('attachment; filename=')
+        assert filename.startswith("attachment; filename=")
 
 
 class TestEdgeCases:
@@ -219,7 +221,7 @@ class TestEdgeCases:
         mock_transcript = Mock()
         mock_transcript.text = "Test"
         mock_transcript.segments = []
-        
+
         result = export_srt(mock_transcript)
         # Should still return WEBVTT header
         assert result == "WEBVTT\n"
@@ -231,7 +233,7 @@ class TestEdgeCases:
         mock_transcript.segments = [
             {"start_ms": 0, "end_ms": 1000, "text": "Single segment", "speaker": None}
         ]
-        
+
         result = export_srt(mock_transcript)
         lines = result.split("\n")
         # Should have: index, timestamp, text (3 lines, no trailing empty line)
@@ -245,7 +247,7 @@ class TestEdgeCases:
         mock_transcript.segments = [
             {"start_ms": 0, "end_ms": 1000, "text": "Hello", "speaker": "Speaker 1"}
         ]
-        
+
         # Speaker info should be in the text
         result = export_srt(mock_transcript)
         assert "Speaker 1" in result

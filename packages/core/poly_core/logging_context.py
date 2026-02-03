@@ -1,13 +1,12 @@
 import contextvars
 import logging
-from typing import Optional
 
 request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="-")
 team_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("team_id", default="-")
 job_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("job_id", default="-")
 
 
-def set_request_context(request_id: str, team_id: Optional[str] = None) -> None:
+def set_request_context(request_id: str, team_id: str | None = None) -> None:
     request_id_var.set(request_id)
     if team_id is not None:
         team_id_var.set(team_id)
@@ -18,7 +17,7 @@ def clear_request_context() -> None:
     team_id_var.set("-")
 
 
-def set_job_context(job_id: str, team_id: Optional[str] = None) -> None:
+def set_job_context(job_id: str, team_id: str | None = None) -> None:
     job_id_var.set(job_id)
     if team_id is not None:
         team_id_var.set(team_id)

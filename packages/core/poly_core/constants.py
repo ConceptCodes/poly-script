@@ -1,5 +1,5 @@
 from enum import Enum, StrEnum
-from typing import Union, TypedDict
+from typing import TypedDict
 
 
 class JobState(str, Enum):
@@ -30,9 +30,9 @@ class PlanType(str, Enum):
 
 
 class PlanLimits(TypedDict):
-    uploads_per_month: Union[int, float]
+    uploads_per_month: int | float
     languages: int
-    members: Union[int, float]
+    members: int | float
 
 
 PLAN_LIMITS: dict[PlanType, PlanLimits] = {
