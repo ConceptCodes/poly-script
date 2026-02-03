@@ -54,6 +54,10 @@ htmlcov/
 *.prof
 .tox/
 .hypothesis/
+playwright-report/
+test-results/
+.nyc_output/
+junit.xml
 
 # Logs
 *.log
@@ -64,3 +68,5 @@ logs/
 
 # Ignore
 .ignore
+
+test-results
