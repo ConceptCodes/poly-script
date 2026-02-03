@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 
 @dataclass
@@ -10,7 +10,7 @@ class Segment:
     start_ms: float
     end_ms: float
     text: str
-    speaker: Optional[str] = None
+    speaker: str | None = None
 
 
 @dataclass
@@ -19,8 +19,8 @@ class TranscriptionResult:
 
     text: str
     language: str
-    segments: List[Segment]
-    confidence: Optional[float] = None
+    segments: list[Segment]
+    confidence: float | None = None
     engine: str = "base"
 
 
@@ -30,7 +30,7 @@ class EngineCapabilities:
 
     supports_timestamps: bool = True
     supports_diarization: bool = False
-    supported_languages: Optional[List[str]] = None
+    supported_languages: list[str] | None = None
 
     def __post_init__(self) -> None:
         """Initialize default values."""
@@ -55,10 +55,10 @@ class STTEngine(ABC):
     def transcribe(
         self,
         audio_path: str,
-        language: Optional[str] = None,
+        language: str | None = None,
         timestamps: bool = True,
         diarization: bool = False,
-        options: Optional[Dict[str, Any]] = None,
+        options: dict[str, Any] | None = None,
     ) -> TranscriptionResult:
         """Transcribe audio and return normalized result.
 

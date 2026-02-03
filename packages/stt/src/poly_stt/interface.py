@@ -1,44 +1,47 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Optional, TypedDict, Required, NotRequired
+
 
 @dataclass
 class Segment:
     start_ms: int
     end_ms: int
     text: str
-    speaker: Optional[str] = None
+    speaker: str | None = None
+
 
 @dataclass
 class EngineCapabilities:
     supports_timestamps: bool = True
     supports_diarization: bool = False
-    supported_languages: Optional[List[str]] = None
+    supported_languages: list[str] | None = None
+
 
 @dataclass
 class TranscriptionResult:
     text: str
     language: str
-    segments: List[Segment]
+    segments: list[Segment]
     engine: str
-    confidence: Optional[float] = None
+    confidence: float | None = None
+
 
 class STTEngine(ABC):
     @property
     @abstractmethod
     def name(self) -> str:
         pass
-    
+
     @property
     @abstractmethod
     def capabilities(self) -> EngineCapabilities:
         pass
-    
+
     @abstractmethod
     def transcribe(
         self,
         audio_path: str,
-        language: Optional[str] = None,
+        language: str | None = None,
         timestamps: bool = True,
         diarization: bool = False,
     ) -> TranscriptionResult:
