@@ -40,10 +40,10 @@ app-spec.txt
 AGENTS.md
 __tasks__/
 /storage
-.vscode
 
 # IDE
-.vscode
+.vscode/
+.idea/
 
 # Testing
 .pytest_cache/
@@ -68,5 +68,3 @@ logs/
 
 # Ignore
 .ignore
-
-test-results
