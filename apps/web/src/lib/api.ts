@@ -1,58 +1,16 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/v1";
+import { createApiFetch, API_URL } from '@poly/ui';
 
-interface ApiOptions extends Omit<RequestInit, "body"> {
-  body?: Record<string, unknown> | FormData | null;
-}
+// Create web-specific apiFetch with:
+// - access_token (not admin_access_token)
+// - error object with status and code
+// - FormData support enabled
+export const apiFetch = createApiFetch({
+  tokenKey: 'access_token',
+  supportsFormData: true,
+});
 
-export async function apiFetch<T = unknown>(
-  endpoint: string,
-  options: ApiOptions = {},
-): Promise<T> {
-  const token = localStorage.getItem("access_token");
-  const headers: Record<string, string> = {
-    ...((options.headers as Record<string, string>) || {}),
-  };
-
-  if (!(options.body instanceof FormData)) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  if (token && !headers.Authorization) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  let body: BodyInit | undefined;
-  if (options.body instanceof FormData) {
-    body = options.body;
-  } else if (options.body && typeof options.body === "object") {
-    body = JSON.stringify(options.body);
-  }
-
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-    body,
-  });
-
-  if (!response.ok) {
-    let error: unknown;
-    try {
-      error = await response.json();
-    } catch (_e) {
-      error = { detail: "An unknown error occurred" };
-    }
-    const errorObj = {
-      ...error,
-      status: response.status,
-      code: error.code || null,
-    };
-    throw errorObj;
-  }
-
-  const data = await response.json();
-  return data as T;
-}
-
+// The api object with all endpoint methods remains the same
+// ... rest of the api methods
 export const api = {
   // Jobs API
   async getJobs(params?: {
