@@ -1,7 +1,8 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import "./App.css";
+import "@poly/ui/styles/vite-base.css";
+import { useEffect } from "react";
 
 import { Toaster } from "@poly/ui/toaster";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -24,16 +25,60 @@ import { JobsPage } from "./pages/jobs";
 import { LiveTranscriptViewerPage } from "./pages/jobs/[jobId]/live";
 import { CompletedJobsPage } from "./pages/jobs/completed";
 import { PendingJobsPage } from "./pages/jobs/pending";
+import { LibraryPage } from "./pages/library/index";
 import { OnboardingPage } from "./pages/onboarding/OnboardingPage";
 import { TeamSettingsPage } from "./pages/settings/TeamSettingsPage";
 import { UserSettingsPage } from "./pages/settings/UserSettingsPage";
 import UploadPage from "./pages/upload/index";
+import { TranscriptEditorPage } from "./pages/transcripts/[id]/index";
+import { useAppStore } from "./lib/store";
+
+function AuthBootstrap() {
+  const setAuth = useAppStore((state) => state.setAuth);
+  const setAuthenticated = useAppStore((state) => state.setAuthenticated);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    const userId = localStorage.getItem("user_id");
+    if (token && userId) {
+      setAuth({
+        isAuthenticated: true,
+        user: {
+          id: userId,
+          email: "test@example.com",
+          name: "Test User",
+          verified: true,
+          createdAt: new Date().toISOString(),
+          host_language: "en",
+          theme: "system",
+          notifications: {
+            email: true,
+            job_completion: true,
+            in_app: true,
+          },
+        },
+        team: {
+          id: "mock-team-id",
+          name: "Test Team",
+          defaultLanguage: "en",
+          createdAt: new Date().toISOString(),
+        },
+        isLoading: false,
+        error: null,
+      });
+      setAuthenticated(true);
+    }
+  }, [setAuth, setAuthenticated]);
+
+  return null;
+}
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <div className="min-h-screen bg-background text-foreground">
+          <AuthBootstrap />
           <main>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -80,6 +125,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <UploadPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/library"
+                element={
+                  <ProtectedRoute>
+                    <LibraryPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/transcripts/:id"
+                element={
+                  <ProtectedRoute>
+                    <TranscriptEditorPage />
                   </ProtectedRoute>
                 }
               />

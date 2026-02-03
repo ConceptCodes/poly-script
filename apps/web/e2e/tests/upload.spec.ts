@@ -2,6 +2,41 @@ import { expect, test } from "@playwright/test";
 
 test.describe("Upload Flow E2E", () => {
   test.beforeEach(async ({ page }) => {
+    // Mock authentication
+    await page.goto("/");
+    await page.evaluate(() => {
+      localStorage.setItem("access_token", "mock-token");
+      localStorage.setItem("user_id", "mock-user-id");
+    });
+
+    // Mock billing/usage API
+    await page.route("**/v1/billing/usage", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          monthly_upload_count: 5,
+          monthly_limit: 10,
+          extra_credits: 0,
+          plan: "STANDARD",
+        }),
+      });
+    });
+
+    // Mock team settings API
+    await page.route("**/v1/teams/current", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "team-1",
+          name: "Test Team",
+          defaultLanguage: "en",
+          createdAt: new Date().toISOString(),
+        }),
+      });
+    });
+
     // Navigate to upload page
     await page.goto("/upload");
   });
@@ -78,7 +113,7 @@ test.describe("Upload Flow E2E", () => {
   });
 
   test("upgrade CTA appears when plan limit reached", async ({ page }) => {
-    // Mock API to return limit reached
+    // Override the default billing mock to return limit reached
     await page.route("**/v1/billing/usage", async (route) => {
       await route.fulfill({
         status: 200,

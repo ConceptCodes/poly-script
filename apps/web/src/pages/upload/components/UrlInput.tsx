@@ -18,7 +18,10 @@ export function UrlInput({ value, onChange, error, disabled }: UrlInputProps) {
     if (!url.trim()) return null;
     if (url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
     if (url.includes(".s3") && url.includes("amazonaws.com")) return "s3";
+    // Direct URL could be any http(s) URL or hosted file
     if (url.startsWith("http://") || url.startsWith("https://")) return "direct";
+    // Some providers host direct files on Google Drive; mark as direct for this UI
+    if (url.includes("drive.google.com")) return "direct";
     return "invalid";
   };
 
