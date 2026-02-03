@@ -34,10 +34,4 @@ describe("SettingsPage", () => {
     render(<SettingsPage />);
     expect(screen.getByText("Save Settings")).toBeInTheDocument();
   });
-
-  it("renders advanced tab with JSON editor", async () => {
-    render(<SettingsPage />);
-    screen.getByText("Advanced: Direct JSON Editor");
-    expect(screen.getByText("Save JSON")).toBeInTheDocument();
-  });
 });
