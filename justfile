@@ -78,7 +78,7 @@ test-e2e:
 # ──────────────────────────────────────────────────────────────────────────────
 
 # Lint all code
-lint: lint-ts lint-py
+lint: lint-ts lint-py theme-guard
 
 # Lint TypeScript code
 lint-ts:
@@ -88,6 +88,10 @@ lint-ts:
 # Lint Python code
 lint-py:
     uv run ruff check .
+
+# Guardrail: no app-level CSS variable definitions
+theme-guard:
+    ! rg --multiline --glob 'apps/**/src/**/*.css' --glob 'apps/**/src/**/*.scss' --glob 'apps/**/src/**/*.astro' ':root\s*\{[\s\S]*?--' apps
 
 # Fix all lint issues
 lint-fix: lint-fix-ts lint-fix-py

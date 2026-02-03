@@ -48,6 +48,8 @@ ignore = [
     "E501",
     "PLR2004",
     "S101",
+    "B008",  # FastAPI Depends pattern - false positive
+    "B904",  # raise from None in FastAPI exception handlers - acceptable pattern
 ]
 
 [tool.ruff.lint.per-file-ignores]
