@@ -1,19 +1,13 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
-import { Input } from "@poly/ui/input";
-import { Button } from "@poly/ui/button";
+import { ConfirmDialog } from "@poly/ui";
 import { Badge } from "@poly/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@poly/ui/table";
-import { Search, User, Mail, Shield, AlertCircle, Ban, RotateCcw } from "lucide-react";
+import { Button } from "@poly/ui/button";
+import { Card, CardContent } from "@poly/ui/card";
+import { Input } from "@poly/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@poly/ui/table";
+import { AlertCircle, Ban, Mail, RotateCcw, Search, User } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { apiFetch } from "../lib/api";
 
 type UserItem = {
   id: string;
@@ -26,29 +20,28 @@ type UserItem = {
 };
 
 export function UsersPage() {
-  const navigate = useNavigate();
   const [items, setItems] = useState<UserItem[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "suspended" | "unverified">("all");
+  const [userToDelete, setUserToDelete] = useState<{
+    id: string;
+    email: string;
+  } | null>(null);
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     const q = query.trim();
     const queryString = q ? `?q=${encodeURIComponent(q)}` : "";
     apiFetch<{ items: UserItem[] }>(`/admin/users${queryString}`).then((data) =>
       setItems(data.items),
     );
-  };
-
-  useEffect(() => {
-    refresh();
-  }, []);
+  }, [query]);
 
   useEffect(() => {
     const handle = setTimeout(() => {
       refresh();
     }, 300);
     return () => clearTimeout(handle);
-  }, [query]);
+  }, [refresh]);
 
   const action = async (path: string, reason?: string) => {
     await apiFetch(path, { method: "POST", body: reason ? { reason } : {} });
@@ -56,8 +49,8 @@ export function UsersPage() {
   };
 
   const remove = async (id: string) => {
-    const reason = window.prompt("Reason for deletion (optional)") || undefined;
-    await apiFetch(`/admin/users/${id}`, { method: "DELETE", body: reason ? { reason } : {} });
+    await apiFetch(`/admin/users/${id}`, { method: "DELETE" });
+    setUserToDelete(null);
     refresh();
   };
 
@@ -89,17 +82,23 @@ export function UsersPage() {
               />
             </div>
             <div className="flex gap-2">
-              {["all", "active", "suspended", "unverified"].map((f) => (
+              {(["all", "active", "suspended", "unverified"] as const).map((f) => (
                 <Button
                   key={f}
                   variant={filter === f ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setFilter(f as any)}
+                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  onClick={() => setFilter(f)}
                 >
                   {f.charAt(0).toUpperCase() + f.slice(1)}
                 </Button>
               ))}
-              <Button variant="outline" size="sm" onClick={refresh}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                onClick={refresh}
+              >
                 Refresh
               </Button>
             </div>
@@ -123,16 +122,13 @@ export function UsersPage() {
             {filteredItems.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>
-                  <Button
-                    variant="link"
-                    className="h-auto p-0 text-left"
-                    onClick={() => navigate(`/users/${user.id}`)}
+                  <Link
+                    to={`/users/${user.id}`}
+                    className="flex items-center gap-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                   >
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{user.email}</span>
-                    </div>
-                  </Button>
+                    <Mail className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    <span>{user.email}</span>
+                  </Link>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
@@ -165,10 +161,10 @@ export function UsersPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                       onClick={() =>
                         action(
                           `/admin/users/${user.id}/${user.is_suspended ? "unsuspend" : "suspend"}`,
-                          window.prompt("Reason (optional)") || undefined,
                         )
                       }
                     >
@@ -187,11 +183,8 @@ export function UsersPage() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => {
-                        if (window.confirm(`Are you sure you want to delete ${user.email}?`)) {
-                          remove(user.id);
-                        }
-                      }}
+                      className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                      onClick={() => setUserToDelete({ id: user.id, email: user.email })}
                     >
                       Delete
                     </Button>
@@ -209,6 +202,16 @@ export function UsersPage() {
           </TableBody>
         </Table>
       </Card>
+
+      <ConfirmDialog
+        open={!!userToDelete}
+        onOpenChange={(open) => !open && setUserToDelete(null)}
+        title="Delete User"
+        description={`Are you sure you want to delete ${userToDelete?.email}? This action cannot be undone.`}
+        onConfirm={() => userToDelete && remove(userToDelete.id)}
+        confirmText="Delete User"
+        variant="destructive"
+      />
     </div>
   );
 }

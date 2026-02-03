@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { Button } from "@poly/ui";
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@poly/ui";
-import { Alert, AlertDescription } from "@poly/ui";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { apiFetch } from "../../lib/api";
 
 type VerificationStatus = "pending" | "success" | "failed";
@@ -25,24 +25,31 @@ export function VerifyEmailPage() {
   const [resendSuccess, setResendSuccess] = useState(false);
   const pendingEmail = localStorage.getItem("pending_email") || "";
 
+  const verifyEmail = useCallback(
+    async (verificationToken: string) => {
+      try {
+        await apiFetch("/auth/verify-email", {
+          method: "POST",
+          body: { token: verificationToken },
+        });
+        setStatus("success");
+      } catch (err: unknown) {
+        setStatus("failed");
+        const message =
+          err instanceof Error && err.message
+            ? err.message
+            : t("auth.verifyEmail.failed.resendError");
+        setError(message);
+      }
+    },
+    [t],
+  );
+
   useEffect(() => {
     if (token) {
       verifyEmail(token);
     }
-  }, [token]);
-
-  const verifyEmail = async (verificationToken: string) => {
-    try {
-      await apiFetch("/auth/verify-email", {
-        method: "POST",
-        body: { token: verificationToken },
-      });
-      setStatus("success");
-    } catch (err: any) {
-      setStatus("failed");
-      setError(err.message || t("auth.verifyEmail.failed.resendError"));
-    }
-  };
+  }, [token, verifyEmail]);
 
   const resendVerification = async () => {
     setResending(true);
@@ -53,8 +60,12 @@ export function VerifyEmailPage() {
         body: { email: pendingEmail },
       });
       setResendSuccess(true);
-    } catch (err: any) {
-      setError(err.message || t("auth.verifyEmail.failed.resendError"));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : t("auth.verifyEmail.failed.resendError");
+      setError(message);
     } finally {
       setResending(false);
     }
@@ -75,6 +86,14 @@ export function VerifyEmailPage() {
             <div className="text-center space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
               <p className="text-sm text-gray-600">{t("auth.verifyEmail.pending.subtitle")}</p>
+              <div className="pt-2">
+                <Link
+                  to="/auth/signup"
+                  className="text-sm text-muted-foreground hover:text-primary"
+                >
+                  {t("auth.verifyEmail.useDifferentEmail") || "Use a different email"}
+                </Link>
+              </div>
             </div>
           )}
 
@@ -85,13 +104,10 @@ export function VerifyEmailPage() {
                   {t("auth.verifyEmail.success.subtitle")}
                 </AlertDescription>
               </Alert>
-              <p className="text-sm text-center text-gray-600">
-                {t("auth.verifyEmail.success.subtitle")}
-              </p>
-              <Button onClick={() => navigate("/auth/login")} className="w-full">{t("auth.verifyEmail.success.login")}</Button>
-              <div className="pt-4">
-                <Link to="/auth/signup" className="text-sm text-muted-foreground hover:text-primary">{t("auth.verifyEmail.useDifferentEmail") || "Use a different email"}</Link>
-              </div></div>
+              <Button onClick={() => navigate("/auth/login")} className="w-full">
+                {t("auth.verifyEmail.success.login")}
+              </Button>
+            </div>
           )}
 
           {status === "failed" && (
@@ -123,10 +139,16 @@ export function VerifyEmailPage() {
                   )}
                 </>
               )}
-              <div className="pt-4">
+              <div className="pt-4 flex flex-col gap-2 items-center">
                 <Button onClick={() => navigate("/auth/login")} variant="ghost" className="w-full">
                   {t("auth.verifyEmail.success.login")}
                 </Button>
+                <Link
+                  to="/auth/signup"
+                  className="text-sm text-muted-foreground hover:text-primary"
+                >
+                  {t("auth.verifyEmail.useDifferentEmail") || "Use a different email"}
+                </Link>
               </div>
             </div>
           )}

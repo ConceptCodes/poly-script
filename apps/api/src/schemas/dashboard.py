@@ -1,7 +1,6 @@
 import uuid
-from typing import List, Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class DashboardStatsResponse(BaseModel):
@@ -11,8 +10,8 @@ class DashboardStatsResponse(BaseModel):
     member_count: int
     plan: str
     credits_balance: int
-    max_members: Optional[int] = None
-    max_jobs_per_month: Optional[int] = None
+    max_members: int | None = None
+    max_jobs_per_month: int | None = None
 
 
 class RecentJobItem(BaseModel):
@@ -20,8 +19,8 @@ class RecentJobItem(BaseModel):
     file_name: str
     state: str
     created_at: str
-    language: Optional[str] = None
-    duration_seconds: Optional[int] = None
+    language: str | None = None
+    duration_seconds: int | None = None
 
 
 class ActivityItem(BaseModel):

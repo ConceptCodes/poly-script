@@ -1,39 +1,24 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@poly/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@poly/ui/tabs";
-import { 
-  ArrowLeft, 
-  Download, 
-  History, 
-  RotateCcw, 
-  Save, 
-  FileText,
-  List,
-  Loader2
-} from "lucide-react";
-
-import { api } from "../../../../lib/api";
-import { TranscriptHeaderCard } from "./components/cards/TranscriptHeaderCard";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Download, FileText, History, List, Loader2, RotateCcw } from "lucide-react";
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { api } from "../../../lib/api";
+import { formatTime } from "../../../lib/formatters";
 import { AudioPlayerCard } from "./components/cards/AudioPlayerCard";
+import { TranscriptHeaderCard } from "./components/cards/TranscriptHeaderCard";
 import { FullTextEditor } from "./components/forms/FullTextEditor";
-import { SegmentList } from "./components/SegmentList";
+import { EditHistoryModal } from "./components/modals/EditHistoryModal";
 import { ExportModal } from "./components/modals/ExportModal";
 import { RevertModal } from "./components/modals/RevertModal";
-import { EditHistoryModal } from "./components/modals/EditHistoryModal";
-
-interface Segment {
-  id: number;
-  start_ms: number;
-  end_ms: number;
-  text: string;
-  speaker: string | null;
-}
+import { SegmentList } from "./components/SegmentList";
 
 export function TranscriptEditorPage() {
-  const { id: transcriptId } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
+  const transcriptId = id ?? "";
+  const hasTranscriptId = Boolean(id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -44,14 +29,23 @@ export function TranscriptEditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  const { data: transcript, isLoading, error } = useQuery({
+  const {
+    data: transcript,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["transcript", transcriptId],
-    queryFn: () => api.getTranscript(transcriptId!),
-    enabled: !!transcriptId,
+    queryFn: () => api.getTranscript(transcriptId),
+    enabled: hasTranscriptId,
   });
 
   const updateTextMutation = useMutation({
-    mutationFn: (text: string) => api.updateTranscriptFullText(transcriptId!, text),
+    mutationFn: (text: string) => {
+      if (!hasTranscriptId) {
+        throw new Error("Missing transcript ID");
+      }
+      return api.updateTranscriptFullText(transcriptId, text);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transcript", transcriptId] });
       setLastSaved(new Date());
@@ -59,7 +53,12 @@ export function TranscriptEditorPage() {
   });
 
   const revertMutation = useMutation({
-    mutationFn: () => api.revertTranscript(transcriptId!),
+    mutationFn: () => {
+      if (!hasTranscriptId) {
+        throw new Error("Missing transcript ID");
+      }
+      return api.revertTranscript(transcriptId);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transcript", transcriptId] });
       setShowRevertModal(false);
@@ -81,7 +80,8 @@ export function TranscriptEditorPage() {
 
   const handleExport = async (format: "txt" | "json" | "srt" | "vtt") => {
     try {
-      const blob = await api.exportTranscript(transcriptId!, format);
+      if (!hasTranscriptId) return;
+      const blob = await api.exportTranscript(transcriptId, format);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -105,6 +105,26 @@ export function TranscriptEditorPage() {
     );
   }
 
+  if (!hasTranscriptId) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex items-center gap-3 text-destructive">
+          <FileText className="w-6 h-6" />
+          <div>
+            <h3 className="font-semibold text-lg mb-1">Transcript Not Found</h3>
+            <p className="text-sm text-muted-foreground">
+              The requested transcript could not be loaded.
+            </p>
+          </div>
+        </div>
+        <Button variant="outline" className="mt-4" onClick={() => navigate("/library")}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Library
+        </Button>
+      </div>
+    );
+  }
+
   if (error || !transcript) {
     return (
       <div className="container mx-auto py-8 px-4">
@@ -117,11 +137,7 @@ export function TranscriptEditorPage() {
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => navigate("/library")}
-        >
+        <Button variant="outline" className="mt-4" onClick={() => navigate("/library")}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Library
         </Button>
@@ -138,6 +154,7 @@ export function TranscriptEditorPage() {
             variant="ghost"
             size="sm"
             onClick={() => navigate("/library")}
+            aria-label="Back to library"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
@@ -145,34 +162,20 @@ export function TranscriptEditorPage() {
           <div>
             <h1 className="text-2xl font-bold">Transcript Editor</h1>
             {lastSaved && (
-              <p className="text-sm text-muted-foreground">
-                Last saved: {lastSaved.toLocaleTimeString()}
-              </p>
+              <p className="text-sm text-muted-foreground">Last saved: {formatTime(lastSaved)}</p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowHistoryModal(true)}
-          >
+          <Button variant="outline" size="sm" onClick={() => setShowHistoryModal(true)}>
             <History className="w-4 h-4 mr-2" />
             History
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowRevertModal(true)}
-          >
+          <Button variant="outline" size="sm" onClick={() => setShowRevertModal(true)}>
             <RotateCcw className="w-4 h-4 mr-2" />
             Revert
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowExportModal(true)}
-          >
+          <Button variant="outline" size="sm" onClick={() => setShowExportModal(true)}>
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
@@ -189,10 +192,7 @@ export function TranscriptEditorPage() {
             createdAt={transcript.created_at}
             updatedAt={transcript.updated_at}
           />
-          <AudioPlayerCard
-            jobId={transcript.job_id}
-            audioDuration={null} // Would need to fetch from job
-          />
+          <AudioPlayerCard jobId={transcript.job_id} transcriptId={transcript.id} />
         </div>
 
         {/* Right Column - Editor */}
@@ -231,10 +231,12 @@ export function TranscriptEditorPage() {
                 </CardHeader>
                 <CardContent>
                   <SegmentList
-                    transcriptId={transcriptId!}
+                    transcriptId={transcriptId}
                     segments={transcript.segments}
                     onUpdate={() => {
-                      queryClient.invalidateQueries({ queryKey: ["transcript", transcriptId] });
+                      queryClient.invalidateQueries({
+                        queryKey: ["transcript", transcriptId],
+                      });
                     }}
                   />
                 </CardContent>
@@ -246,10 +248,7 @@ export function TranscriptEditorPage() {
 
       {/* Modals */}
       {showExportModal && (
-        <ExportModal
-          onClose={() => setShowExportModal(false)}
-          onExport={handleExport}
-        />
+        <ExportModal onClose={() => setShowExportModal(false)} onExport={handleExport} />
       )}
       {showRevertModal && (
         <RevertModal
@@ -259,10 +258,7 @@ export function TranscriptEditorPage() {
         />
       )}
       {showHistoryModal && (
-        <EditHistoryModal
-          transcriptId={transcriptId!}
-          onClose={() => setShowHistoryModal(false)}
-        />
+        <EditHistoryModal transcriptId={transcriptId} onClose={() => setShowHistoryModal(false)} />
       )}
     </div>
   );

@@ -11,10 +11,8 @@ type AuthState = {
 const STORAGE_KEY = "admin_access_token";
 const EMAIL_KEY = "admin_email";
 
-const initialToken =
-  typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
-const initialEmail =
-  typeof window !== "undefined" ? localStorage.getItem(EMAIL_KEY) : null;
+const initialToken = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+const initialEmail = typeof window !== "undefined" ? localStorage.getItem(EMAIL_KEY) : null;
 
 export const useAuthStore = create<AuthState>((set) => ({
   token: initialToken,

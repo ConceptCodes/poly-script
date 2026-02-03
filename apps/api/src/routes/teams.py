@@ -3,13 +3,12 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from src.dependencies import get_current_user
 from poly_core.constants import I18nKeys
 from poly_core.services.invitation import InvitationService
 from poly_core.services.team import TeamService
 from poly_db.database import get_db_session
+from src.dependencies import get_current_user
 from src.schemas.teams import (
-    AcceptInvitationRequest,
     CreateInvitationRequest,
     CreateTeamRequest,
     InvitationResponse,
@@ -27,8 +26,8 @@ def get_team_service(db: Session = Depends(get_db_session)) -> TeamService:
 
 
 def get_invitation_service(db: Session = Depends(get_db_session)) -> InvitationService:
-    from src.config import get_settings
     from poly_core.services.notification import NotificationService
+    from src.config import get_settings
 
     settings = get_settings()
     notification_service = NotificationService(

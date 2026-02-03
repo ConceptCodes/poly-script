@@ -1,10 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@poly/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui/select";
 import { ArrowUpDown } from "lucide-react";
 
 interface SortFilterProps {

@@ -1,21 +1,11 @@
-import { useTranslation } from "react-i18next";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from "@poly/ui";
 import { useForm } from "@tanstack/react-form";
-import { Button } from "@poly/ui";
-import { Input } from "@poly/ui";
-import { Label } from "@poly/ui";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@poly/ui";
+import { useTranslation } from "react-i18next";
 
 // Adapt to flexible props to support OnboardingPage wiring
-export function TeamNameStep({}
-  : {
-  data?: any;
-  updateData?: any;
+export function TeamNameStep(_props: {
+  data?: { teamName?: string };
+  updateData?: (key: string, value: string) => void;
   onNext?: () => void;
 }) {
   const { t } = useTranslation();

@@ -1,8 +1,8 @@
+import { Badge } from "@poly/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
 import { Progress } from "@poly/ui/progress";
-import { Badge } from "@poly/ui/badge";
-import { Clock, FileText, Volume2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { Clock, FileText, Volume2 } from "lucide-react";
 
 interface ProgressCardProps {
   filename: string;
@@ -79,17 +79,13 @@ export function ProgressCard({
           {language && (
             <div className="flex items-center gap-2">
               <Volume2 className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">
-                {language.toUpperCase()}
-              </span>
+              <span className="text-muted-foreground">{language.toUpperCase()}</span>
             </div>
           )}
           {audioDuration && (
             <div className="flex items-center gap-2">
               <Volume2 className="w-4 h-4 text-muted-foreground" />
-              <span className="text-muted-foreground">
-                {formatDuration(audioDuration)}
-              </span>
+              <span className="text-muted-foreground">{formatDuration(audioDuration)}</span>
             </div>
           )}
         </div>

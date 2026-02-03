@@ -1,19 +1,21 @@
 from __future__ import annotations
 
-from datetime import timedelta
 import uuid
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from fastapi import Depends, Header, HTTPException, status
-from sqlalchemy.orm import Session
 
-from poly_core.services.auth import AuthService
 from poly_core.services.admin_auth import AdminAuthService
+from poly_core.services.auth import AuthService
 from poly_core.services.notification import NotificationService
 from poly_db.database import get_db_session
-from poly_db.repositories import TeamMemberRepository, UserRepository, AdminUserRepository
 from poly_db.models.teams import Team
+from poly_db.repositories import AdminUserRepository, TeamMemberRepository, UserRepository
 from src.config import get_settings
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 
 async def get_locale(accept_language: str | None = Header(None)) -> str:
@@ -60,7 +62,7 @@ def get_notification_service() -> NotificationService:
 
 
 def get_auth_service(
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(get_db_session)
 ) -> AuthService:
     settings = get_settings()
     notification_service = get_notification_service()
@@ -75,7 +77,7 @@ def get_auth_service(
 
 
 def get_admin_auth_service(
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(get_db_session)
 ) -> AdminAuthService:
     settings = get_settings()
     return AdminAuthService(
@@ -88,7 +90,7 @@ def get_admin_auth_service(
 async def get_current_user(
     authorization: str | None = Header(None),
     db: Session = Depends(get_db_session),
-    auth_service: AuthService = Depends(get_auth_service),
+    auth_service: AuthService = Depends(get_auth_service)
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
@@ -115,7 +117,7 @@ async def get_current_user(
 
 
 async def get_current_user_id(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user)
 ) -> str:
     return str(current_user["id"])
 
@@ -123,7 +125,7 @@ async def get_current_user_id(
 async def get_current_admin(
     authorization: str | None = Header(None),
     db: Session = Depends(get_db_session),
-    admin_auth_service: AdminAuthService = Depends(get_admin_auth_service),
+    admin_auth_service: AdminAuthService = Depends(get_admin_auth_service)
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
@@ -172,7 +174,7 @@ async def get_team_context(
 ) -> dict:
     """Get full team context including team details."""
     member_repo = TeamMemberRepository(db)
-    
+
     if team_id:
         team_uuid = uuid.UUID(team_id)
         member = member_repo.get_by_user_and_team(current_user["id"], team_uuid)
@@ -184,10 +186,10 @@ async def get_team_context(
         if not memberships:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
         team = db.query(Team).filter(Team.id == memberships[0].team_id).first()
-    
+
     if not team:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
-    
+
     return {
         "id": team.id,
         "name": team.name,

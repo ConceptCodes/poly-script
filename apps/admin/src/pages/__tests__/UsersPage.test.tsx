@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { UsersPage } from "../UsersPage";
+import { render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { UsersPage } from "../UsersPage";
 
 vi.mock("../../lib/api", () => ({
   apiFetch: vi.fn().mockResolvedValue({ items: [] }),

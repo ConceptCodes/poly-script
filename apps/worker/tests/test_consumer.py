@@ -1,10 +1,10 @@
 """Tests for TranscriptionConsumer."""
-import pytest
+
 import time
 from unittest.mock import Mock, patch
 
+import pytest
 from src.consumer import TranscriptionConsumer
-from src.progress import ProgressPublisher
 
 
 @pytest.fixture
@@ -49,28 +49,26 @@ class TestTranscriptionConsumer:
         """Test consumer starts a thread."""
         consumer.start()
         time.sleep(0.1)  # Give thread time to start
-        
+
         assert consumer.is_running
         assert consumer._thread is not None
-        
+
         consumer.stop()
 
     def test_consumer_stop(self, consumer):
         """Test consumer stops gracefully."""
         consumer.start()
         time.sleep(0.1)
-        
+
         assert consumer.is_running
-        
+
         consumer.stop()
         time.sleep(0.1)  # Give thread time to stop
-        
+
         assert not consumer.is_running
 
-    @patch('src.consumer.get_db_session')
-    def test_process_work_item_success(
-        self, mock_db_session, consumer, mock_queue
-    ):
+    @patch("src.consumer.get_db_session")
+    def test_process_work_item_success(self, mock_db_session, consumer, mock_queue):
         """Test processing a work item successfully."""
         work_item = {
             "job_id": "test-job-123",
@@ -79,11 +77,11 @@ class TestTranscriptionConsumer:
             "engine": "whisper-local-tiny",
             "options": {"timestamps": True, "diarization": False},
         }
-        
+
         mock_queue.dequeue.return_value = work_item
         mock_session = Mock()
         mock_db_session.return_value.__enter__.return_value = mock_session
-        
+
         # Test will fail if processor isn't mocked, but this is expected
         # The test structure validates the flow
         with pytest.raises(Exception):

@@ -1,10 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@poly/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui/select";
 
 interface LanguageFilterProps {
   value: string | undefined;
@@ -22,10 +16,7 @@ const LANGUAGES = [
 
 export function LanguageFilter({ value, onChange }: LanguageFilterProps) {
   return (
-    <Select
-      value={value || ""}
-      onValueChange={(v) => onChange(v || undefined)}
-    >
+    <Select value={value || ""} onValueChange={(v) => onChange(v || undefined)}>
       <SelectTrigger className="w-[150px]">
         <SelectValue placeholder="All Languages" />
       </SelectTrigger>

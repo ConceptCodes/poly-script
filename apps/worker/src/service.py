@@ -3,9 +3,10 @@ Worker Service
 
 Manages the transcription consumer thread with graceful shutdown.
 """
+
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Add parent directories to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -16,9 +17,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "stt"))
 
 from src.config import get_settings
 from src.consumer import TranscriptionConsumer
+
+from poly_core.services.storage_service import get_storage_backend
 from poly_redis.client import get_redis_client
 from poly_redis.queue import TranscriptionQueue
-from poly_core.services.storage_service import get_storage_backend
 from poly_stt.bootstrap import initialize_engines
 
 logger = logging.getLogger(__name__)

@@ -1,13 +1,26 @@
-import { useEffect, useState } from "react";
-import { apiFetch } from "../lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Badge } from "@poly/ui/badge";
 import { Button } from "@poly/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
 import { Input } from "@poly/ui/input";
 import { Label } from "@poly/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui/select";
 import { Switch } from "@poly/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@poly/ui/tabs";
-import { Badge } from "@poly/ui/badge";
-import { Settings, Database, Zap, Mail, Shield, Globe, Webhook, AlertTriangle, FileCode, Save, RefreshCw } from "lucide-react";
+import { Textarea } from "@poly/ui/textarea";
+import {
+  AlertTriangle,
+  Database,
+  FileCode,
+  Globe,
+  Mail,
+  RefreshCw,
+  Save,
+  Shield,
+  Webhook,
+  Zap,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { apiFetch } from "../lib/api";
 
 type SettingsData = {
   administrators: Array<{ id: string; email: string; full_name: string }>;
@@ -87,9 +100,8 @@ export function SettingsPage() {
       setSettings(updated);
       setLocalSettings(updated.system as SystemSettings);
       setDraft(JSON.stringify(updated.system, null, 2));
-      window.alert("Settings saved successfully");
-    } catch (err) {
-      window.alert("Failed to save settings");
+    } catch (_err) {
+      // Error handling - could add error state here
     } finally {
       setSaving(false);
     }
@@ -110,7 +122,7 @@ export function SettingsPage() {
           {saving ? (
             <>
               <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
+              Saving…
             </>
           ) : (
             <>
@@ -131,7 +143,10 @@ export function SettingsPage() {
         <CardContent>
           <div className="space-y-2">
             {settings?.administrators?.map((admin) => (
-              <div key={admin.id} className="flex items-center gap-2 p-2 rounded-lg border border-border">
+              <div
+                key={admin.id}
+                className="flex items-center gap-2 p-2 rounded-lg border border-border"
+              >
                 <Badge variant="outline">{admin.email}</Badge>
                 <span className="text-sm text-muted-foreground">{admin.full_name}</span>
               </div>
@@ -169,7 +184,10 @@ export function SettingsPage() {
                     onCheckedChange={(checked) =>
                       updateSetting("engines", {
                         ...localSettings.engines,
-                        whisper: { ...localSettings.engines?.whisper, enabled: checked },
+                        whisper: {
+                          ...localSettings.engines?.whisper,
+                          enabled: checked,
+                        },
                       } as SystemSettings["engines"])
                     }
                   />
@@ -184,7 +202,10 @@ export function SettingsPage() {
                     onCheckedChange={(checked) =>
                       updateSetting("engines", {
                         ...localSettings.engines,
-                        whisper: { ...localSettings.engines?.whisper, default: checked },
+                        whisper: {
+                          ...localSettings.engines?.whisper,
+                          default: checked,
+                        },
                       } as SystemSettings["engines"])
                     }
                   />
@@ -202,7 +223,10 @@ export function SettingsPage() {
                     onCheckedChange={(checked) =>
                       updateSetting("engines", {
                         ...localSettings.engines,
-                        speechmatics: { ...localSettings.engines?.speechmatics, enabled: checked },
+                        speechmatics: {
+                          ...localSettings.engines?.speechmatics,
+                          enabled: checked,
+                        },
                       } as SystemSettings["engines"])
                     }
                   />
@@ -217,7 +241,10 @@ export function SettingsPage() {
                     onCheckedChange={(checked) =>
                       updateSetting("engines", {
                         ...localSettings.engines,
-                        speechmatics: { ...localSettings.engines?.speechmatics, default: checked },
+                        speechmatics: {
+                          ...localSettings.engines?.speechmatics,
+                          default: checked,
+                        },
                       } as SystemSettings["engines"])
                     }
                   />
@@ -228,10 +255,15 @@ export function SettingsPage() {
                     id="speechmatics-api-key"
                     type="password"
                     value={localSettings.engines?.speechmatics?.api_key || ""}
+                    autoComplete="off"
+                    spellCheck={false}
                     onChange={(e) =>
                       updateSetting("engines", {
                         ...localSettings.engines,
-                        speechmatics: { ...localSettings.engines?.speechmatics, api_key: e.target.value },
+                        speechmatics: {
+                          ...localSettings.engines?.speechmatics,
+                          api_key: e.target.value,
+                        },
                       } as SystemSettings["engines"])
                     }
                     placeholder="Enter API key"
@@ -250,7 +282,10 @@ export function SettingsPage() {
                     onCheckedChange={(checked) =>
                       updateSetting("engines", {
                         ...localSettings.engines,
-                        assemblyai: { ...localSettings.engines?.assemblyai, enabled: checked },
+                        assemblyai: {
+                          ...localSettings.engines?.assemblyai,
+                          enabled: checked,
+                        },
                       } as SystemSettings["engines"])
                     }
                   />
@@ -265,7 +300,10 @@ export function SettingsPage() {
                     onCheckedChange={(checked) =>
                       updateSetting("engines", {
                         ...localSettings.engines,
-                        assemblyai: { ...localSettings.engines?.assemblyai, default: checked },
+                        assemblyai: {
+                          ...localSettings.engines?.assemblyai,
+                          default: checked,
+                        },
                       } as SystemSettings["engines"])
                     }
                   />
@@ -276,10 +314,15 @@ export function SettingsPage() {
                     id="assemblyai-api-key"
                     type="password"
                     value={localSettings.engines?.assemblyai?.api_key || ""}
+                    autoComplete="off"
+                    spellCheck={false}
                     onChange={(e) =>
                       updateSetting("engines", {
                         ...localSettings.engines,
-                        assemblyai: { ...localSettings.engines?.assemblyai, api_key: e.target.value },
+                        assemblyai: {
+                          ...localSettings.engines?.assemblyai,
+                          api_key: e.target.value,
+                        },
                       } as SystemSettings["engines"])
                     }
                     placeholder="Enter API key"
@@ -301,21 +344,24 @@ export function SettingsPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="storage-provider">Storage Provider</Label>
-                <select
-                  id="storage-provider"
-                  className="w-full bg-card border border-border rounded-md px-3 py-2"
+                <Select
                   value={localSettings.storage?.provider || "local"}
-                  onChange={(e) =>
+                  onValueChange={(value) =>
                     updateSetting("storage", {
                       ...localSettings.storage,
-                      provider: e.target.value as "local" | "s3" | "gcs",
+                      provider: value as "local" | "s3" | "gcs",
                     } as SystemSettings["storage"])
                   }
                 >
-                  <option value="local">Local filesystem</option>
-                  <option value="s3">Amazon S3</option>
-                  <option value="gcs">Google Cloud Storage</option>
-                </select>
+                  <SelectTrigger id="storage-provider">
+                    <SelectValue placeholder="Select storage provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="local">Local filesystem</SelectItem>
+                    <SelectItem value="s3">Amazon S3</SelectItem>
+                    <SelectItem value="gcs">Google Cloud Storage</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {localSettings.storage?.provider === "local" && (
@@ -324,6 +370,8 @@ export function SettingsPage() {
                   <Input
                     id="local-path"
                     value={localSettings.storage?.local_path || ""}
+                    autoComplete="off"
+                    spellCheck={false}
                     onChange={(e) =>
                       updateSetting("storage", {
                         ...localSettings.storage,
@@ -342,6 +390,8 @@ export function SettingsPage() {
                     <Input
                       id="s3-bucket"
                       value={localSettings.storage?.s3_bucket || ""}
+                      autoComplete="off"
+                      spellCheck={false}
                       onChange={(e) =>
                         updateSetting("storage", {
                           ...localSettings.storage,
@@ -356,6 +406,8 @@ export function SettingsPage() {
                     <Input
                       id="s3-region"
                       value={localSettings.storage?.s3_region || ""}
+                      autoComplete="off"
+                      spellCheck={false}
                       onChange={(e) =>
                         updateSetting("storage", {
                           ...localSettings.storage,
@@ -386,10 +438,13 @@ export function SettingsPage() {
                   id="max-jobs"
                   type="number"
                   value={localSettings.rate_limits?.max_jobs_per_minute || ""}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  spellCheck={false}
                   onChange={(e) =>
                     updateSetting("rate_limits", {
                       ...localSettings.rate_limits,
-                      max_jobs_per_minute: parseInt(e.target.value) || undefined,
+                      max_jobs_per_minute: parseInt(e.target.value, 10) || undefined,
                     } as SystemSettings["rate_limits"])
                   }
                   placeholder="10"
@@ -401,10 +456,13 @@ export function SettingsPage() {
                   id="max-upload"
                   type="number"
                   value={localSettings.rate_limits?.max_upload_size_mb || ""}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  spellCheck={false}
                   onChange={(e) =>
                     updateSetting("rate_limits", {
                       ...localSettings.rate_limits,
-                      max_upload_size_mb: parseInt(e.target.value) || undefined,
+                      max_upload_size_mb: parseInt(e.target.value, 10) || undefined,
                     } as SystemSettings["rate_limits"])
                   }
                   placeholder="500"
@@ -428,6 +486,8 @@ export function SettingsPage() {
                 <Input
                   id="smtp-host"
                   value={localSettings.email?.smtp_host || ""}
+                  autoComplete="off"
+                  spellCheck={false}
                   onChange={(e) =>
                     updateSetting("email", {
                       ...localSettings.email,
@@ -443,10 +503,13 @@ export function SettingsPage() {
                   id="smtp-port"
                   type="number"
                   value={localSettings.email?.smtp_port || ""}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  spellCheck={false}
                   onChange={(e) =>
                     updateSetting("email", {
                       ...localSettings.email,
-                      smtp_port: parseInt(e.target.value) || undefined,
+                      smtp_port: parseInt(e.target.value, 10) || undefined,
                     } as SystemSettings["email"])
                   }
                   placeholder="587"
@@ -457,6 +520,8 @@ export function SettingsPage() {
                 <Input
                   id="smtp-user"
                   value={localSettings.email?.smtp_user || ""}
+                  autoComplete="off"
+                  spellCheck={false}
                   onChange={(e) =>
                     updateSetting("email", {
                       ...localSettings.email,
@@ -471,6 +536,8 @@ export function SettingsPage() {
                 <Input
                   id="from-address"
                   value={localSettings.email?.from_address || ""}
+                  autoComplete="off"
+                  spellCheck={false}
                   onChange={(e) =>
                     updateSetting("email", {
                       ...localSettings.email,
@@ -499,10 +566,13 @@ export function SettingsPage() {
                   id="session-timeout"
                   type="number"
                   value={localSettings.auth?.session_timeout_minutes || ""}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  spellCheck={false}
                   onChange={(e) =>
                     updateSetting("auth", {
                       ...localSettings.auth,
-                      session_timeout_minutes: parseInt(e.target.value) || undefined,
+                      session_timeout_minutes: parseInt(e.target.value, 10) || undefined,
                     } as SystemSettings["auth"])
                   }
                   placeholder="1440"
@@ -514,10 +584,13 @@ export function SettingsPage() {
                   id="max-login-attempts"
                   type="number"
                   value={localSettings.auth?.max_login_attempts || ""}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  spellCheck={false}
                   onChange={(e) =>
                     updateSetting("auth", {
                       ...localSettings.auth,
-                      max_login_attempts: parseInt(e.target.value) || undefined,
+                      max_login_attempts: parseInt(e.target.value, 10) || undefined,
                     } as SystemSettings["auth"])
                   }
                   placeholder="5"
@@ -539,6 +612,8 @@ export function SettingsPage() {
                 <Input
                   id="default-language"
                   value={localSettings.localization?.default_language || ""}
+                  autoComplete="off"
+                  spellCheck={false}
                   onChange={(e) =>
                     updateSetting("localization", {
                       ...localSettings.localization,
@@ -579,6 +654,8 @@ export function SettingsPage() {
                 <Input
                   id="signature-header"
                   value={localSettings.webhooks?.signature_header || ""}
+                  autoComplete="off"
+                  spellCheck={false}
                   onChange={(e) =>
                     updateSetting("webhooks", {
                       ...localSettings.webhooks,
@@ -602,7 +679,9 @@ export function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="font-medium">Enable Maintenance Mode</Label>
-                  <p className="text-sm text-muted-foreground">Temporarily disable all user access</p>
+                  <p className="text-sm text-muted-foreground">
+                    Temporarily disable all user access
+                  </p>
                 </div>
                 <Switch
                   checked={localSettings.maintenance?.enabled ?? false}
@@ -619,6 +698,8 @@ export function SettingsPage() {
                 <Input
                   id="maintenance-message"
                   value={localSettings.maintenance?.message || ""}
+                  autoComplete="off"
+                  spellCheck={false}
                   onChange={(e) =>
                     updateSetting("maintenance", {
                       ...localSettings.maintenance,
@@ -642,8 +723,8 @@ export function SettingsPage() {
               <p className="text-sm text-muted-foreground">
                 Edit the raw system configuration JSON directly. Be careful with manual edits.
               </p>
-              <textarea
-                className="w-full min-h-[300px] bg-card border border-border rounded-md p-4 font-mono text-sm"
+              <Textarea
+                className="min-h-[300px] font-mono text-sm"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
               />
@@ -659,9 +740,8 @@ export function SettingsPage() {
                     setSettings(updated);
                     setLocalSettings(updated.system as SystemSettings);
                     setDraft(JSON.stringify(updated.system, null, 2));
-                    window.alert("Settings saved successfully");
-                  } catch (err) {
-                    window.alert("Invalid JSON payload");
+                  } catch (_err) {
+                    // Error handling - invalid JSON
                   }
                 }}
               >

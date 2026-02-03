@@ -1,19 +1,23 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../lib/api";
+import { ConfirmDialog } from "@poly/ui";
+import { Badge } from "@poly/ui/badge";
+import { Button } from "@poly/ui/button";
 import { Card, CardContent } from "@poly/ui/card";
 import { Input } from "@poly/ui/input";
-import { Button } from "@poly/ui/button";
-import { Badge } from "@poly/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@poly/ui/table";
+import type { LucideIcon } from "lucide-react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@poly/ui/table";
-import { Search, Briefcase, Clock, CheckCircle, XCircle, Pause, RefreshCw, Filter } from "lucide-react";
+  Briefcase,
+  CheckCircle,
+  Clock,
+  Filter,
+  Pause,
+  RefreshCw,
+  Search,
+  XCircle,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../lib/api";
 
 type JobItem = {
   id: string;
@@ -25,31 +29,32 @@ type JobItem = {
   team_name?: string;
 };
 
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
+type StatusFilter = "all" | "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELED";
+type EngineFilter = "all" | "whisper" | "speechmatics" | "assemblyai";
+
 export function JobsPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<JobItem[]>([]);
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELED">("all");
-  const [engineFilter, setEngineFilter] = useState<"all" | "whisper" | "speechmatics" | "assemblyai">("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [engineFilter, setEngineFilter] = useState<EngineFilter>("all");
+  const [jobToCancel, setJobToCancel] = useState<string | null>(null);
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     const q = query.trim();
     const queryString = q ? `?q=${encodeURIComponent(q)}` : "";
     apiFetch<{ items: JobItem[] }>(`/admin/jobs${queryString}`).then((data) =>
       setItems(data.items),
     );
-  };
-
-  useEffect(() => {
-    refresh();
-  }, []);
+  }, [query]);
 
   useEffect(() => {
     const handle = setTimeout(() => {
       refresh();
     }, 300);
     return () => clearTimeout(handle);
-  }, [query]);
+  }, [refresh]);
 
   const filteredItems = items.filter((job) => {
     const statusMatch = statusFilter === "all" || job.status === statusFilter;
@@ -57,8 +62,15 @@ export function JobsPage() {
     return statusMatch && engineMatch;
   });
 
+  const confirmCancelJob = async () => {
+    if (!jobToCancel) return;
+    await apiFetch(`/admin/jobs/${jobToCancel}/cancel`, { method: "POST" });
+    setJobToCancel(null);
+    refresh();
+  };
+
   const getStatusBadge = (status: string) => {
-    const colors: Record<string, { variant: any; icon: any }> = {
+    const colors: Record<string, { variant: BadgeVariant; icon: LucideIcon }> = {
       QUEUED: { variant: "secondary", icon: Clock },
       RUNNING: { variant: "default", icon: RefreshCw },
       SUCCEEDED: { variant: "default", icon: CheckCircle },
@@ -96,27 +108,36 @@ export function JobsPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Filter className="h-4 w-4 text-muted-foreground mt-2" />
-              {["all", "QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELED"].map((f) => (
-                <Button
-                  key={f}
-                  variant={statusFilter === f ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter(f as any)}
-                >
-                  {f === "all" ? "All Status" : f}
-                </Button>
-              ))}
-              {["all", "whisper", "speechmatics", "assemblyai"].map((f) => (
+              {(["all", "QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELED"] as const).map(
+                (f) => (
+                  <Button
+                    key={f}
+                    variant={statusFilter === f ? "default" : "outline"}
+                    size="sm"
+                    className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                    onClick={() => setStatusFilter(f)}
+                  >
+                    {f === "all" ? "All Status" : f}
+                  </Button>
+                ),
+              )}
+              {(["all", "whisper", "speechmatics", "assemblyai"] as const).map((f) => (
                 <Button
                   key={f}
                   variant={engineFilter === f ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setEngineFilter(f as any)}
+                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  onClick={() => setEngineFilter(f)}
                 >
                   {f === "all" ? "All Engines" : f}
                 </Button>
               ))}
-              <Button variant="outline" size="sm" onClick={refresh}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                onClick={refresh}
+              >
                 Refresh
               </Button>
             </div>
@@ -167,6 +188,7 @@ export function JobsPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                       onClick={() => navigate(`/jobs/${job.id}`)}
                     >
                       View
@@ -175,7 +197,12 @@ export function JobsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => apiFetch(`/admin/jobs/${job.id}/retry`, { method: "POST" }).then(refresh)}
+                        className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        onClick={() =>
+                          apiFetch(`/admin/jobs/${job.id}/retry`, {
+                            method: "POST",
+                          }).then(refresh)
+                        }
                       >
                         Retry
                       </Button>
@@ -184,11 +211,8 @@ export function JobsPage() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => {
-                          if (window.confirm("Are you sure you want to cancel this job?")) {
-                            apiFetch(`/admin/jobs/${job.id}/cancel`, { method: "POST" }).then(refresh);
-                          }
-                        }}
+                        className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        onClick={() => setJobToCancel(job.id)}
                       >
                         Cancel
                       </Button>
@@ -207,6 +231,16 @@ export function JobsPage() {
           </TableBody>
         </Table>
       </Card>
+
+      <ConfirmDialog
+        open={!!jobToCancel}
+        onOpenChange={(open) => !open && setJobToCancel(null)}
+        title="Cancel Job"
+        description="Are you sure you want to cancel this job? This action cannot be undone."
+        onConfirm={confirmCancelJob}
+        confirmText="Cancel Job"
+        variant="destructive"
+      />
     </div>
   );
 }

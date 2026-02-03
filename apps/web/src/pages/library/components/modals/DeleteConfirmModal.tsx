@@ -5,10 +5,7 @@ interface DeleteConfirmModalProps {
   onConfirm: () => void;
 }
 
-export function DeleteConfirmModal({
-  onClose,
-  onConfirm,
-}: DeleteConfirmModalProps) {
+export function DeleteConfirmModal({ onClose, onConfirm }: DeleteConfirmModalProps) {
   return (
     <ConfirmDialog
       open

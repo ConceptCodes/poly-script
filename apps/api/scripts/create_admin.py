@@ -13,28 +13,37 @@ Behavior:
 - Uses the AdminAuthService from the core package and reuses the existing DB session factory.
 """
 
-import sys
-import os
 import argparse
+import logging
+import os
 import pathlib
-import uuid
-import importlib
+import sys
+
 
 def _setup_python_path():
     # Support running this script from repo root without installing packages
     script_dir = pathlib.Path(__file__).resolve()
     # root is parent of apps
     root = script_dir.parent.parent.parent.parent
-    
+
     # Path to core package (where AdminAuthService lives)
     core_pkg = root / "packages" / "core"
     if core_pkg.exists():
         sys.path.insert(0, str(core_pkg))
-    
+
     # Path to db (db layer with get_db_session)
     db_path = root / "packages" / "storage" / "db"
     if db_path.exists():
         sys.path.insert(0, str(db_path))
+
+
+_setup_python_path()
+
+from poly_core.services.admin_auth import AdminAuthService  # noqa: E402
+from poly_db.database import get_db_session  # noqa: E402
+
+logger = logging.getLogger(__name__)
+
 
 def _parse_args():
     ap = argparse.ArgumentParser(description="Create a SUPER_ADMIN user via AdminAuthService")
@@ -60,35 +69,28 @@ def _load_inputs():
         full_name = os.environ.get("ADMIN_FULL_NAME")
 
     if not email or not password or not full_name:
-        print("Error: email, password and full_name are required (via CLI or ADMIN_* env vars).", file=sys.stderr)
+        logger.error(
+            "email, password and full_name are required (via CLI or ADMIN_* env vars)."
+        )
         sys.exit(2)
 
     return email, password, full_name
 
 def main():
-    _setup_python_path()
+    logging.basicConfig(level=logging.INFO)
     email, password, full_name = _load_inputs()
-
-    # Import after adjusting sys.path
-    try:
-        # AdminAuthService is exposed via the core package
-        from poly_db.database import get_db_session
-        from poly_core.services.admin_auth import AdminAuthService
-    except Exception as exc:
-        print(f"Error importing admin auth dependencies: {exc}", file=sys.stderr)
-        sys.exit(3)
 
     # Admin secret and token expiry (admin tokens are separate from user tokens)
     admin_jwt_secret = os.environ.get("ADMIN_JWT_SECRET") or os.environ.get("JWT_SECRET")
     if not admin_jwt_secret:
-        print("Error: ADMIN_JWT_SECRET environment variable is not set.", file=sys.stderr)
+        logger.error("ADMIN_JWT_SECRET environment variable is not set.")
         sys.exit(4)
 
     admin_jwt_expiry = os.environ.get("ADMIN_JWT_EXPIRY_MINUTES")
     try:
         jwt_expiry_minutes = int(admin_jwt_expiry) if admin_jwt_expiry else 60
     except ValueError:
-        print("Error: ADMIN_JWT_EXPIRY_MINUTES must be an integer.", file=sys.stderr)
+        logger.error("ADMIN_JWT_EXPIRY_MINUTES must be an integer.")
         sys.exit(5)
 
     # Create admin using a dedicated DB session
@@ -96,13 +98,18 @@ def main():
         svc = AdminAuthService(db_session, admin_jwt_secret, jwt_expiry_minutes)
         try:
             created = svc.create_admin_user(email=email, password=password, full_name=full_name, role="SUPER_ADMIN")
-            print(f"SUCCESS: Admin created: {created.email} (id={created.id}, role={created.role})")
+            logger.info(
+                "Admin created: %s (id=%s, role=%s)",
+                created.email,
+                created.id,
+                created.role,
+            )
             sys.exit(0)
         except ValueError as ve:
-            print(f"ERROR: {ve}", file=sys.stderr)
+            logger.error("Admin creation failed: %s", ve)
             sys.exit(1)
         except Exception as e:
-            print(f"UNEXPECTED ERROR: {e}", file=sys.stderr)
+            logger.exception("Unexpected error creating admin: %s", e)
             sys.exit(9)
 
 if __name__ == "__main__":

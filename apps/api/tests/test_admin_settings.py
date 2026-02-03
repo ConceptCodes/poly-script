@@ -1,7 +1,8 @@
-
 """Test admin settings endpoints."""
+
 import pytest
-from typing import Dict, Any
+
+
 class TestAdminSettingsEndpoints:
     """Test admin settings endpoints."""
 

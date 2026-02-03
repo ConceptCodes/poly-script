@@ -46,9 +46,14 @@ const t = getCopy(lang);
   <section class="container" style="margin-top:80px;">
     <h2 class="section-title">{t.features.title}</h2>
     <div class="grid cols-3" style="margin-top:24px;">
-      {t.features.items.map((item) => (
+      {t.features.items.map((item, index) => (
         <div class="card">
-          <h3>{item.title}</h3>
+          <div class="feature-icon" style={`background: ${index === 0 ? 'var(--gradient-blue)' : index === 1 ? 'var(--gradient-orange)' : 'var(--gradient-brand)'};`}>
+            {index === 0 && '📊'}
+            {index === 1 && '⚡'}
+            {index === 2 && '👥'}
+          </div>
+          <h3 style="margin-top: 20px;">{item.title}</h3>
           <p class="muted">{item.body}</p>
         </div>
       ))}
@@ -72,8 +77,9 @@ const t = getCopy(lang);
     <h2 class="section-title">{t.pricing.title}</h2>
     <p class="muted">{t.pricing.subtitle}</p>
     <div class="pricing" style="margin-top:24px;">
-      {t.pricing.plans.map((plan) => (
-        <div class="card">
+      {t.pricing.plans.map((plan, index) => (
+        <div class={`card ${index === 1 ? 'recommended' : ''}`}>
+          {index === 1 && <div class="recommended-badge">Most Popular</div>}
           <div class="tag">{plan.name}</div>
           <h3>{plan.summary}</h3>
           <strong>{plan.price}</strong>
@@ -82,7 +88,7 @@ const t = getCopy(lang);
               <li>{bullet}</li>
             ))}
           </ul>
-          <a class="btn primary" href="https://app.polyscript.io/signup">Choose plan</a>
+          <a class={`btn ${index === 1 ? 'primary' : 'ghost'}`} href="https://app.polyscript.io/signup">Choose plan</a>
         </div>
       ))}
     </div>

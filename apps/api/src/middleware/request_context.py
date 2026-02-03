@@ -1,9 +1,10 @@
 import uuid
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-from poly_core.logging_context import set_request_context, clear_request_context
+from poly_core.logging_context import clear_request_context, set_request_context
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):

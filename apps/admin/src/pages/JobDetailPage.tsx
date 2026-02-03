@@ -1,10 +1,24 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { apiFetch } from "../lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
-import { Button } from "@poly/ui/button";
+import { ConfirmDialog } from "@poly/ui";
 import { Badge } from "@poly/ui/badge";
-import { ArrowLeft, Briefcase, Clock, CheckCircle, XCircle, Pause, RefreshCw, AlertTriangle, FileText, Activity, Zap } from "lucide-react";
+import { Button } from "@poly/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import type { LucideIcon } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  ArrowLeft,
+  Briefcase,
+  CheckCircle,
+  Clock,
+  FileText,
+  Pause,
+  RefreshCw,
+  XCircle,
+  Zap,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { apiFetch } from "../lib/api";
 
 type JobDetail = {
   id: string;
@@ -26,10 +40,13 @@ type JobDetail = {
   duration_ms?: number;
 };
 
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
+
 export function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [job, setJob] = useState<JobDetail | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -38,18 +55,22 @@ export function JobDetailPage() {
   }, [id]);
 
   if (!job) {
-    return <div className="p-8">Loading...</div>;
+    return <div className="p-8">Loading…</div>;
   }
 
   const getStatusBadge = (status: string) => {
-    const colors: Record<string, { variant: any; icon: any; label: string }> = {
+    const colors: Record<string, { variant: BadgeVariant; icon: LucideIcon; label: string }> = {
       QUEUED: { variant: "secondary", icon: Clock, label: "Queued" },
       RUNNING: { variant: "default", icon: RefreshCw, label: "Running" },
       SUCCEEDED: { variant: "default", icon: CheckCircle, label: "Succeeded" },
       FAILED: { variant: "destructive", icon: XCircle, label: "Failed" },
       CANCELED: { variant: "outline", icon: Pause, label: "Canceled" },
     };
-    const config = colors[status] || { variant: "outline", icon: Clock, label: status };
+    const config = colors[status] || {
+      variant: "outline",
+      icon: Clock,
+      label: status,
+    };
     const Icon = config.icon;
     return (
       <Badge variant={config.variant} className="flex items-center gap-1">
@@ -59,11 +80,29 @@ export function JobDetailPage() {
     );
   };
 
+  const handleRetry = async () => {
+    if (!job) return;
+    await apiFetch(`/admin/jobs/${job.id}/retry`, { method: "POST" });
+    navigate("/jobs");
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!job) return;
+    await apiFetch(`/admin/jobs/${job.id}/cancel`, { method: "POST" });
+    setShowCancelDialog(false);
+    navigate("/jobs");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/jobs")}>
-          <ArrowLeft className="h-5 w-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/jobs")}
+          aria-label="Back to jobs"
+        >
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight mb-2">Job Details</h1>
@@ -225,30 +264,13 @@ export function JobDetailPage() {
 
       <div className="flex items-center gap-4">
         {(job.status === "FAILED" || job.status === "CANCELED") && (
-          <Button
-            onClick={() => {
-              apiFetch(`/admin/jobs/${job.id}/retry`, { method: "POST" }).then(() => {
-                window.alert("Job queued for retry");
-                navigate("/jobs");
-              });
-            }}
-          >
+          <Button onClick={handleRetry}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Retry Job
           </Button>
         )}
         {(job.status === "QUEUED" || job.status === "RUNNING") && (
-          <Button
-            variant="destructive"
-            onClick={() => {
-              if (window.confirm("Are you sure you want to cancel this job?")) {
-                apiFetch(`/admin/jobs/${job.id}/cancel`, { method: "POST" }).then(() => {
-                  window.alert("Job canceled");
-                  navigate("/jobs");
-                });
-              }
-            }}
-          >
+          <Button variant="destructive" onClick={() => setShowCancelDialog(true)}>
             <Pause className="h-4 w-4 mr-2" />
             Cancel Job
           </Button>
@@ -257,6 +279,16 @@ export function JobDetailPage() {
           Back to Jobs
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        title="Cancel Job"
+        description="Are you sure you want to cancel this job? This action cannot be undone."
+        onConfirm={handleCancelConfirm}
+        confirmText="Cancel Job"
+        variant="destructive"
+      />
     </div>
   );
 }

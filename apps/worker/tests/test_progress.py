@@ -1,7 +1,8 @@
 """Tests for ProgressPublisher."""
-import pytest
+
 from unittest.mock import Mock, patch
 
+import pytest
 from src.progress import ProgressPublisher
 
 
@@ -14,7 +15,7 @@ def mock_redis():
 @pytest.fixture
 def publisher(mock_redis):
     """Create a ProgressPublisher instance."""
-    with patch('src.progress.get_redis_client', return_value=mock_redis):
+    with patch("src.progress.get_redis_client", return_value=mock_redis):
         return ProgressPublisher()
 
 
@@ -30,13 +31,14 @@ class TestProgressPublisher:
             progress_stage="transcribing",
             status="RUNNING",
         )
-        
+
         mock_redis.publish.assert_called_once()
         call_args = mock_redis.publish.call_args[0]
-        
+
         assert call_args[0] == "job:test-job:progress"
-        
+
         import json
+
         payload = json.loads(call_args[1])
         assert payload["job_id"] == "test-job"
         assert payload["team_id"] == "test-team"
@@ -51,11 +53,12 @@ class TestProgressPublisher:
             team_id="test-team",
             stage="transcribing",
         )
-        
+
         mock_redis.publish.assert_called_once()
         call_args = mock_redis.publish.call_args[0]
-        
+
         import json
+
         payload = json.loads(call_args[1])
         assert payload["progress_pct"] == 90  # transcribing stage progress
         assert payload["progress_stage"] == "transcribing"
@@ -73,7 +76,6 @@ class TestProgressPublisher:
         assert ProgressPublisher._get_stage_progress("failed") == 0
         assert ProgressPublisher._get_stage_progress("canceled") == 0
 
-
     def test_publish_progress_with_error(self, publisher, mock_redis):
         """Test publishing progress with error."""
         publisher.publish_progress(
@@ -84,11 +86,12 @@ class TestProgressPublisher:
             status="FAILED",
             error_message="Test error",
         )
-        
+
         mock_redis.publish.assert_called_once()
         call_args = mock_redis.publish.call_args[0]
-        
+
         import json
+
         payload = json.loads(call_args[1])
         assert payload["status"] == "FAILED"
         assert payload["error_message"] == "Test error"

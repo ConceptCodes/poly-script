@@ -1,14 +1,14 @@
-import { useRef, useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
 import { Button } from "@poly/ui/button";
-import { Play, Pause, Volume2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Pause, Play, Volume2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface AudioPlayerCardProps {
   jobId: string;
-  audioDuration: number | null;
+  transcriptId: string;
 }
 
-export function AudioPlayerCard({ jobId, audioDuration }: AudioPlayerCardProps) {
+export function AudioPlayerCard({ jobId, transcriptId }: AudioPlayerCardProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -70,6 +70,9 @@ export function AudioPlayerCard({ jobId, audioDuration }: AudioPlayerCardProps) 
 
   // Audio URL would come from the job/audio asset
   const audioUrl = `/api/v1/jobs/${jobId}/audio`;
+  const captionsSrc = `${
+    import.meta.env.VITE_API_URL || "http://localhost:8000/v1"
+  }/transcripts/${transcriptId}/export?format=vtt`;
 
   return (
     <Card>
@@ -77,7 +80,9 @@ export function AudioPlayerCard({ jobId, audioDuration }: AudioPlayerCardProps) 
         <CardTitle className="text-lg">Audio Player</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <audio ref={audioRef} src={audioUrl} preload="metadata" />
+        <audio ref={audioRef} src={audioUrl} preload="metadata">
+          <track kind="captions" srcLang="en" src={captionsSrc} label="English captions" />
+        </audio>
 
         <div className="flex items-center justify-center">
           <Button
@@ -85,11 +90,12 @@ export function AudioPlayerCard({ jobId, audioDuration }: AudioPlayerCardProps) 
             size="icon"
             onClick={togglePlay}
             className="w-12 h-12 rounded-full"
+            aria-label={isPlaying ? "Pause audio" : "Play audio"}
           >
             {isPlaying ? (
-              <Pause className="w-5 h-5" />
+              <Pause className="w-5 h-5" aria-hidden="true" />
             ) : (
-              <Play className="w-5 h-5" />
+              <Play className="w-5 h-5" aria-hidden="true" />
             )}
           </Button>
         </div>
@@ -102,6 +108,7 @@ export function AudioPlayerCard({ jobId, audioDuration }: AudioPlayerCardProps) 
             value={currentTime}
             onChange={handleSeek}
             className="w-full"
+            aria-label="Seek audio position"
           />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>{formatTime(currentTime)}</span>
@@ -110,7 +117,7 @@ export function AudioPlayerCard({ jobId, audioDuration }: AudioPlayerCardProps) 
         </div>
 
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Volume2 className="w-4 h-4" />
+          <Volume2 className="w-4 h-4" aria-hidden="true" />
           <span>Use controls above or click on segments to jump to that position</span>
         </div>
       </CardContent>

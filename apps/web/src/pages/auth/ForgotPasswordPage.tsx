@@ -1,12 +1,18 @@
-import { useState } from "react";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+} from "@poly/ui";
 import { useForm } from "@tanstack/react-form";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { Button } from "@poly/ui";
-import { Input } from "@poly/ui";
-import { Label } from "@poly/ui";
-import { Alert, AlertDescription } from "@poly/ui";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui";
 import { apiFetch } from "../../lib/api";
 import { createForgotPasswordSchema } from "./schemas";
 
@@ -30,8 +36,10 @@ export function ForgotPasswordPage() {
         body: { email: form.state.values.email },
       });
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || t("auth.forgotPassword.error"));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error && err.message ? err.message : t("auth.forgotPassword.error");
+      setError(message);
     }
   };
 
@@ -104,18 +112,19 @@ export function ForgotPasswordPage() {
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
                     autoComplete="email"
+                    spellCheck={false}
                   />
                   {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-destructive">
-                      {field.state.meta.errors[0]}
-                    </p>
+                    <p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
                   )}
                 </div>
               )}
             </form.Field>
 
             <Button type="submit" className="w-full" disabled={form.state.isSubmitting}>
-              {form.state.isSubmitting ? t("auth.forgotPassword.sending") : t("auth.forgotPassword.sendLink")}
+              {form.state.isSubmitting
+                ? t("auth.forgotPassword.sending")
+                : t("auth.forgotPassword.sendLink")}
             </Button>
           </form>
 

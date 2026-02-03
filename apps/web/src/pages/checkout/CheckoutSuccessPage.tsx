@@ -1,6 +1,6 @@
-import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@poly/ui";
 import { CheckCircle2 } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 
 export function CheckoutSuccessPage() {
   const { type } = useParams<{ type: string }>();
@@ -8,21 +8,21 @@ export function CheckoutSuccessPage() {
 
   const getMessage = () => {
     if (type === "subscription") {
-      return ({
+      return {
         title: "Subscription Activated!",
         description:
           "Your subscription has been successfully activated. You can now enjoy all the benefits of your new plan.",
-      });
+      };
     } else if (type === "credits") {
-      return ({
+      return {
         title: "Credits Purchased!",
         description: "Your credits have been added to your account and are ready to use.",
-      });
+      };
     }
-    return ({
+    return {
       title: "Payment Successful!",
       description: "Your payment has been processed successfully.",
-    });
+    };
   };
 
   const { title, description } = getMessage();

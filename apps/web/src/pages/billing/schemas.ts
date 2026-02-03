@@ -6,7 +6,7 @@ export const purchaseCreditsSchema = z.object({
   amount: z
     .number()
     .refine(
-      (val) => CREDIT_BUNDLES.includes(val as any),
+      (val) => CREDIT_BUNDLES.includes(val as (typeof CREDIT_BUNDLES)[number]),
       "Must be 10, 50, or 100 credits",
     ),
 });

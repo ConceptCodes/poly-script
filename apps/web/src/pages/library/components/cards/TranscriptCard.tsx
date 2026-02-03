@@ -1,14 +1,16 @@
-import { Card, CardContent } from "@poly/ui/card";
 import { Badge } from "@poly/ui/badge";
 import { Button } from "@poly/ui/button";
+import { Card, CardContent } from "@poly/ui/card";
+import { Checkbox } from "@poly/ui/checkbox";
 import {
-  CheckSquare,
-  Square,
-  FileText,
-  Download,
-  Trash2,
-  ExternalLink,
-} from "lucide-react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@poly/ui/dropdown-menu";
+import { Download, ExternalLink, FileText, Trash2 } from "lucide-react";
+import { formatDate } from "../../../../lib/formatters";
+import { AudioPreview } from "./AudioPreview";
 
 interface TranscriptListItem {
   id: string;
@@ -40,13 +42,11 @@ export function TranscriptCard({
   onView,
   onExport,
   onDelete,
+  audioPreview,
+  audioUrl,
 }: TranscriptCardProps) {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const formatDisplayDate = (dateString: string) => {
+    return formatDate(dateString);
   };
 
   const formatContent = () => {
@@ -59,69 +59,38 @@ export function TranscriptCard({
             </h3>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Badge variant="secondary">{transcript.language.toUpperCase()}</Badge>
-              <span>{formatDate(transcript.created_at)}</span>
+              <span>{formatDisplayDate(transcript.created_at)}</span>
             </div>
           </div>
-          <button
-            onClick={onSelect}
-            className="flex-shrink-0 mt-1"
-          >
-            {isSelected ? (
-              <CheckSquare className="w-5 h-5 text-primary" />
-            ) : (
-              <Square className="w-5 h-5 text-muted-foreground" />
-            )}
-          </button>
-        </div>
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {transcript.text_preview}
-        </p>
-        {audioPreview && audioUrl && (
-          <AudioPreview
-            transcriptId={transcript.id}
-            audioUrl={audioUrl}
-            className="mb-3"
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onSelect}
+            aria-label={isSelected ? "Deselect transcript" : "Select transcript"}
           />
+        </div>
+        <p className="text-sm text-muted-foreground line-clamp-2">{transcript.text_preview}</p>
+        {audioPreview && audioUrl && (
+          <AudioPreview transcriptId={transcript.id} audioUrl={audioUrl} className="mb-3" />
         )}
         <div className="flex items-center gap-2 mt-3">
           <Button variant="ghost" size="sm" onClick={onView}>
             <FileText className="w-4 h-4 mr-1" />
             View
           </Button>
-          <div className="relative group">
-            <Button variant="ghost" size="sm">
-              <Download className="w-4 h-4 mr-1" />
-              Export
-            </Button>
-            <div className="absolute left-0 top-full mt-1 hidden group-hover:block z-10">
-              <div className="bg-popover border rounded-lg shadow-lg p-1">
-                <button
-                  onClick={() => onExport("txt")}
-                  className="block w-full text-left px-3 py-1.5 text-sm hover:bg-muted rounded"
-                >
-                  TXT
-                </button>
-                <button
-                  onClick={() => onExport("json")}
-                  className="block w-full text-left px-3 py-1.5 text-sm hover:bg-muted rounded"
-                >
-                  JSON
-                </button>
-                <button
-                  onClick={() => onExport("srt")}
-                  className="block w-full text-left px-3 py-1.5 text-sm hover:bg-muted rounded"
-                >
-                  SRT
-                </button>
-                <button
-                  onClick={() => onExport("vtt")}
-                  className="block w-full text-left px-3 py-1.5 text-sm hover:bg-muted rounded"
-                >
-                  VTT
-                </button>
-              </div>
-            </div>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <Download className="w-4 h-4 mr-1" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => onExport("txt")}>TXT</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExport("json")}>JSON</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExport("srt")}>SRT</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExport("vtt")}>VTT</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="ghost" size="sm" onClick={onDelete}>
             <Trash2 className="w-4 h-4 mr-1" />
             Delete
@@ -132,16 +101,11 @@ export function TranscriptCard({
       <>
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
-            <button
-              onClick={onSelect}
-              className="flex-shrink-0"
-            >
-              {isSelected ? (
-                <CheckSquare className="w-5 h-5 text-primary" />
-              ) : (
-                <Square className="w-5 h-5 text-muted-foreground" />
-              )}
-            </button>
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={onSelect}
+              aria-label={isSelected ? "Deselect transcript" : "Select transcript"}
+            />
             <div>
               <h3 className="font-medium">
                 {transcript.job_filename || `Transcript ${transcript.id.slice(0, 8)}`}
@@ -150,33 +114,21 @@ export function TranscriptCard({
                 <Badge variant="secondary" className="text-xs">
                   {transcript.language.toUpperCase()}
                 </Badge>
-                <span>{formatDate(transcript.created_at)}</span>
+                <span>{formatDisplayDate(transcript.created_at)}</span>
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={onView}>
+          <Button variant="ghost" size="sm" onClick={onView} aria-label="View transcript details">
             <ExternalLink className="w-4 h-4" />
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
-          {transcript.text_preview}
-        </p>
+        <p className="text-sm text-muted-foreground line-clamp-3 mb-3">{transcript.text_preview}</p>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={onView}
-          >
+          <Button variant="outline" size="sm" className="flex-1" onClick={onView}>
             <FileText className="w-4 h-4 mr-1" />
             Edit
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={() => onExport("txt")}
-          >
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => onExport("txt")}>
             <Download className="w-4 h-4 mr-1" />
             Export
           </Button>
@@ -191,9 +143,7 @@ export function TranscriptCard({
         isSelected ? "ring-2 ring-primary" : ""
       }`}
     >
-      <CardContent className={viewMode === "list" ? "py-4" : "p-4"}>
-        {formatContent()}
-      </CardContent>
+      <CardContent className={viewMode === "list" ? "py-4" : "p-4"}>{formatContent()}</CardContent>
     </Card>
   );
 }

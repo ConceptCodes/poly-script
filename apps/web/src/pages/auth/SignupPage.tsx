@@ -1,20 +1,21 @@
-import { useForm } from "@tanstack/react-form";
-import { useNavigate, Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Button } from "@poly/ui";
-import { Input } from "@poly/ui";
-import { Label } from "@poly/ui";
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
+  Checkbox,
+  Input,
+  Label,
+  Separator,
 } from "@poly/ui";
-import { Alert, AlertDescription } from "@poly/ui";
-import { Separator } from "@poly/ui";
-import { Checkbox } from "@poly/ui";
+import { useForm } from "@tanstack/react-form";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
 import { apiFetch } from "../../lib/api";
 import { createSignupSchema } from "./schemas";
 
@@ -42,7 +43,7 @@ export function SignupPage() {
         });
         localStorage.setItem("pending_email", value.email);
         navigate("/auth/verify-email-code");
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Signup failed:", error);
         throw error;
       }
@@ -67,167 +68,171 @@ export function SignupPage() {
               form.handleSubmit();
             }}
             className="space-y-4"
+          >
+            <form.Field
+              name="email"
+              validators={{
+                onChange: ({ value }) =>
+                  signupSchema.shape.email.safeParse(value).success
+                    ? undefined
+                    : signupSchema.shape.email.safeParse(value).error?.issues[0]?.message,
+              }}
             >
-              <form.Field
-                name="email"
-                validators={{
-                  onChange: ({ value }) =>
-                    signupSchema.shape.email.safeParse(value).success
-                      ? undefined
-                      : signupSchema.shape.email.safeParse(value).error?.issues[0]?.message,
-                }}
-              >
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t("auth.signup.emailLabel")}</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder={t("auth.signup.emailPlaceholder")}
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                    />
-                    {field.state.meta.errors && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field
-                name="password"
-                validators={{
-                  onChange: ({ value }) =>
-                    signupSchema.shape.password.safeParse(value).success
-                      ? undefined
-                      : signupSchema.shape.password.safeParse(value).error?.issues[0]?.message,
-                }}
-              >
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor="password">{t("auth.signup.passwordLabel")}</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder={t("auth.signup.passwordPlaceholder")}
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                    />
-                    {field.state.meta.errors && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field
-                name="confirmPassword"
-                validators={{
-                  onChange: ({ value }) =>
-                    (() => {
-                      const result = signupSchema.safeParse({
-                        ...form.state.values,
-                        confirmPassword: value,
-                      });
-                      return result.success
-                        ? undefined
-                        : (result.error as any).errors?.find((e: any) => e.path?.includes("confirmPassword"))?.message;
-                    })(),
-                }}
-              >
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">
-                      {t("auth.signup.confirmPasswordLabel")}
-                    </Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder={t("auth.signup.confirmPasswordPlaceholder")}
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                    />
-                    {field.state.meta.errors && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Field
-                name="terms"
-                validators={{
-                  onChange: ({ value }) =>
-                    signupSchema.shape.terms.safeParse(value).success
-                      ? undefined
-                      : signupSchema.shape.terms.safeParse(value).error?.issues[0]?.message,
-                }}
-              >
-                {(field) => (
-                  <div className="flex items-start space-x-2">
-                    <Checkbox
-                      id="terms"
-                      checked={field.state.value}
-                      onCheckedChange={(checked) => field.handleChange(checked === true)}
-                    />
-                    <div className="grid gap-1.5 leading-none">
-                      <Label
-                        htmlFor="terms"
-                        className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {t("auth.signup.agreeToTerms")}
-                      </Label>
-                    </div>
-                    {field.state.meta.errors && (
-                      <Alert variant="destructive">
-                        <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-
-              <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-                {([canSubmit, isSubmitting]) => (
-                  <Button type="submit" className="w-full" disabled={!canSubmit || isSubmitting}>
-                    {isSubmitting ? t("common.loading") : t("common.submit")}
-                  </Button>
-                )}
-              </form.Subscribe>
-
-              <form.Subscribe selector={(state) => state.errors}>
-                {(errors) =>
-                  errors.length > 0 && (
+              {(field) => (
+                <div className="space-y-2">
+                  <Label htmlFor="email">{t("auth.signup.emailLabel")}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={t("auth.signup.emailPlaceholder")}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    autoComplete="username"
+                    spellCheck={false}
+                  />
+                  {field.state.meta.errors && (
                     <Alert variant="destructive">
-                      <AlertDescription>{errors[0]}</AlertDescription>
+                      <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
                     </Alert>
-                  )
-                }
-               </form.Subscribe>
-            </form>
+                  )}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field
+              name="password"
+              validators={{
+                onChange: ({ value }) =>
+                  signupSchema.shape.password.safeParse(value).success
+                    ? undefined
+                    : signupSchema.shape.password.safeParse(value).error?.issues[0]?.message,
+              }}
+            >
+              {(field) => (
+                <div className="space-y-2">
+                  <Label htmlFor="password">{t("auth.signup.passwordLabel")}</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder={t("auth.signup.passwordPlaceholder")}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    autoComplete="new-password"
+                    spellCheck={false}
+                  />
+                  {field.state.meta.errors && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field
+              name="confirmPassword"
+              validators={{
+                onChange: ({ value }) =>
+                  (() => {
+                    const result = signupSchema.safeParse({
+                      ...form.state.values,
+                      confirmPassword: value,
+                    });
+                    if (result.success) return undefined;
+                    return result.error.issues.find((issue) =>
+                      issue.path?.includes("confirmPassword"),
+                    )?.message;
+                  })(),
+              }}
+            >
+              {(field) => (
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">{t("auth.signup.confirmPasswordLabel")}</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder={t("auth.signup.confirmPasswordPlaceholder")}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    autoComplete="new-password"
+                    spellCheck={false}
+                  />
+                  {field.state.meta.errors && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field
+              name="terms"
+              validators={{
+                onChange: ({ value }) =>
+                  signupSchema.shape.terms.safeParse(value).success
+                    ? undefined
+                    : signupSchema.shape.terms.safeParse(value).error?.issues[0]?.message,
+              }}
+            >
+              {(field) => (
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="terms"
+                    checked={field.state.value}
+                    onCheckedChange={(checked) => field.handleChange(checked === true)}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label
+                      htmlFor="terms"
+                      className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {t("auth.signup.agreeToTerms")}
+                    </Label>
+                  </div>
+                  {field.state.meta.errors && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{field.state.meta.errors[0]}</AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+            </form.Field>
+
+            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+              {([canSubmit, isSubmitting]) => (
+                <Button type="submit" className="w-full" disabled={!canSubmit || isSubmitting}>
+                  {isSubmitting ? t("common.loading") : t("common.submit")}
+                </Button>
+              )}
+            </form.Subscribe>
+
+            <form.Subscribe selector={(state) => state.errors}>
+              {(errors) =>
+                errors.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{errors[0]}</AlertDescription>
+                  </Alert>
+                )
+              }
+            </form.Subscribe>
+          </form>
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <Separator />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                {t("common.or")}
-              </span>
+              <span className="bg-background px-2 text-muted-foreground">{t("common.or")}</span>
             </div>
           </div>
 
           <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignup}>
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+              <title>Google</title>
               <path
                 fill="currentColor"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

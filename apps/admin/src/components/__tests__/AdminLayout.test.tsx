@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { AdminLayout } from "../AdminLayout";
 import { BrowserRouter } from "react-router-dom";
+import { describe, expect, it, vi } from "vitest";
+import { AdminLayout } from "../AdminLayout";
 
 vi.mock("../../store/auth", () => ({
   useAuthStore: vi.fn(() => ({

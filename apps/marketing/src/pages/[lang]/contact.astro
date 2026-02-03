@@ -23,19 +23,46 @@ const apiUrl = import.meta.env.PUBLIC_API_URL || "http://localhost:8000/v1";
       >
         <label>
           {t.contact.name}
-          <input class="input-field" type="text" name="name" required />
+          <input
+            class="input-field"
+            type="text"
+            name="name"
+            autoComplete="name"
+            spellcheck="false"
+            required
+          />
         </label>
         <label>
           {t.contact.company}
-          <input class="input-field" type="text" name="company" />
+          <input
+            class="input-field"
+            type="text"
+            name="company"
+            autoComplete="organization"
+            spellcheck="false"
+          />
         </label>
         <label>
           {t.contact.email}
-          <input class="input-field" type="email" name="email" required />
+          <input
+            class="input-field"
+            type="email"
+            name="email"
+            autoComplete="email"
+            spellcheck="false"
+            required
+          />
         </label>
         <label>
           {t.contact.message}
-          <textarea class="input-field" style="min-height:160px;" name="message" required></textarea>
+          <textarea
+            class="input-field"
+            style="min-height:160px;"
+            name="message"
+            autoComplete="off"
+            spellcheck="true"
+            required
+          ></textarea>
         </label>
         <button class="btn primary" type="submit">{t.contact.submit}</button>
       </form>

@@ -1,46 +1,39 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import "./App.css";
 
-import { LoginPage } from "./pages/auth/LoginPage";
-import { SignupPage } from "./pages/auth/SignupPage";
-import { VerifyEmailPage } from "./pages/auth/VerifyEmailPage";
-import { VerifyEmailCodePage } from "./pages/auth/VerifyEmailCodePage";
-import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
-import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
-
-import { OnboardingPage } from "./pages/onboarding/OnboardingPage";
-
-import { CheckoutSuccessPage } from "./pages/checkout/CheckoutSuccessPage";
-import { CheckoutCancelPage } from "./pages/checkout/CheckoutCancelPage";
-
-import { DashboardPage } from "./pages/dashboard/DashboardPage";
-import { TeamSettingsPage } from "./pages/settings/TeamSettingsPage";
-import { UserSettingsPage } from "./pages/settings/UserSettingsPage";
-
-import { BillingPage } from "./pages/billing/index";
-import UploadPage from "./pages/upload/index";
-
-import { JobsPage } from "./pages/jobs";
-import { PendingJobsPage } from "./pages/jobs/pending";
-import { LiveTranscriptViewerPage } from "./pages/jobs/[jobId]/live";
-import { CompletedJobsPage } from "./pages/jobs/completed";
-
-import { NotFoundPage } from "./pages/errors/NotFoundPage";
-import { ForbiddenPage } from "./pages/errors/ForbiddenPage";
-import { InternalServerErrorPage } from "./pages/errors/InternalServerErrorPage";
-import { SessionExpiredPage } from "./pages/errors/SessionExpiredPage";
-
+import { Toaster } from "@poly/ui/toaster";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { queryClient } from "./lib/queryClient";
+import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
+import { LoginPage } from "./pages/auth/LoginPage";
+import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
+import { SignupPage } from "./pages/auth/SignupPage";
+import { VerifyEmailCodePage } from "./pages/auth/VerifyEmailCodePage";
+import { VerifyEmailPage } from "./pages/auth/VerifyEmailPage";
+import { BillingPage } from "./pages/billing/index";
+import { CheckoutCancelPage } from "./pages/checkout/CheckoutCancelPage";
+import { CheckoutSuccessPage } from "./pages/checkout/CheckoutSuccessPage";
+import { DashboardPage } from "./pages/dashboard/DashboardPage";
+import { ForbiddenPage } from "./pages/errors/ForbiddenPage";
+import { InternalServerErrorPage } from "./pages/errors/InternalServerErrorPage";
+import { NotFoundPage } from "./pages/errors/NotFoundPage";
+import { SessionExpiredPage } from "./pages/errors/SessionExpiredPage";
+import { JobsPage } from "./pages/jobs";
+import { LiveTranscriptViewerPage } from "./pages/jobs/[jobId]/live";
+import { CompletedJobsPage } from "./pages/jobs/completed";
+import { PendingJobsPage } from "./pages/jobs/pending";
+import { OnboardingPage } from "./pages/onboarding/OnboardingPage";
+import { TeamSettingsPage } from "./pages/settings/TeamSettingsPage";
+import { UserSettingsPage } from "./pages/settings/UserSettingsPage";
+import UploadPage from "./pages/upload/index";
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <div className="min-h-screen bg-background text-foreground">
-
           <main>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -142,6 +135,7 @@ function App() {
           </main>
         </div>
       </Router>
+      <Toaster />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

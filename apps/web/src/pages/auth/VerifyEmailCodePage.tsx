@@ -1,17 +1,19 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@poly/ui";
-import { Input } from "@poly/ui";
-import { Label } from "@poly/ui";
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  Input,
+  Label,
+  useToast,
 } from "@poly/ui";
-import { Alert, AlertDescription } from "@poly/ui";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../lib/api";
 
 export function VerifyEmailCodePage() {
@@ -23,6 +25,7 @@ export function VerifyEmailCodePage() {
   const [success, setSuccess] = useState(false);
   const [resending, setResending] = useState(false);
   const pendingEmail = localStorage.getItem("pending_email") || "";
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +41,10 @@ export function VerifyEmailCodePage() {
       setTimeout(() => {
         navigate("/onboarding");
       }, 2000);
-    } catch (err: any) {
-      setError(err.message || "Invalid verification code");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error && err.message ? err.message : "Invalid verification code";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -55,9 +60,13 @@ export function VerifyEmailCodePage() {
         body: { email: pendingEmail },
       });
       // Show success message
-      alert("Verification code resent!");
-    } catch (err: any) {
-      setError(err.message || "Failed to resend code");
+      toast({
+        title: "Code resent",
+        description: "A new verification code has been sent to your email.",
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error && err.message ? err.message : "Failed to resend code";
+      setError(message);
     } finally {
       setResending(false);
     }
@@ -67,9 +76,7 @@ export function VerifyEmailCodePage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">
-            {t("auth.verifyEmailCode.title")}
-          </CardTitle>
+          <CardTitle className="text-2xl text-center">{t("auth.verifyEmailCode.title")}</CardTitle>
           <CardDescription className="text-center">
             {t("auth.verifyEmailCode.subtitle", { email: pendingEmail })}
           </CardDescription>
@@ -93,7 +100,6 @@ export function VerifyEmailCodePage() {
                   onChange={(e) => setCode(e.target.value)}
                   maxLength={6}
                   className="text-center text-2xl tracking-widest"
-                  autoFocus
                 />
                 <p className="text-xs text-gray-500 text-center">
                   Enter the 6-digit code sent to your email
@@ -107,13 +113,11 @@ export function VerifyEmailCodePage() {
               )}
 
               <Button type="submit" className="w-full" disabled={loading || code.length !== 6}>
-                {loading ? "Verifying..." : "Verify Email"}
+                {loading ? "Verifying…" : "Verify Email"}
               </Button>
 
               <div className="text-center">
-                <p className="text-sm text-gray-600">
-                  Didn't receive the code?
-                </p>
+                <p className="text-sm text-gray-600">Didn't receive the code?</p>
                 <Button
                   type="button"
                   variant="link"
@@ -121,7 +125,7 @@ export function VerifyEmailCodePage() {
                   disabled={resending}
                   className="text-sm"
                 >
-                  {resending ? "Sending..." : "Resend Code"}
+                  {resending ? "Sending…" : "Resend Code"}
                 </Button>
               </div>
 

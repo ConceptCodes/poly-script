@@ -1,48 +1,43 @@
 import uuid
+from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from datetime import datetime, timezone
-
-from poly_db.database import get_db_session
-from poly_db.repositories import (
-    AuditLogRepository,
-    UserRepository,
-    TeamRepository,
-    TranscriptionJobRepository,
-    AudioAssetRepository,
-)
-from poly_db.models.transcription_jobs import JobStatus
 from poly_core.services.admin import AdminService
 from poly_core.services.admin_auth import AdminAuthService
-from src.dependencies import get_admin_auth_service, get_current_admin
-from fastapi import Query
-from src.schemas.admin import (
-    AdminLoginRequest,
-    AdminLoginResponse,
-    AdminDashboardResponse,
-    AdminCounts,
-    AdminUsersResponse,
-    AdminTeamsResponse,
-    AdminJobsResponse,
-    AdminAnalyticsResponse,
-    AdminSettingsResponse,
-    AuditLogListResponse,
-    AuditLogListItem,
-    AdminUserListItem,
-    AdminTeamListItem,
-    AdminJobListItem,
-    AdminJobDetailResponse,
-    AdminActionRequest,
-    AdminHealthResponse,
-    AdminUserDetailResponse,
-    AdminTeamDetailResponse,
-    AdminErrorAnalyticsResponse,
+from poly_db.database import get_db_session
+from poly_db.models.transcription_jobs import JobStatus
+from poly_db.repositories import (
+    AudioAssetRepository,
+    AuditLogRepository,
+    TeamRepository,
+    TranscriptionJobRepository,
+    UserRepository,
 )
 from poly_redis.client import get_redis_client
 from poly_redis.queue import TranscriptionQueue, TranscriptionWorkItem
-
+from src.dependencies import get_admin_auth_service, get_current_admin
+from src.schemas.admin import (
+    AdminActionRequest,
+    AdminCounts,
+    AdminDashboardResponse,
+    AdminErrorAnalyticsResponse,
+    AdminHealthResponse,
+    AdminJobDetailResponse,
+    AdminJobListItem,
+    AdminJobsResponse,
+    AdminLoginRequest,
+    AdminLoginResponse,
+    AdminTeamDetailResponse,
+    AdminTeamListItem,
+    AdminTeamsResponse,
+    AdminUserDetailResponse,
+    AdminUserListItem,
+    AdminUsersResponse,
+    AuditLogListItem,
+    AuditLogListResponse,
+)
 
 router = APIRouter(prefix="/v1/admin", tags=["admin"])
 
@@ -61,7 +56,7 @@ async def admin_login(
 
 @router.get("/dashboard/stats", response_model=AdminDashboardResponse)
 async def admin_dashboard(
-    admin: dict = Depends(get_current_admin),
+    _admin: dict = Depends(get_current_admin),
     db: Session = Depends(get_db_session),
 ):
     service = AdminService(db)
@@ -78,7 +73,7 @@ async def admin_dashboard(
 
 @router.get("/system/health", response_model=AdminHealthResponse)
 async def admin_system_health(
-    admin: dict = Depends(get_current_admin),
+    _admin: dict = Depends(get_current_admin),
 ):
     redis_client = get_redis_client()
     queue_depth = 0
@@ -95,7 +90,7 @@ async def admin_system_health(
 
 @router.get("/users", response_model=AdminUsersResponse)
 async def admin_users(
-    admin: dict = Depends(get_current_admin),
+    _admin: dict = Depends(get_current_admin),
     db: Session = Depends(get_db_session),
     q: str | None = Query(None),
 ):
@@ -126,7 +121,7 @@ async def admin_users(
 @router.get("/users/{user_id}", response_model=AdminUserDetailResponse)
 async def admin_user_detail(
     user_id: uuid.UUID,
-    admin: dict = Depends(get_current_admin),
+    _admin: dict = Depends(get_current_admin),
     db: Session = Depends(get_db_session),
 ):
     user_repo = UserRepository(db)
@@ -162,7 +157,7 @@ async def admin_suspend_user(
     user_repo.update(
         user_id,
         is_suspended=True,
-        suspended_at=datetime.now(timezone.utc),
+        suspended_at=datetime.now(UTC),
         suspended_by=admin["id"],
         suspension_reason=request.reason,
     )
@@ -223,14 +218,14 @@ async def admin_delete_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     previous = {"deleted_at": user.deleted_at}
-    user_repo.update(user_id, deleted_at=datetime.now(timezone.utc))
+    user_repo.update(user_id, deleted_at=datetime.now(UTC))
     AuditLogRepository(db).create(
         admin_user_id=admin["id"],
         target_type="user",
         target_id=str(user_id),
         action="delete_user",
         previous_state=previous,
-        new_state={"deleted_at": datetime.now(timezone.utc).isoformat()},
+        new_state={"deleted_at": datetime.now(UTC).isoformat()},
         reason=request.reason,
     )
     db.commit()
@@ -308,7 +303,7 @@ async def admin_suspend_team(
     team_repo.update(
         team_id,
         is_suspended=True,
-        suspended_at=datetime.now(timezone.utc),
+        suspended_at=datetime.now(UTC),
         suspended_by=admin["id"],
     )
     AuditLogRepository(db).create(
@@ -514,9 +509,9 @@ async def admin_analytics(
 ):
     """Get usage analytics with optional timeframe and granularity."""
     service = AdminService(db)
-    
+
     # Parse dates if provided
-    from datetime import datetime, timezone
+    from datetime import datetime
     start = None
     end = None
     if start_date:
@@ -529,7 +524,7 @@ async def admin_analytics(
             end = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
         except ValueError:
             pass
-    
+
     return service.analytics_with_timeframe(
         start_date=start,
         end_date=end,
@@ -572,7 +567,7 @@ async def admin_update_settings(
     """Update system settings (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can update settings")
-    
+
     service = AdminService(db)
     try:
         return service.update_system_settings(
@@ -594,7 +589,7 @@ async def admin_create_admin_user(
     """Create a new admin user (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can create admins")
-    
+
     service = AdminService(db)
     try:
         result = service.create_admin_user(
@@ -619,7 +614,7 @@ async def admin_suspend_admin_user(
     """Suspend an admin user (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can suspend admins")
-    
+
     service = AdminService(db)
     try:
         result = service.suspend_admin_user(
@@ -642,7 +637,7 @@ async def admin_unsuspend_admin_user(
     """Unsuspend an admin user (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can unsuspend admins")
-    
+
     service = AdminService(db)
     try:
         result = service.unsuspend_admin_user(
@@ -665,7 +660,7 @@ async def admin_change_admin_role(
     """Change admin role (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can change admin roles")
-    
+
     service = AdminService(db)
     try:
         result = service.change_admin_role(
@@ -689,7 +684,7 @@ async def admin_delete_admin_user(
     """Delete an admin user (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can delete admins")
-    
+
     service = AdminService(db)
     try:
         result = service.delete_admin_user(
@@ -712,7 +707,7 @@ async def admin_suspend_team(
     """Suspend a team (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can suspend teams")
-    
+
     service = AdminService(db)
     try:
         result = service.suspend_team(
@@ -735,7 +730,7 @@ async def admin_unsuspend_team(
     """Unsuspend a team (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can unsuspend teams")
-    
+
     service = AdminService(db)
     try:
         result = service.unsuspend_team(
@@ -782,7 +777,7 @@ async def admin_audit_log_detail(
     log = audit_repo.get_by_id(audit_id)
     if not log:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Audit log not found")
-    
+
     return AuditLogListItem(
         id=log.id,
         admin_user_id=log.admin_user_id,
@@ -805,16 +800,16 @@ async def admin_create_impersonation_token(
     """Create an impersonation token for a user (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can create impersonation tokens")
-    
+
     user_id_str = request.get("user_id")
     if not user_id_str:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="user_id is required")
-    
+
     try:
         user_id = uuid.UUID(user_id_str)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user_id")
-    
+
     service = AdminService(db)
     try:
         result = service.create_impersonation_token(
@@ -835,7 +830,7 @@ async def admin_revoke_impersonation_token(
     """Revoke an impersonation token (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can revoke impersonation tokens")
-    
+
     service = AdminService(db)
     result = service.revoke_impersonation_token(
         token_id=token_id,
@@ -853,9 +848,9 @@ async def admin_job_volume_analytics(
 ):
     """Get job volume analytics by status."""
     service = AdminService(db)
-    
+
     # Parse dates if provided
-    from datetime import datetime, timezone
+    from datetime import datetime
     start = None
     end = None
     if start_date:
@@ -868,7 +863,7 @@ async def admin_job_volume_analytics(
             end = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
         except ValueError:
             pass
-    
+
     return service.job_volume_analytics(start_date=start, end_date=end)
 
 admin_router = router

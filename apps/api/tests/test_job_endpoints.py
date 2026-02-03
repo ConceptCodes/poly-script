@@ -1,14 +1,14 @@
-
 """Tests for job status endpoints."""
-import pytest
-import json
-from httpx import AsyncClient, ASGITransport
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timezone
-import uuid
 
-from poly_db.models import Team, User, TranscriptionJob, JobStatus, AudioAsset
+import uuid
+from datetime import UTC, datetime
+from unittest.mock import Mock, patch
+
+import pytest
+from httpx import ASGITransport, AsyncClient
 from src.main import app
+
+from poly_db.models import JobStatus
 
 
 @pytest.fixture
@@ -78,7 +78,7 @@ class TestJobListEndpoint:
                 mock_job.progress = 0
                 mock_job.progress_stage = None
                 mock_job.requested_language = "en"
-                mock_job.created_at = datetime.now(timezone.utc)
+                mock_job.created_at = datetime.now(UTC)
                 mock_job.started_at = None
                 mock_job.finished_at = None
                 mock_repo.get_by_team_id.return_value = [mock_job]
@@ -183,8 +183,8 @@ class TestJobDetailEndpoint:
                     mock_job.attempts = 1
                     mock_job.error_code = None
                     mock_job.error_message = None
-                    mock_job.created_at = datetime.now(timezone.utc)
-                    mock_job.started_at = datetime.now(timezone.utc)
+                    mock_job.created_at = datetime.now(UTC)
+                    mock_job.started_at = datetime.now(UTC)
                     mock_job.finished_at = None
                     mock_repo.get.return_value = mock_job
 

@@ -1,8 +1,7 @@
-
 """Test admin job management endpoints."""
+
 import pytest
-import uuid
-from unittest.mock import Mock
+
 
 class TestAdminJobsEndpoints:
     """Test admin job management endpoints."""

@@ -1,13 +1,11 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 
 @import "@poly/ui/index.css";
 
-:root {
-  font-family: "Space Grotesk", system-ui, sans-serif;
-  line-height: 1.4;
+html {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
   font-weight: 400;
-  color: #111827;
-  background-color: #0f1115;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -20,10 +18,12 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(1200px 600px at 20% -10%, #2d2b4f 0%, rgba(45, 43, 79, 0) 60%),
-    radial-gradient(800px 500px at 90% 0%, #123d3a 0%, rgba(18, 61, 58, 0) 55%),
-    #0f1115;
-  color: #e5e7eb;
+  background-color: var(--mc-bg-deep);
+  background-image:
+    linear-gradient(rgba(30, 41, 59, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 41, 59, 0.3) 1px, transparent 1px);
+  background-size: 40px 40px;
+  color: var(--mc-text-primary);
 }
 
 a {
@@ -52,23 +52,31 @@ select {
 }
 
 .admin-main {
-  padding: 28px 32px 56px;
+  padding: 32px 40px 56px;
 }
 
 .card {
-  background: #151923;
-  border: 1px solid #232a3a;
-  border-radius: 16px;
-  padding: 20px;
+  background: var(--mc-bg-card);
+  border: 1px solid var(--mc-border);
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--mc-border-highlight);
+  background: var(--mc-bg-card-hover);
 }
 
 .card-title {
   font-weight: 600;
-  font-size: 18px;
+  font-size: 16px;
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: -0.01em;
 }
 
 .muted {
-  color: #9aa4b2;
+  color: var(--mc-text-secondary);
 }
 
 .table {
@@ -145,7 +153,101 @@ select {
 }
 
 .code {
-  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+}
+
+.font-mono {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.mission-grid {
+  background-image:
+    linear-gradient(rgba(0, 217, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 217, 255, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.glow-cyan {
+  box-shadow:
+    0 0 20px rgba(0, 217, 255, 0.15),
+    0 0 40px rgba(0, 217, 255, 0.05);
+}
+
+.glow-green {
+  box-shadow:
+    0 0 20px rgba(0, 255, 136, 0.15),
+    0 0 40px rgba(0, 255, 136, 0.05);
+}
+
+.glow-amber {
+  box-shadow:
+    0 0 20px rgba(255, 184, 0, 0.15),
+    0 0 40px rgba(255, 184, 0, 0.05);
+}
+
+.glow-danger {
+  box-shadow:
+    0 0 20px rgba(255, 71, 87, 0.15),
+    0 0 40px rgba(255, 71, 87, 0.05);
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.terminal-bg {
+  background: linear-gradient(180deg, rgba(10, 11, 15, 0.95) 0%, rgba(19, 20, 26, 0.95) 100%);
+  border: 1px solid var(--mc-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.sparkline {
+  width: 100%;
+  height: 24px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.sparkline-bar {
+  flex: 1;
+  background: linear-gradient(180deg, var(--mc-cyan) 0%, rgba(0, 217, 255, 0.2) 100%);
+  border-radius: 1px;
+  transition: opacity 0.2s;
+}
+
+.sparkline-bar:hover {
+  opacity: 0.7;
 }
 
 @media (max-width: 960px) {
@@ -154,6 +256,18 @@ select {
   }
   .admin-sidebar {
     border-right: none;
-    border-bottom: 1px solid #1f2430;
+    border-bottom: 1px solid var(--mc-border);
+  }
+  .admin-main {
+    padding: 24px 20px 48px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-main {
+    padding: 20px 16px 40px;
+  }
+  .card {
+    padding: 16px;
   }
 }

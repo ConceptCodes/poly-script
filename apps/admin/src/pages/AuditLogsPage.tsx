@@ -1,18 +1,12 @@
-import { useEffect, useState } from "react";
-import { apiFetch } from "../lib/api";
+import { Badge } from "@poly/ui/badge";
+import { Button } from "@poly/ui/button";
 import { Card, CardContent } from "@poly/ui/card";
 import { Input } from "@poly/ui/input";
-import { Button } from "@poly/ui/button";
-import { Badge } from "@poly/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@poly/ui/table";
-import { Search, FileText, User, Shield, Globe, Clock, Filter, Activity } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@poly/ui/table";
+import type { LucideIcon } from "lucide-react";
+import { Activity, Clock, Filter, Globe, Search, Shield, User } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { apiFetch } from "../lib/api";
 
 type AuditLogItem = {
   id: string;
@@ -25,41 +19,49 @@ type AuditLogItem = {
   created_at: string;
 };
 
-type ActionFilter = "all" | "create" | "update" | "delete" | "suspend" | "unsuspend" | "retry" | "cancel";
+type ActionFilter =
+  | "all"
+  | "create"
+  | "update"
+  | "delete"
+  | "suspend"
+  | "unsuspend"
+  | "retry"
+  | "cancel";
+
+type ResourceFilter = "all" | "user" | "team" | "job" | "settings";
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
 export function AuditLogsPage() {
   const [items, setItems] = useState<AuditLogItem[]>([]);
   const [query, setQuery] = useState("");
   const [actionFilter, setActionFilter] = useState<ActionFilter>("all");
-  const [resourceFilter, setResourceFilter] = useState<"all" | "user" | "team" | "job" | "settings">("all");
+  const [resourceFilter, setResourceFilter] = useState<ResourceFilter>("all");
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     const q = query.trim();
     const queryString = q ? `?q=${encodeURIComponent(q)}` : "";
     apiFetch<{ items: AuditLogItem[] }>(`/admin/audit-logs${queryString}`).then((data) =>
       setItems(data.items),
     );
-  };
-
-  useEffect(() => {
-    refresh();
-  }, []);
+  }, [query]);
 
   useEffect(() => {
     const handle = setTimeout(() => {
       refresh();
     }, 300);
     return () => clearTimeout(handle);
-  }, [query]);
+  }, [refresh]);
 
   const filteredItems = items.filter((item) => {
     const actionMatch = actionFilter === "all" || item.action.toLowerCase().includes(actionFilter);
-    const resourceMatch = resourceFilter === "all" || item.resource_type?.toLowerCase() === resourceFilter;
+    const resourceMatch =
+      resourceFilter === "all" || item.resource_type?.toLowerCase() === resourceFilter;
     return actionMatch && resourceMatch;
   });
 
   const getActionBadge = (action: string) => {
-    const colors: Record<string, { variant: any; icon: any }> = {
+    const colors: Record<string, { variant: BadgeVariant; icon: LucideIcon }> = {
       create: { variant: "default", icon: Activity },
       update: { variant: "secondary", icon: Shield },
       delete: { variant: "destructive", icon: Activity },
@@ -70,7 +72,7 @@ export function AuditLogsPage() {
     };
     const actionLower = action.toLowerCase();
     let key: keyof typeof colors = "update";
-    for (const [k, v] of Object.entries(colors)) {
+    for (const [k, _v] of Object.entries(colors)) {
       if (actionLower.includes(k)) {
         key = k as keyof typeof colors;
         break;
@@ -107,27 +109,36 @@ export function AuditLogsPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Filter className="h-4 w-4 text-muted-foreground mt-2" />
-              {["all", "create", "update", "delete", "suspend", "unsuspend", "retry", "cancel"].map((f) => (
-                <Button
-                  key={f}
-                  variant={actionFilter === f ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setActionFilter(f as ActionFilter)}
-                >
-                  {f === "all" ? "All Actions" : f.charAt(0).toUpperCase() + f.slice(1)}
-                </Button>
-              ))}
-              {["all", "user", "team", "job", "settings"].map((f) => (
+              {["all", "create", "update", "delete", "suspend", "unsuspend", "retry", "cancel"].map(
+                (f) => (
+                  <Button
+                    key={f}
+                    variant={actionFilter === f ? "default" : "outline"}
+                    size="sm"
+                    className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                    onClick={() => setActionFilter(f as ActionFilter)}
+                  >
+                    {f === "all" ? "All Actions" : f.charAt(0).toUpperCase() + f.slice(1)}
+                  </Button>
+                ),
+              )}
+              {(["all", "user", "team", "job", "settings"] as const).map((f) => (
                 <Button
                   key={f}
                   variant={resourceFilter === f ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setResourceFilter(f as any)}
+                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  onClick={() => setResourceFilter(f)}
                 >
                   {f === "all" ? "All Resources" : f.charAt(0).toUpperCase() + f.slice(1)}
                 </Button>
               ))}
-              <Button variant="outline" size="sm" onClick={refresh}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                onClick={refresh}
+              >
                 Refresh
               </Button>
             </div>
@@ -177,7 +188,10 @@ export function AuditLogsPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-sm text-muted-foreground max-w-[200px] truncate" title={log.details}>
+                  <span
+                    className="text-sm text-muted-foreground max-w-[200px] truncate"
+                    title={log.details}
+                  >
                     {log.details || "-"}
                   </span>
                 </TableCell>

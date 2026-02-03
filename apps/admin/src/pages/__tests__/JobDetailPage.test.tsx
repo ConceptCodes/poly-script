@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { JobDetailPage } from "../JobDetailPage";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 vi.mock("../../lib/api", () => ({
   apiFetch: vi.fn().mockResolvedValue({

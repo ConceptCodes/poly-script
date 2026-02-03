@@ -15,14 +15,19 @@ export async function getStaticPaths() {
 const { lang, slug } = Astro.params;
 const { post } = Astro.props;
 const { Content } = await post.render();
+const dateFormatter = new Intl.DateTimeFormat(lang, {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
 ---
 
 <SiteLayout lang={lang} title={`${post.data.title} — PolyScript`}>
   <section class="container post-header">
-    <a class="muted" href={`/${lang}/blog`} class="post-meta">
+    <a class="muted link post-meta" href={`/${lang}/blog`}>
       ← Back to blog
     </a>
-    <div class="tag" style="color:#38bdf8;">{post.data.pubDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+    <div class="tag" style="color:#38bdf8;">{dateFormatter.format(post.data.pubDate)}</div>
     <h1 class="hero-title" style="margin-top:16px;">{post.data.title}</h1>
     <p class="hero-subtitle">{post.data.description}</p>
     <div class="post-content" style="margin-top:32px;">

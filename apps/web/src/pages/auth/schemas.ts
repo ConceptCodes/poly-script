@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { TFunction } from "i18next";
+import { z } from "zod";
 
 export const createLoginSchema = (t: TFunction) =>
   z.object({

@@ -1,8 +1,7 @@
-
 """Test admin team management endpoints."""
+
 import pytest
-import uuid
-from unittest.mock import Mock
+
 
 class TestAdminTeamsEndpoints:
     """Test admin team management endpoints."""

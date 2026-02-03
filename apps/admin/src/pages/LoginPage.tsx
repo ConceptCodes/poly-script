@@ -1,6 +1,11 @@
+import { Alert, AlertDescription } from "@poly/ui/alert";
+import { Button } from "@poly/ui/button";
+import { Input } from "@poly/ui/input";
+import { Label } from "@poly/ui/label";
+import { useForm } from "@tanstack/react-form";
+import { AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { apiFetch } from "../lib/api";
 import { useAuthStore } from "../store/auth";
@@ -63,20 +68,22 @@ export function LoginPage() {
             }}
           >
             {(field) => (
-              <label style={{ display: "grid", gap: 6 }}>
-                Email
-                <input
-                  className="input"
+              <div style={{ display: "grid", gap: 6 }}>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
                   type="email"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
+                  autoComplete="email"
+                  spellCheck={false}
                 />
                 {field.state.meta.errors?.[0] && (
                   <span className="muted" style={{ fontSize: 12 }}>
                     {field.state.meta.errors[0]}
                   </span>
                 )}
-              </label>
+              </div>
             )}
           </form.Field>
           <form.Field
@@ -89,30 +96,33 @@ export function LoginPage() {
             }}
           >
             {(field) => (
-              <label style={{ display: "grid", gap: 6 }}>
-                Password
-                <input
-                  className="input"
+              <div style={{ display: "grid", gap: 6 }}>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
                   type="password"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
+                  autoComplete="current-password"
+                  spellCheck={false}
                 />
                 {field.state.meta.errors?.[0] && (
                   <span className="muted" style={{ fontSize: 12 }}>
                     {field.state.meta.errors[0]}
                   </span>
                 )}
-              </label>
+              </div>
             )}
           </form.Field>
           {error && (
-            <div className="card" style={{ background: "#2b1720", borderColor: "#5b1b2f" }}>
-              {error}
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
-          <button className="btn btn-primary" type="submit">
+          <Button type="submit" className="w-full">
             Sign In
-          </button>
+          </Button>
         </form>
       </div>
     </div>

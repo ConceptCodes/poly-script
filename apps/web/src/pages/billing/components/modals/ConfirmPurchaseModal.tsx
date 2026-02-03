@@ -1,14 +1,14 @@
 import {
+  Button,
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-  Button,
 } from "@poly/ui";
-import { Loader2, CreditCard } from "lucide-react";
+import { CreditCard, Loader2 } from "lucide-react";
 
 interface ConfirmPurchaseModalProps {
   open: boolean;

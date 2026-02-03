@@ -19,9 +19,7 @@ export async function apiFetch<T = unknown>(
   }
 
   const body =
-    options.body && typeof options.body === "object"
-      ? JSON.stringify(options.body)
-      : undefined;
+    options.body && typeof options.body === "object" ? JSON.stringify(options.body) : undefined;
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,

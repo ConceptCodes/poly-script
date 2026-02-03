@@ -1,7 +1,10 @@
 """Worker tests configuration."""
-import pytest
+
 import os
+import sys
 from pathlib import Path
+
+import pytest
 
 # Add parent directories to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -9,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "storage" / "
 sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "storage" / "poly-redis"))
 sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "core"))
 sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "stt"))
+
 
 @pytest.fixture
 def test_settings():

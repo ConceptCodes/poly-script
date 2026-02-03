@@ -8,32 +8,29 @@ Processes transcription jobs through a 5-stage pipeline:
 4. Format & Normalize (90-95%)
 5. Save to Database (95-100%)
 """
+
 import logging
 import os
 import tempfile
-from typing import Optional
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
-from poly_db.models.transcription_jobs import TranscriptionJob, JobStatus
-from poly_db.models.audio_assets import AudioAsset
+from poly_core.logging_context import clear_job_context, set_job_context
+from poly_db.models.transcription_jobs import JobStatus, TranscriptionJob
 from poly_db.models.transcripts import Transcript
 from poly_db.models.translation_artifacts import TranslationArtifact, TranslationStatus
 from poly_db.repositories import (
-    TranscriptionJobRepository,
     AudioAssetRepository,
+    TranscriptionJobRepository,
     TranscriptRepository,
     TranslationArtifactRepository,
-    TranscriptionJobRepository,
-    AudioAssetRepository,
-    TranscriptRepository,
 )
-from poly_stt.registry import EngineRegistry
 from poly_stt.engines.translategemma import TranslateGemmaEngine
 from poly_stt.interface import TranscriptionResult
+from poly_stt.registry import EngineRegistry
+
 from .progress import ProgressPublisher
-from poly_core.logging_context import set_job_context, clear_job_context
-from .enums import ProgressStage
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +82,7 @@ class JobProcessor:
             job_id,
             status=JobStatus.RUNNING,
             attempts=job.attempts + 1,
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
         )
 
         self.progress_publisher.publish_progress(
@@ -97,7 +94,7 @@ class JobProcessor:
         )
         self._set_progress(job_id, "starting")
 
-        audio_path: Optional[str] = None
+        audio_path: str | None = None
 
         try:
             # Stage 1: Download/Load Audio (0-10%)
@@ -223,15 +220,15 @@ class JobProcessor:
 
             # Validate with soundfile
             info = sf.info(audio_path)
-            logger.info(f"Audio validated: {duration_ms}ms, {info.samplerate}Hz, {info.channels} channels")
+            logger.info(
+                f"Audio validated: {duration_ms}ms, {info.samplerate}Hz, {info.channels} channels"
+            )
 
             return duration_ms
         except Exception as e:
             raise ValueError(f"Invalid audio file: {e}")
 
-    def _transcribe_audio(
-        self, job: TranscriptionJob, audio_path: str
-    ) -> TranscriptionResult:
+    def _transcribe_audio(self, job: TranscriptionJob, audio_path: str) -> TranscriptionResult:
         """Transcribe audio using configured STT engine."""
         # Get engine
         engine_name = job.engine or "whisper-local-base"
@@ -275,7 +272,9 @@ class JobProcessor:
             for seg in result.segments
         ]
 
-        logger.info(f"Formatted transcript: {len(segments_json)} segments, {len(result.text)} chars")
+        logger.info(
+            f"Formatted transcript: {len(segments_json)} segments, {len(result.text)} chars"
+        )
 
         return Transcript(
             job_id=job.id,
@@ -286,12 +285,11 @@ class JobProcessor:
             audio_duration_ms=duration_ms,
         )
 
-
     def _translate_transcript(
         self, job: TranscriptionJob, transcript: Transcript, stt_result: TranscriptionResult
     ) -> None:
         """Translate transcript to target language.
-        
+
         Translation failures do NOT mark the job as FAILED.
         The translation artifact is saved with appropriate status.
         """
@@ -303,17 +301,18 @@ class JobProcessor:
         )
         self.translation_repo.create(translation)
         self.session.commit()
-        
+
         try:
             # Check plan limits before translating
             if not self._check_translation_limit(job):
                 raise Exception("Translation limit exceeded for team")
-            
+
             # Initialize translation engine
             translation_engine = TranslateGemmaEngine()
-            
+
             # Translate with segments preserved
             from poly_stt.interface import Segment
+
             segments = [
                 Segment(
                     start_ms=seg["start_ms"],
@@ -323,13 +322,13 @@ class JobProcessor:
                 )
                 for seg in transcript.segments
             ]
-            
+
             translation_result = translation_engine.translate_segments(
                 segments=segments,
                 target_language=job.target_language,
                 source_language=stt_result.language,
             )
-            
+
             # Update translation artifact with result
             self.translation_repo.update(
                 translation.id,
@@ -347,13 +346,13 @@ class JobProcessor:
                 engine=translation_result.engine,
                 engine_version=translation_engine.name,
             )
-            
+
             # Increment translation count
             self._increment_translation_count(job)
-            
+
             self.session.commit()
             logger.info(f"Translation completed for job {job.id}: {job.target_language}")
-            
+
         except Exception as e:
             # Mark translation as failed but don't fail the job
             logger.error(f"Translation failed for job {job.id}: {e}", exc_info=True)
@@ -368,17 +367,17 @@ class JobProcessor:
     def _check_translation_limit(self, job: TranscriptionJob) -> bool:
         """Check if team has translation quota remaining."""
         from poly_db.models.teams import PlanType
-        
+
         team = self.session.query(TranscriptionJob).filter_by(id=job.id).one().team
-        
+
         if team.plan == PlanType.PRO:
             return True  # Unlimited for PRO
-        
+
         if team.plan == PlanType.STANDARD:
             limit = 25
         else:  # FREE
             limit = 5
-        
+
         return team.monthly_translation_count < limit
 
     def _increment_translation_count(self, job: TranscriptionJob) -> None:
@@ -387,23 +386,20 @@ class JobProcessor:
         team.monthly_translation_count += 1
         self.session.commit()
 
-
     def _save_transcript(self, transcript: Transcript) -> None:
         """Save transcript to database."""
         self.transcript_repo.create(transcript)
         self.session.commit()
         logger.info(f"Saved transcript for job {transcript.job_id}")
 
-    def _mark_succeeded(
-        self, job: TranscriptionJob, duration_ms: int
-    ) -> None:
+    def _mark_succeeded(self, job: TranscriptionJob, duration_ms: int) -> None:
         """Mark job as SUCCEEDED."""
         self.job_repo.update(
             job.id,
             status=JobStatus.SUCCEEDED,
             progress=100,
             progress_stage="completed",
-            finished_at=datetime.now(timezone.utc),
+            finished_at=datetime.now(UTC),
         )
 
         # Update audio duration
@@ -444,7 +440,7 @@ class JobProcessor:
             progress=0,
             progress_stage="failed",
             error_message=error_message,
-            finished_at=datetime.now(timezone.utc),
+            finished_at=datetime.now(UTC),
         )
         self.session.commit()
 
@@ -466,7 +462,7 @@ class JobProcessor:
             status=JobStatus.CANCELED,
             progress=0,
             progress_stage="canceled",
-            finished_at=datetime.now(timezone.utc),
+            finished_at=datetime.now(UTC),
         )
         self.session.commit()
 
@@ -488,7 +484,7 @@ class JobProcessor:
         cancel_key = f"cancel:{job_id}"
         return redis.exists(cancel_key)
 
-    def _cleanup_temp_files(self, audio_path: Optional[str]) -> None:
+    def _cleanup_temp_files(self, audio_path: str | None) -> None:
         """Clean up temporary audio files."""
         if audio_path and os.path.exists(audio_path):
             try:

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
+
 from poly_stt import EngineRegistry
-from src.schemas.engines import EnginesResponse, EngineInfo, EngineCapabilitiesSchema
+from src.schemas.engines import EngineCapabilitiesSchema, EngineInfo, EnginesResponse
 
 router = APIRouter()
 

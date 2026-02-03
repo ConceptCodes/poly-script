@@ -1,17 +1,17 @@
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-import uuid
 
-from src.dependencies import get_current_user, get_auth_service, get_db_session
-from poly_core.services.settings import SettingsService
 from poly_core.services.auth import AuthService
+from poly_core.services.settings import SettingsService
+from src.dependencies import get_auth_service, get_current_user, get_db_session
 from src.schemas.settings import (
-    UserSettingsResponse,
-    UpdateUserProfileRequest,
     UpdateEmailRequest,
     UpdatePasswordRequest,
-    UpdateUserPreferencesRequest,
     UpdateUserNotificationsRequest,
+    UpdateUserPreferencesRequest,
+    UpdateUserProfileRequest,
+    UserSettingsResponse,
 )
 
 router = APIRouter(prefix="/v1/user", tags=["User"])
@@ -152,7 +152,7 @@ def delete_user_account(
     user = db.query(User).filter(User.id == current_user["id"]).first()
     if not user:
          raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    
+
     db.delete(user)
     db.commit()
 

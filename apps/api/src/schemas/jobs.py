@@ -1,30 +1,35 @@
 """Job-related request and response schemas."""
 
 import uuid
-from typing import Optional, Dict, Any, List
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 
 class CreateJobOptions(BaseModel):
-    language: Optional[str] = None  # Source language for ASR
-    target_language: Optional[str] = Field(None, pattern=r"^[a-z]{2}(-[A-Z]{2})?$")  # Target language for translation (e.g., es, fr, de)
-    engine: Optional[str] = None
+    language: str | None = None  # Source language for ASR
+    target_language: str | None = Field(
+        None, pattern=r"^[a-z]{2}(-[A-Z]{2})?$"
+    )  # Target language for translation (e.g., es, fr, de)
+    engine: str | None = None
     timestamps: bool = True
     diarization: bool = False
+
 
 class CreateJobFromUrlRequest(BaseModel):
     url: str = Field(..., min_length=1)
     options: CreateJobOptions = Field(default_factory=CreateJobOptions)
+
 
 class CreateJobResponse(BaseModel):
     job_id: uuid.UUID
     status: str
     message: str
 
+
 class JobLimitError(BaseModel):
-    error: Dict[str, Any]
+    error: dict[str, Any]
 
 
 # Response schemas for job endpoints
@@ -32,16 +37,16 @@ class JobSummary(BaseModel):
     id: uuid.UUID
     status: str  # QUEUED|RUNNING|SUCCEEDED|FAILED|CANCELED
     filename: str
-    language: Optional[str]
+    language: str | None
     progress_pct: int
-    progress_stage: Optional[str]
+    progress_stage: str | None
     created_at: datetime
-    started_at: Optional[datetime]
-    finished_at: Optional[datetime]
+    started_at: datetime | None
+    finished_at: datetime | None
 
 
 class JobListResponse(BaseModel):
-    jobs: List[JobSummary]
+    jobs: list[JobSummary]
     total: int
     page: int
     page_size: int
@@ -51,20 +56,20 @@ class JobDetailResponse(BaseModel):
     id: uuid.UUID
     status: str
     filename: str
-    requested_language: Optional[str]
-    detected_language: Optional[str]
+    requested_language: str | None
+    detected_language: str | None
     engine: str
-    options: Dict[str, Any]
+    options: dict[str, Any]
     progress_pct: int
-    progress_stage: Optional[str]
+    progress_stage: str | None
     attempts: int
-    error_code: Optional[str]
-    error_message: Optional[str]
+    error_code: str | None
+    error_message: str | None
     created_at: datetime
-    started_at: Optional[datetime]
-    finished_at: Optional[datetime]
-    audio_duration_seconds: Optional[float]
-    target_language: Optional[str]  # Target language for translation
+    started_at: datetime | None
+    finished_at: datetime | None
+    audio_duration_seconds: float | None
+    target_language: str | None  # Target language for translation
 
 
 class SegmentResponse(BaseModel):
@@ -72,16 +77,16 @@ class SegmentResponse(BaseModel):
     start_ms: int
     end_ms: int
     text: str
-    speaker: Optional[str] = None
+    speaker: str | None = None
 
 
 class JobResultResponse(BaseModel):
     job_id: uuid.UUID
-    translation: Optional[Dict[str, Any]] = None  # Translation artifact if available
+    translation: dict[str, Any] | None = None  # Translation artifact if available
     transcript_id: uuid.UUID
     text: str
     language: str
-    segments: List[SegmentResponse]
+    segments: list[SegmentResponse]
     engine: str
 
 

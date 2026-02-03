@@ -1,16 +1,21 @@
-import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { Progress } from "@poly/ui";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Progress,
+  Separator,
+} from "@poly/ui";
 import { useForm } from "@tanstack/react-form";
-import { Button } from "@poly/ui";
-import { Input } from "@poly/ui";
-import { Label } from "@poly/ui";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@poly/ui";
-import { Alert, AlertDescription } from "@poly/ui";
-import { Separator } from "@poly/ui";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { apiFetch } from "../../lib/api";
-import { createResetPasswordSchema } from "./schemas";
 
 const getPasswordStrength = (password: string): { strength: 0 | 1 | 2 | 3; label: string } => {
   if (!password) return { strength: 0, label: "" };
@@ -31,11 +36,11 @@ export function ResetPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const token = searchParams.get("token");
-  const [passwordStrength, setPasswordStrength] = useState<{ strength: 0 | 1 | 2 | 3; label: string }>({ strength: 0, label: "" });
-  const resetSchema = createResetPasswordSchema(t);
-
+  const [passwordStrength, setPasswordStrength] = useState<{
+    strength: 0 | 1 | 2 | 3;
+    label: string;
+  }>({ strength: 0, label: "" });
   const form = useForm({
     defaultValues: { password: "", confirmPassword: "" },
   });
@@ -51,10 +56,11 @@ export function ResetPasswordPage() {
         method: "POST",
         body: { token, new_password: form.state.values.password },
       });
-      setSuccess(true);
       setTimeout(() => navigate("/auth/login"), 3000);
-    } catch (err: any) {
-      setError(err.message || t("auth.resetPassword.error"));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error && err.message ? err.message : t("auth.resetPassword.error");
+      setError(message);
     }
   };
 
@@ -85,7 +91,14 @@ export function ResetPasswordPage() {
             </Alert>
           )}
 
-          <form onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); handleSubmit(); }} className="space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSubmit();
+            }}
+            className="space-y-6"
+          >
             <form.Field name="password">
               {(field) => (
                 <div className="space-y-2">
@@ -95,9 +108,13 @@ export function ResetPasswordPage() {
                     type="password"
                     placeholder={t("auth.resetPassword.passwordPlaceholder")}
                     value={field.state.value}
-                    onChange={(e) => { field.handleChange(e.target.value); handlePasswordChange(e.target.value); }}
+                    onChange={(e) => {
+                      field.handleChange(e.target.value);
+                      handlePasswordChange(e.target.value);
+                    }}
                     onBlur={field.handleBlur}
                     autoComplete="new-password"
+                    spellCheck={false}
                   />
                   {field.state.value && (
                     <div className="space-y-1">
@@ -114,7 +131,9 @@ export function ResetPasswordPage() {
             <form.Field name="confirmPassword">
               {(field) => (
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">{t("auth.resetPassword.confirmPasswordLabel")}</Label>
+                  <Label htmlFor="confirmPassword">
+                    {t("auth.resetPassword.confirmPasswordLabel")}
+                  </Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -123,6 +142,7 @@ export function ResetPasswordPage() {
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
                     autoComplete="new-password"
+                    spellCheck={false}
                   />
                   {field.state.meta.errors.length > 0 && (
                     <p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
@@ -132,7 +152,9 @@ export function ResetPasswordPage() {
             </form.Field>
 
             <Button type="submit" className="w-full" disabled={form.state.isSubmitting}>
-              {form.state.isSubmitting ? t("auth.resetPassword.submitting") : t("auth.resetPassword.submit")}
+              {form.state.isSubmitting
+                ? t("auth.resetPassword.submitting")
+                : t("auth.resetPassword.submit")}
             </Button>
           </form>
 

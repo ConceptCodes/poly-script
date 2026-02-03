@@ -1,59 +1,236 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 32.1% 91.4%;
-    --input: 214.3 32.1% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+@import "@poly/ui/index.css";
+
+/* Precision Intelligence - Custom Animations */
+
+/* Wave animation for audio activity indicator */
+@keyframes audio-wave {
+  0%,
+  100% {
+    height: 8px;
+    opacity: 0.3;
   }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+  50% {
+    height: 32px;
+    opacity: 1;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+/* Dashed border animation for dropzone */
+@keyframes border-dash {
+  0% {
+    background-position: 0 0;
   }
-  body {
-    @apply bg-background text-foreground;
+  100% {
+    background-position: 48px 48px;
   }
+}
+
+/* Gentle pulse for glow effect */
+@keyframes gentle-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Fade in with stagger */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Success checkmark animation */
+@keyframes checkmark {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Floating animation for icons */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Shake animation for error states */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+/* Progress bar fill animation */
+@keyframes progress-fill {
+  from {
+    width: 0%;
+  }
+}
+
+/* Utility classes for animations */
+.animate-audio-wave-1 {
+  animation: audio-wave 1.2s ease-in-out infinite;
+  animation-delay: 0s;
+}
+.animate-audio-wave-2 {
+  animation: audio-wave 1.2s ease-in-out infinite;
+  animation-delay: 0.2s;
+}
+.animate-audio-wave-3 {
+  animation: audio-wave 1.2s ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+.animate-audio-wave-4 {
+  animation: audio-wave 1.2s ease-in-out infinite;
+  animation-delay: 0.6s;
+}
+.animate-audio-wave-5 {
+  animation: audio-wave 1.2s ease-in-out infinite;
+  animation-delay: 0.8s;
+}
+
+.animate-border-dash {
+  background-image: linear-gradient(90deg, hsl(var(--primary)) 50%, transparent 50%);
+  background-size: 24px 2px;
+  animation: border-dash 1s linear infinite;
+}
+
+.animate-gentle-pulse {
+  animation: gentle-pulse 2s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* Stagger delays for multiple elements */
+.stagger-1 {
+  animation-delay: 0.05s;
+  opacity: 0;
+}
+.stagger-2 {
+  animation-delay: 0.1s;
+  opacity: 0;
+}
+.stagger-3 {
+  animation-delay: 0.15s;
+  opacity: 0;
+}
+.stagger-4 {
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+.stagger-5 {
+  animation-delay: 0.25s;
+  opacity: 0;
+}
+
+/* Custom scrollbar for better aesthetics */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-secondary/30 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/40 rounded-full hover:bg-muted-foreground/60 transition-colors;
+}
+
+/* Smooth transitions for all interactive elements */
+.smooth-transition {
+  transition: all 0.3s ease;
+}
+
+/* Precision Intelligence color overrides */
+.precision-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+}
+
+.precision-gradient-text {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card enhancements */
+.precision-card {
+  @apply border border-border/60 shadow-sm;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+/* Input field enhancements */
+.precision-input {
+  @apply transition-all duration-300;
+}
+
+.precision-input:focus {
+  @apply shadow-[0_0_0_3px_rgba(79,70,229,0.1)];
+}
+
+/* Toggle switch animations */
+.precision-switch {
+  @apply transition-all duration-300;
+}
+
+/* File icon floating positions */
+.file-icon-1 {
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+.file-icon-2 {
+  position: absolute;
+  top: 20%;
+  right: 15%;
+  animation-delay: 0.5s;
+}
+.file-icon-3 {
+  position: absolute;
+  bottom: 30%;
+  left: 20%;
+  animation-delay: 1s;
+}
+.file-icon-4 {
+  position: absolute;
+  bottom: 15%;
+  right: 10%;
+  animation-delay: 1.5s;
 }

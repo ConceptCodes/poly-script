@@ -6,11 +6,7 @@ interface RevertModalProps {
   isLoading: boolean;
 }
 
-export function RevertModal({
-  onClose,
-  onConfirm,
-  isLoading,
-}: RevertModalProps) {
+export function RevertModal({ onClose, onConfirm, isLoading }: RevertModalProps) {
   return (
     <ConfirmDialog
       open

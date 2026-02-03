@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-""Standalone worker entry point for Railway deployment.
-""
+"""Standalone worker entry point for Railway deployment."""
 import os
 import signal
 import sys
@@ -18,7 +17,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Import concurrent consumer
-from src.consumer_pool import ConcurrentConsumer
+from src.consumer_pool import ConcurrentConsumer  # noqa: E402
 
 
 def run_worker():
@@ -51,8 +50,8 @@ def run_worker():
     )
     
     # Setup shutdown handler
-    def signal_handler(sig, frame):
-        logger.info(f"Received signal {sig}, shutting down...")
+    def signal_handler(sig, _frame):
+        logger.info("Received signal %s, shutting down...", sig)
         consumer.stop()
         sys.exit(0)
     
@@ -67,7 +66,7 @@ def run_worker():
         logger.info("Worker interrupted by user")
         consumer.stop()
     except Exception as e:
-        logger.error(f"Worker error: {e}")
+        logger.exception("Worker error: %s", e)
         consumer.stop()
         raise
     

@@ -9,7 +9,7 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
-    
+
     /* Path aliases */
     "baseUrl": ".",
     "paths": {

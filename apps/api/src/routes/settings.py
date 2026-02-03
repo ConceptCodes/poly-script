@@ -1,19 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from src.dependencies import get_current_user, get_auth_service, get_team_context
 from poly_core.services.settings import SettingsService
-from poly_core.services.auth import AuthService
 from poly_db.database import get_db_session
+from src.dependencies import get_current_user, get_team_context
 from src.schemas.settings import (
-    UserSettingsResponse,
-    UpdateUserProfileRequest,
-    UpdateEmailRequest,
-    UpdatePasswordRequest,
+    BillingInfoResponse,
+    TeamMemberItem,
     TeamSettingsResponse,
     UpdateTeamSettingsRequest,
-    TeamMemberItem,
-    BillingInfoResponse,
 )
 
 router = APIRouter(prefix="/v1/settings", tags=["Settings"])

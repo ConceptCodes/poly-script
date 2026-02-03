@@ -1,19 +1,11 @@
-import { useTranslation } from "react-i18next";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@poly/ui";
 import { useForm } from "@tanstack/react-form";
-import { Button } from "@poly/ui";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@poly/ui";
+import { useTranslation } from "react-i18next";
 
 // Adapt to flexible props to support OnboardingPage wiring
-export function LanguageStep({}
-  : {
-  data?: any;
-  updateData?: any;
+export function LanguageStep(_props: {
+  data?: { language?: string };
+  updateData?: (key: string, value: string) => void;
   onNext?: () => void;
 }) {
   const { t } = useTranslation();
@@ -50,7 +42,8 @@ export function LanguageStep({}
                 }}
               >
                 {(field) => (
-                  <div
+                  <button
+                    type="button"
                     className={`relative rounded-lg border-2 p-6 cursor-pointer transition-all ${
                       field.state.value === lang.code
                         ? "border-primary bg-primary/5"
@@ -67,7 +60,7 @@ export function LanguageStep({}
                         <div className="h-2 w-2 rounded-full bg-primary" />
                       </div>
                     )}
-                  </div>
+                  </button>
                 )}
               </form.Field>
             ))}

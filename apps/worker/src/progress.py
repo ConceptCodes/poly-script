@@ -3,12 +3,11 @@ Progress Publisher for Job Processing
 
 Publishes job progress updates to Redis Pub/Sub for real-time UI updates.
 """
+
 import json
 import logging
-from typing import Optional
 
 from poly_redis.client import get_redis_client
-from .enums import ProgressStage, WorkerStatus
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ class ProgressPublisher:
         progress_pct: int,
         progress_stage: str,
         status: str = "RUNNING",
-        error_message: Optional[str] = None,
+        error_message: str | None = None,
     ) -> None:
         """
         Publish progress update to Redis Pub/Sub channel.
@@ -52,9 +51,7 @@ class ProgressPublisher:
 
         try:
             self.redis_client.publish(channel, json.dumps(payload))
-            logger.debug(
-                f"[Progress] Job {job_id}: {progress_pct}% ({progress_stage})"
-            )
+            logger.debug(f"[Progress] Job {job_id}: {progress_pct}% ({progress_stage})")
         except Exception as e:
             logger.error(f"[Progress] Failed to publish for job {job_id}: {e}")
 
@@ -63,7 +60,7 @@ class ProgressPublisher:
         job_id: str,
         team_id: str,
         stage: str,
-        next_stage: Optional[str] = None,
+        next_stage: str | None = None,
     ) -> None:
         """
         Publish completion of a processing stage.
@@ -84,9 +81,7 @@ class ProgressPublisher:
             status="RUNNING",
         )
 
-        logger.info(
-            f"[Progress] Job {job_id} completed stage '{stage}' ({progress_pct}%)"
-        )
+        logger.info(f"[Progress] Job {job_id} completed stage '{stage}' ({progress_pct}%)")
 
     @staticmethod
     def _get_stage_progress(stage: str) -> int:

@@ -1,7 +1,11 @@
+import logging
+import sys
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 try:
-    from poly_core.services.auth import AuthService
-    print("AuthService imported successfully!")
+    logger.info("AuthService imported successfully!")
 except Exception as e:
-    print(f"Failed to import AuthService: {e}")
-    import sys
+    logger.exception("Failed to import AuthService: %s", e)
     sys.exit(1)

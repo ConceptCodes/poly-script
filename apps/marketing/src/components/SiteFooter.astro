@@ -10,21 +10,22 @@ const t = getCopy(lang);
       <div class="brand">
         <span class="brand-mark">PS</span>
         <span>PolyScript</span>
-          <div>
-      <h4>Legal</h4>
-      <div class="footer-links">
-        <a href="/{lang}/legal/terms">Terms</a>
-        <a href="/{lang}/legal/privacy">Privacy</a>
       </div>
-    </div></div>
-      <p class="muted">{t.footer.tagline}</p>
+      <div style="margin-top: 24px;">
+        <h4 style="font-family: var(--font-display); font-weight: 600; margin-bottom: 12px; font-size: 14px;">Legal</h4>
+        <div class="footer-links">
+          <a class="link" href={`/${lang}/legal/terms`}>Terms</a>
+          <a class="link" href={`/${lang}/legal/privacy`}>Privacy</a>
+        </div>
+      </div>
+      <p class="muted" style="margin-top: 24px;">{t.footer.tagline}</p>
     </div>
     <div class="footer-links">
-      <a href={`/${lang}/features`}>Features</a>
-      <a href={`/${lang}/pricing`}>Pricing</a>
-      <a href={`/${lang}/docs`}>Docs</a>
-      <a href={`/${lang}/blog`}>Blog</a>
-      <a href={`/${lang}/contact`}>Contact</a>
+      <a class="link" href={`/${lang}/features`}>Features</a>
+      <a class="link" href={`/${lang}/pricing`}>Pricing</a>
+      <a class="link" href={`/${lang}/docs`}>Docs</a>
+      <a class="link" href={`/${lang}/blog`}>Blog</a>
+      <a class="link" href={`/${lang}/contact`}>Contact</a>
     </div>
     <div class="footer-cta">
       <div class="tag">Status: All systems nominal</div>

@@ -1,4 +1,4 @@
-declare module '@poly/uitextarea' {
-  const value: any;
+declare module "@poly/uitextarea" {
+  const value: unknown;
   export default value;
 }

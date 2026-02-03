@@ -35,10 +35,10 @@ export async function apiFetch<T = unknown>(
   });
 
   if (!response.ok) {
-    let error;
+    let error: unknown;
     try {
       error = await response.json();
-    } catch (e) {
+    } catch (_e) {
       error = { detail: "An unknown error occurred" };
     }
     const errorObj = {
@@ -59,12 +59,17 @@ export const api = {
     page?: number;
     page_size?: number;
     status?: string;
+    search?: string;
+    sort_field?: string;
+    sort_order?: "asc" | "desc";
   }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.page_size)
-      queryParams.append("page_size", params.page_size.toString());
+    if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
     if (params?.status) queryParams.append("status_filter", params.status);
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.sort_field) queryParams.append("sort_field", params.sort_field);
+    if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
 
     return apiFetch<{
       jobs: Array<{
@@ -87,8 +92,7 @@ export const api = {
   async getPendingJobs(params?: { page?: number; page_size?: number }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.page_size)
-      queryParams.append("page_size", params.page_size.toString());
+    if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
 
     return apiFetch<{
       jobs: Array<{
@@ -108,15 +112,10 @@ export const api = {
     }>(`/jobs/pending?${queryParams.toString()}`);
   },
 
-  async getCompletedJobs(params?: {
-    page?: number;
-    page_size?: number;
-    status?: string;
-  }) {
+  async getCompletedJobs(params?: { page?: number; page_size?: number; status?: string }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.page_size)
-      queryParams.append("page_size", params.page_size.toString());
+    if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
     if (params?.status) queryParams.append("status_filter", params.status);
 
     return apiFetch<{
@@ -176,23 +175,17 @@ export const api = {
   },
 
   async createJob(formData: FormData) {
-    return apiFetch<{ job_id: string; status: string; message: string }>(
-      "/jobs",
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
+    return apiFetch<{ job_id: string; status: string; message: string }>("/jobs", {
+      method: "POST",
+      body: formData,
+    });
   },
 
   async createJobFromUrl(url: string, options: Record<string, unknown>) {
-    return apiFetch<{ job_id: string; status: string; message: string }>(
-      "/jobs/url",
-      {
-        method: "POST",
-        body: { url, options },
-      },
-    );
+    return apiFetch<{ job_id: string; status: string; message: string }>("/jobs/url", {
+      method: "POST",
+      body: { url, options },
+    });
   },
 
   async cancelJob(jobId: string) {
@@ -213,13 +206,14 @@ export const api = {
     page_size?: number;
     language?: string;
     search?: string;
+    sort?: string;
   }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
-    if (params?.page_size)
-      queryParams.append("page_size", params.page_size.toString());
+    if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
     if (params?.language) queryParams.append("language", params.language);
     if (params?.search) queryParams.append("search", params.search);
+    if (params?.sort) queryParams.append("sort", params.sort);
 
     return apiFetch<{
       transcripts: Array<{
@@ -290,11 +284,7 @@ export const api = {
     }>(`/transcripts/${transcriptId}/segments`);
   },
 
-  async updateTranscriptSegment(
-    transcriptId: string,
-    segmentId: number,
-    text: string,
-  ) {
+  async updateTranscriptSegment(transcriptId: string, segmentId: number, text: string) {
     return apiFetch<{
       id: number;
       start_ms: number;
@@ -338,30 +328,21 @@ export const api = {
     format: "txt" | "json" | "srt" | "vtt" = "txt",
   ): Promise<Blob> {
     const token = localStorage.getItem("access_token");
-    const response = await fetch(
-      `${API_URL}/transcripts/${transcriptId}/export?format=${format}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const response = await fetch(`${API_URL}/transcripts/${transcriptId}/export?format=${format}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-    );
+    });
 
     if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ detail: "Export failed" }));
+      const error = await response.json().catch(() => ({ detail: "Export failed" }));
       throw new Error(error.detail || "Export failed");
     }
 
     return response.blob();
   },
 
-  async splitSegment(
-    transcriptId: string,
-    segmentId: number,
-    splitAtMs: number,
-  ) {
+  async splitSegment(transcriptId: string, segmentId: number, splitAtMs: number) {
     return apiFetch<{
       message: string;
       original_segment_id: number;

@@ -4,17 +4,15 @@ Unit tests for Consumer, Processor, and Progress Publisher.
 Tests core worker functionality including job processing pipeline,
 progress publishing, and consumer thread behavior.
 """
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timezone
-from sqlalchemy.orm import Session
 
+from unittest.mock import Mock, patch
+
+import pytest
 from apps.worker.src.consumer import TranscriptionConsumer
 from apps.worker.src.processor import JobProcessor
 from apps.worker.src.progress import ProgressPublisher
-from apps.worker.src.enums import ProgressStage, WorkerStatus
-from poly_db.models.transcription_jobs import JobStatus, TranscriptionJob
-from poly_db.models.audio_assets import AudioAsset
+from sqlalchemy.orm import Session
+
 from poly_db.models.transcripts import Transcript
 
 
@@ -50,7 +48,7 @@ def mock_publisher():
 @pytest.fixture
 def mock_transcription_result():
     """Mock STT transcription result."""
-    from poly_stt.interface import TranscriptionResult, Segment
+    from poly_stt.interface import Segment, TranscriptionResult
 
     return TranscriptionResult(
         text="Hello world",
@@ -101,9 +99,7 @@ class TestProgressPublisher:
 class TestJobProcessor:
     """Tests for JobProcessor."""
 
-    def test_processor_initialization(
-        self, mock_session, mock_storage_backend, mock_publisher
-    ):
+    def test_processor_initialization(self, mock_session, mock_storage_backend, mock_publisher):
         """Test processor initializes correctly."""
         processor = JobProcessor(
             session=mock_session,
@@ -133,9 +129,7 @@ class TestJobProcessor:
         audio_path = processor._download_audio("https://example.com/audio.mp3")
 
         # Verify download was called
-        mock_get.assert_called_once_with(
-            "https://example.com/audio.mp3", timeout=60, stream=True
-        )
+        mock_get.assert_called_once_with("https://example.com/audio.mp3", timeout=60, stream=True)
 
         # Verify temp file was created
         assert audio_path.endswith(".mp3")
@@ -146,6 +140,7 @@ class TestJobProcessor:
         """Test audio validation."""
         # Mock librosa to return audio
         import numpy as np
+
         mock_load.return_value = (np.array([1, 2, 3]), 16000)
 
         # Mock soundfile info
@@ -178,9 +173,7 @@ class TestJobProcessor:
         job = Mock()
         job.id = "job-123"
 
-        transcript = processor._format_transcript(
-            job, mock_transcription_result, duration_ms=5000
-        )
+        transcript = processor._format_transcript(job, mock_transcription_result, duration_ms=5000)
 
         # Verify transcript structure
         assert isinstance(transcript, Transcript)
@@ -240,11 +233,8 @@ class TestTranscriptionConsumer:
 
     def test_retry_logic(self, mock_queue):
         """Test retry logic with exponential backoff."""
-        import time
 
-        consumer = TranscriptionConsumer(
-            queue=mock_queue, max_retries=3, retry_backoff=2
-        )
+        consumer = TranscriptionConsumer(queue=mock_queue, max_retries=3, retry_backoff=2)
 
         # Mock session and job
         mock_session = Mock()
@@ -253,6 +243,7 @@ class TestTranscriptionConsumer:
         job.attempts = 0
 
         from poly_db.repositories import TranscriptionJobRepository
+
         job_repo = TranscriptionJobRepository(mock_session)
         job_repo.get = Mock(return_value=job)
         job_repo.update = Mock()
@@ -289,12 +280,11 @@ class TestTranscriptionConsumer:
         job.attempts = 3  # Already at max retries
 
         from poly_db.repositories import TranscriptionJobRepository
+
         job_repo = TranscriptionJobRepository(mock_session)
         job_repo.get = Mock(return_value=job)
 
-        consumer = TranscriptionConsumer(
-            queue=mock_queue, max_retries=3, retry_backoff=2
-        )
+        consumer = TranscriptionConsumer(queue=mock_queue, max_retries=3, retry_backoff=2)
 
         work_item = {
             "job_id": "job-123",

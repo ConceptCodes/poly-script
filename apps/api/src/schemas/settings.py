@@ -1,5 +1,4 @@
 import uuid
-from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -7,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field
 class UserSettingsResponse(BaseModel):
     id: uuid.UUID
     email: str
-    full_name: Optional[str] = None
+    full_name: str | None = None
     is_verified: bool
     is_active: bool
     created_at: str
@@ -17,8 +16,8 @@ class UserSettingsResponse(BaseModel):
 
 
 class UpdateUserProfileRequest(BaseModel):
-    full_name: Optional[str] = Field(None, min_length=1, max_length=128)
-    avatar_url: Optional[str] = None
+    full_name: str | None = Field(None, min_length=1, max_length=128)
+    avatar_url: str | None = None
 
 
 class UpdateEmailRequest(BaseModel):
@@ -26,8 +25,8 @@ class UpdateEmailRequest(BaseModel):
 
 
 class UpdateUserPreferencesRequest(BaseModel):
-    host_language: Optional[str] = None
-    theme: Optional[str] = None
+    host_language: str | None = None
+    theme: str | None = None
 
 
 class UpdateUserNotificationsRequest(BaseModel):
@@ -50,15 +49,15 @@ class TeamSettingsResponse(BaseModel):
 
 
 class UpdateTeamSettingsRequest(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=128)
-    host_language: Optional[str] = None
+    name: str | None = Field(None, min_length=1, max_length=128)
+    host_language: str | None = None
 
 
 class TeamMemberItem(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     email: str
-    full_name: Optional[str] = None
+    full_name: str | None = None
     role: str
     created_at: str
 
@@ -66,5 +65,5 @@ class TeamMemberItem(BaseModel):
 class BillingInfoResponse(BaseModel):
     plan: str
     credits_balance: int
-    stripe_customer_id: Optional[str] = None
-    stripe_subscription_id: Optional[str] = None
+    stripe_customer_id: str | None = None
+    stripe_subscription_id: str | None = None

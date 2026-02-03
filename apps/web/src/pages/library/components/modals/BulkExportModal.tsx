@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@poly/ui/dialog";
-import { FileJson, FileText, Download } from "lucide-react";
+import { Download, FileJson, FileText } from "lucide-react";
 
 interface BulkExportModalProps {
   transcriptIds: string[];
@@ -32,7 +32,7 @@ export function BulkExportModal({ transcriptIds, onClose }: BulkExportModalProps
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access_token")}`,
             },
-          }
+          },
         ).then((r) => r.blob());
 
         const url = URL.createObjectURL(blob);
@@ -62,19 +62,19 @@ export function BulkExportModal({ transcriptIds, onClose }: BulkExportModalProps
 
         <div className="grid gap-3 py-4">
           {formats.map((format) => (
-            <button
+            <Button
+              type="button"
               key={format.id}
+              variant="outline"
               onClick={() => handleExport(format.id as "txt" | "json" | "srt" | "vtt")}
-              className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted transition-colors text-left"
+              className="flex items-center gap-3 p-3 h-auto justify-start"
             >
               <format.icon className="w-5 h-5 text-muted-foreground" />
-              <div className="flex-1">
+              <div className="flex-1 text-left">
                 <div className="font-medium">{format.label}</div>
-                <div className="text-sm text-muted-foreground">
-                  {format.description}
-                </div>
+                <div className="text-sm text-muted-foreground">{format.description}</div>
               </div>
-            </button>
+            </Button>
           ))}
         </div>
 

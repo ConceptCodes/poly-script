@@ -6,17 +6,17 @@ const t = getCopy(lang);
 
 <header class="site-header">
   <div class="container nav">
-    <a class="brand" href={`/${lang}`}>
+    <a class="brand link" href={`/${lang}`}>
       <span class="brand-mark">PS</span>
       <span>PolyScript</span>
     </a>
     <nav class="nav-links">
-      <a href={`/${lang}/features`}>{t.nav.features}</a>
-      <a href={`/${lang}/pricing`}>{t.nav.pricing}</a>
-      <a href={`/${lang}/docs`}>{t.nav.docs}</a>
-      <a href={`/${lang}/blog`}>{t.nav.blog}</a>
-      <a href={`/${lang}/legal`}>{t.nav.legal}</a>
-      <a href={`/${lang}/contact`}>{t.nav.contact}</a>
+      <a class="link" href={`/${lang}/features`}>{t.nav.features}</a>
+      <a class="link" href={`/${lang}/pricing`}>{t.nav.pricing}</a>
+      <a class="link" href={`/${lang}/docs`}>{t.nav.docs}</a>
+      <a class="link" href={`/${lang}/blog`}>{t.nav.blog}</a>
+      <a class="link" href={`/${lang}/legal`}>{t.nav.legal}</a>
+      <a class="link" href={`/${lang}/contact`}>{t.nav.contact}</a>
     </nav>
     <div class="nav-actions">
       <a class="btn ghost" href="https://app.polyscript.io">
@@ -26,13 +26,15 @@ const t = getCopy(lang);
         {t.nav.cta}
       </a>
       <div class="lang">
-        <select onchange="location = this.value;">
-          {locales.map((locale) => (
-            <option value={`/${locale}`} selected={locale === lang}>
-              {locale.toUpperCase()}
-            </option>
-          ))}
-        </select>
+        {locales.map((locale) => (
+          <a
+            class="link"
+            href={`/${locale}`}
+            aria-current={locale === lang ? "page" : undefined}
+          >
+            {locale.toUpperCase()}
+          </a>
+        ))}
       </div>
     </div>
   </div>

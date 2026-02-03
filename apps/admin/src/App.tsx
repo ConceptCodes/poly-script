@@ -1,17 +1,17 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AdminLayout } from "./components/AdminLayout";
-import { useAuthStore } from "./store/auth";
-import { LoginPage } from "./pages/LoginPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { UsersPage } from "./pages/UsersPage";
-import { UserDetailPage } from "./pages/UserDetailPage";
-import { TeamsPage } from "./pages/TeamsPage";
-import { TeamDetailPage } from "./pages/TeamDetailPage";
-import { JobsPage } from "./pages/JobsPage";
-import { JobDetailPage } from "./pages/JobDetailPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
-import { SettingsPage } from "./pages/SettingsPage";
 import { AuditLogsPage } from "./pages/AuditLogsPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { JobDetailPage } from "./pages/JobDetailPage";
+import { JobsPage } from "./pages/JobsPage";
+import { LoginPage } from "./pages/LoginPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { TeamDetailPage } from "./pages/TeamDetailPage";
+import { TeamsPage } from "./pages/TeamsPage";
+import { UserDetailPage } from "./pages/UserDetailPage";
+import { UsersPage } from "./pages/UsersPage";
+import { useAuthStore } from "./store/auth";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);

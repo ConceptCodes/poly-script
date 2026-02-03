@@ -1,19 +1,12 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../lib/api";
+import { Badge } from "@poly/ui/badge";
+import { Button } from "@poly/ui/button";
 import { Card, CardContent } from "@poly/ui/card";
 import { Input } from "@poly/ui/input";
-import { Button } from "@poly/ui/button";
-import { Badge } from "@poly/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@poly/ui/table";
-import { Search, Building2, Users, Calendar, Crown, Shield, Eye } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@poly/ui/table";
+import { Building2, Calendar, Search, Shield, Users } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../lib/api";
 
 type TeamItem = {
   id: string;
@@ -24,30 +17,29 @@ type TeamItem = {
   created_at: string;
 };
 
+type PlanFilter = "all" | "FREE" | "STANDARD" | "PRO";
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
+
 export function TeamsPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<TeamItem[]>([]);
   const [query, setQuery] = useState("");
-  const [planFilter, setPlanFilter] = useState<"all" | "FREE" | "STANDARD" | "PRO">("all");
+  const [planFilter, setPlanFilter] = useState<PlanFilter>("all");
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     const q = query.trim();
     const queryString = q ? `?q=${encodeURIComponent(q)}` : "";
     apiFetch<{ items: TeamItem[] }>(`/admin/teams${queryString}`).then((data) =>
       setItems(data.items),
     );
-  };
-
-  useEffect(() => {
-    refresh();
-  }, []);
+  }, [query]);
 
   useEffect(() => {
     const handle = setTimeout(() => {
       refresh();
     }, 300);
     return () => clearTimeout(handle);
-  }, [query]);
+  }, [refresh]);
 
   const filteredItems = items.filter((team) => {
     if (planFilter === "all") return true;
@@ -55,7 +47,7 @@ export function TeamsPage() {
   });
 
   const getPlanBadge = (plan: string) => {
-    const colors: Record<string, { variant: any; label: string }> = {
+    const colors: Record<string, { variant: BadgeVariant; label: string }> = {
       FREE: { variant: "secondary", label: "Free" },
       STANDARD: { variant: "default", label: "Standard" },
       PRO: { variant: "default", label: "Pro" },
@@ -84,17 +76,23 @@ export function TeamsPage() {
               />
             </div>
             <div className="flex gap-2">
-              {["all", "FREE", "STANDARD", "PRO"].map((f) => (
+              {(["all", "FREE", "STANDARD", "PRO"] as const).map((f) => (
                 <Button
                   key={f}
                   variant={planFilter === f ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setPlanFilter(f as any)}
+                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  onClick={() => setPlanFilter(f)}
                 >
                   {f === "all" ? "All Plans" : f}
                 </Button>
               ))}
-              <Button variant="outline" size="sm" onClick={refresh}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                onClick={refresh}
+              >
                 Refresh
               </Button>
             </div>
@@ -153,6 +151,7 @@ export function TeamsPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                       onClick={() => navigate(`/teams/${team.id}`)}
                     >
                       View

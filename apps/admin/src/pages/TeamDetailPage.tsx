@@ -1,10 +1,21 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { apiFetch } from "../lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
-import { Button } from "@poly/ui/button";
 import { Badge } from "@poly/ui/badge";
-import { ArrowLeft, Building2, Users, Crown, Shield, Eye, Calendar, CreditCard, Clock } from "lucide-react";
+import { Button } from "@poly/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import type { LucideIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Calendar,
+  Clock,
+  CreditCard,
+  Crown,
+  Eye,
+  Shield,
+  Users,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { apiFetch } from "../lib/api";
 
 type TeamDetail = {
   id: string;
@@ -23,6 +34,8 @@ type TeamDetail = {
   };
 };
 
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
+
 export function TeamDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -35,11 +48,11 @@ export function TeamDetailPage() {
   }, [id]);
 
   if (!team) {
-    return <div className="p-8">Loading...</div>;
+    return <div className="p-8">Loading…</div>;
   }
 
   const getPlanBadge = (plan: string) => {
-    const colors: Record<string, { variant: any; label: string }> = {
+    const colors: Record<string, { variant: BadgeVariant; label: string }> = {
       FREE: { variant: "secondary", label: "Free" },
       STANDARD: { variant: "default", label: "Standard" },
       PRO: { variant: "default", label: "Pro" },
@@ -49,7 +62,7 @@ export function TeamDetailPage() {
   };
 
   const getRoleBadge = (role: string) => {
-    const icons: Record<string, any> = {
+    const icons: Record<string, LucideIcon> = {
       ADMIN: Crown,
       MEMBER: Shield,
       VIEWER: Eye,
@@ -57,7 +70,7 @@ export function TeamDetailPage() {
     const Icon = icons[role] || Users;
     return (
       <Badge variant="outline" className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
+        <Icon className="h-3 w-3" aria-hidden="true" />
         {role}
       </Badge>
     );
@@ -66,8 +79,13 @@ export function TeamDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/teams")}>
-          <ArrowLeft className="h-5 w-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/teams")}
+          aria-label="Back to teams"
+        >
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Team Details</h1>
@@ -85,28 +103,28 @@ export function TeamDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-start gap-3">
-              <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" aria-hidden="true" />
               <div className="flex-1">
                 <div className="text-sm text-muted-foreground">Team Name</div>
                 <div className="font-medium">{team.name}</div>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <CreditCard className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <CreditCard className="h-5 w-5 text-muted-foreground mt-0.5" aria-hidden="true" />
               <div className="flex-1">
                 <div className="text-sm text-muted-foreground">Plan</div>
                 {getPlanBadge(team.plan)}
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Users className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <Users className="h-5 w-5 text-muted-foreground mt-0.5" aria-hidden="true" />
               <div className="flex-1">
                 <div className="text-sm text-muted-foreground">Owner Email</div>
                 <div className="font-medium">{team.owner_email || "-"}</div>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" aria-hidden="true" />
               <div className="flex-1">
                 <div className="text-sm text-muted-foreground">Created At</div>
                 <div className="font-medium">{new Date(team.created_at).toLocaleString()}</div>
@@ -119,7 +137,7 @@ export function TeamDetailPage() {
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
+                <Clock className="h-5 w-5" aria-hidden="true" />
                 Usage & Limits
               </CardTitle>
             </CardHeader>

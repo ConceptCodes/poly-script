@@ -1,15 +1,13 @@
+import { Button } from "@poly/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { Filter } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
-import { Button } from "@poly/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@poly/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui/select";
-import { Filter } from "lucide-react";
-
-import { CompletedJobCard } from "./components/cards/CompletedJobCard";
-import { JobListSkeleton } from "../pending/components/JobListSkeleton";
 import { api } from "../../../lib/api";
+import { JobListSkeleton } from "../pending/components/JobListSkeleton";
+import { CompletedJobCard } from "./components/cards/CompletedJobCard";
 
 export function CompletedJobsPage() {
   const navigate = useNavigate();
@@ -21,7 +19,7 @@ export function CompletedJobsPage() {
     error,
   } = useQuery({
     queryKey: ["completed-jobs", statusFilter],
-    queryFn: () => api.getJobs({ status: statusFilter === "all" ? undefined : statusFilter }),
+    queryFn: () => api.getCompletedJobs({ status: statusFilter === "all" ? undefined : statusFilter }),
   });
 
   const jobs = jobsData?.jobs || [];
@@ -64,11 +62,7 @@ export function CompletedJobsPage() {
       <Card>
         <CardHeader className="flex items-center justify-between">
           <CardTitle>Completed Jobs</CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/upload")}
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate("/upload")}>
             Upload Audio
           </Button>
         </CardHeader>
@@ -93,11 +87,11 @@ export function CompletedJobsPage() {
           {jobs.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">
-                {statusFilter === "all" ? "No completed jobs found" : `No ${statusFilter} jobs found`}
+                {statusFilter === "all"
+                  ? "No completed jobs found"
+                  : `No ${statusFilter} jobs found`}
               </p>
-              <Button onClick={() => navigate("/upload")}>
-                Upload Audio
-              </Button>
+              <Button onClick={() => navigate("/upload")}>Upload Audio</Button>
             </div>
           ) : (
             <div className="space-y-4">

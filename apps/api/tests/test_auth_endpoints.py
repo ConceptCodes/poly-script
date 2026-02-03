@@ -163,7 +163,9 @@ class TestAuthEndpoints:
             mock_service = Mock()
             mock_oauth_service_dep.return_value = mock_service
 
-            mock_service.get_google_auth_url.return_value = "https://accounts.google.com/o/oauth2/auth?..."
+            mock_service.get_google_auth_url.return_value = (
+                "https://accounts.google.com/o/oauth2/auth?..."
+            )
 
             response = client.get("/v1/auth/oauth/google")
 
@@ -177,7 +179,9 @@ class TestAuthEndpoints:
             mock_service = Mock()
             mock_oauth_service_dep.return_value = mock_service
 
-            mock_service.get_google_auth_url.return_value = "https://accounts.google.com/o/oauth2/auth?..."
+            mock_service.get_google_auth_url.return_value = (
+                "https://accounts.google.com/o/oauth2/auth?..."
+            )
 
             response = client.get(
                 "/v1/auth/oauth/google",

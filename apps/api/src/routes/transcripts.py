@@ -1,39 +1,36 @@
 """Transcript API routes."""
 
 import uuid
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from poly_db.database import get_db_session
-from poly_db.repositories import TranscriptRepository, AudioAssetRepository
-from poly_core.services.transcript_service import TranscriptService
-from poly_core.services.export_service import ExportService
 from poly_core.services.async_export_service import AsyncExportService
+from poly_core.services.export_service import ExportService
+from poly_core.services.transcript_service import TranscriptService
+from poly_db.database import get_db_session
+from poly_db.repositories import AudioAssetRepository, TranscriptRepository
 from src.dependencies import get_current_team_id, get_current_user_id
 from src.schemas.transcripts import (
-    TranscriptResponse,
-    SegmentResponse,
-    TranscriptListItem,
-    TranscriptListResponse,
-    UpdateTranscriptRequest,
-    UpdateSegmentRequest,
     EditEntry,
     EditHistoryResponse,
-    ExportResponse,
-    SegmentsResponse,
-    RevertTranscriptRequest,
-    RevertTranscriptResponse,
-    SplitSegmentRequest,
-    SplitSegmentResponse,
     MergeSegmentsRequest,
     MergeSegmentsResponse,
+    RevertTranscriptRequest,
+    RevertTranscriptResponse,
+    SegmentResponse,
+    SegmentsResponse,
+    SplitSegmentRequest,
+    SplitSegmentResponse,
+    TranscriptListItem,
+    TranscriptListResponse,
+    TranscriptResponse,
+    UpdateSegmentRequest,
     UpdateSegmentTimestampsRequest,
     UpdateSegmentTimestampsResponse,
+    UpdateTranscriptRequest,
 )
-
 
 router = APIRouter(prefix="/v1/transcripts", tags=["transcripts"])
 
@@ -46,20 +43,20 @@ def get_transcript_with_team_check(
     """Get transcript and verify team access."""
     repo = TranscriptRepository(session)
     transcript = repo.get(transcript_id)
-    
+
     if not transcript:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Transcript not found",
         )
-    
+
     # Verify team access via job
     if transcript.job and transcript.job.team_id != team_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have access to this transcript",
         )
-    
+
     return transcript
 
 
@@ -67,8 +64,8 @@ def get_transcript_with_team_check(
 async def list_transcripts(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    language: Optional[str] = Query(None),
-    search: Optional[str] = Query(None),
+    language: str | None = Query(None),
+    search: str | None = Query(None),
     team_id: uuid.UUID = Depends(get_current_team_id),
 ) -> TranscriptListResponse:
     """List all transcripts for the current team."""
@@ -81,9 +78,9 @@ async def list_transcripts(
             page=page,
             page_size=page_size,
         )
-        
+
         audio_repo = AudioAssetRepository(session)
-        
+
         items = []
         for t in transcripts:
             audio = audio_repo.get_by_job_id(t.job_id)
@@ -98,7 +95,7 @@ async def list_transcripts(
                     updated_at=t.updated_at,
                 )
             )
-        
+
         return TranscriptListResponse(
             transcripts=items,
             total=total,
@@ -115,7 +112,7 @@ async def get_transcript(
     """Get a specific transcript by ID."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
-        
+
         # Build segment responses
         segments = []
         for idx, seg in enumerate(transcript.segments or []):
@@ -128,7 +125,7 @@ async def get_transcript(
                     "speaker": seg.get("speaker"),
                 }
             )
-        
+
         return TranscriptResponse(
             id=transcript.id,
             job_id=transcript.job_id,
@@ -151,14 +148,14 @@ async def update_transcript_full_text(
     """Update the full text of a transcript."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
-        
+
         service = TranscriptService(session)
         updated = service.update_full_text(
             str(transcript_id),
             user_id,
             request.text,
         )
-        
+
         # Build segment responses
         segments = []
         for idx, seg in enumerate(updated.segments or []):
@@ -171,7 +168,7 @@ async def update_transcript_full_text(
                     "speaker": seg.get("speaker"),
                 }
             )
-        
+
         return TranscriptResponse(
             id=updated.id,
             job_id=updated.job_id,
@@ -192,7 +189,7 @@ async def get_transcript_segments(
     """Get segments of a specific transcript."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
-        
+
         segments = []
         for idx, seg in enumerate(transcript.segments or []):
             segments.append(
@@ -204,7 +201,7 @@ async def get_transcript_segments(
                     "speaker": seg.get("speaker"),
                 }
             )
-        
+
         return SegmentsResponse(segments=segments)
 
 
@@ -219,7 +216,7 @@ async def update_transcript_segment(
     """Update a single segment of a transcript."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
-        
+
         service = TranscriptService(session)
         updated = service.update_segment(
             str(transcript_id),
@@ -227,7 +224,7 @@ async def update_transcript_segment(
             user_id,
             request.text,
         )
-        
+
         # Return updated segment
         if segment_id < len(updated.segments):
             seg = updated.segments[segment_id]
@@ -254,10 +251,10 @@ async def get_transcript_history(
     with get_db_session() as session:
         # First verify access
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
-        
+
         service = TranscriptService(session)
         edits = service.get_edit_history(str(team_id), str(transcript_id))
-        
+
         entries = []
         for edit in edits:
             entries.append(
@@ -272,7 +269,7 @@ async def get_transcript_history(
                     created_at=edit.created_at,
                 )
             )
-        
+
         return EditHistoryResponse(edits=entries, total=len(entries))
 
 
@@ -291,7 +288,7 @@ async def revert_transcript(
         )
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
-        
+
         service = TranscriptService(session)
         try:
             service.revert_to_original(str(team_id), str(transcript_id), user_id)
@@ -300,7 +297,7 @@ async def revert_transcript(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(e),
             )
-        
+
         return RevertTranscriptResponse(
             message="Transcript reverted to original state",
             transcript_id=transcript_id,
@@ -319,7 +316,7 @@ async def split_segment(
     """Split a segment at a specified timestamp."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
-        
+
         service = TranscriptService(session)
         try:
             updated, new_ids = service.split_segment(
@@ -350,7 +347,7 @@ async def merge_segments(
     """Merge consecutive segments into one."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
-        
+
         service = TranscriptService(session)
         try:
             updated, merged_id, removed_ids = service.merge_segments(
@@ -381,7 +378,7 @@ async def update_segment_timestamps(
     """Update timestamps of a segment."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
-        
+
         service = TranscriptService(session)
         try:
             updated = service.update_segment_timestamps(
@@ -391,7 +388,7 @@ async def update_segment_timestamps(
                 request.start_ms,
                 request.end_ms,
             )
-            
+
             # Return updated segment
             if segment_id < len(updated.segments):
                 seg = updated.segments[segment_id]
@@ -431,12 +428,12 @@ async def export_transcript(
     """
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
-        
+
         # For async export with caching
         if async_export:
-            from src.config import settings
             from poly_core.services.storage_service import get_storage_backend
-            
+            from src.config import settings
+
             storage_backend = None
             if settings.STORAGE_TYPE == "s3":
                 storage_backend = get_storage_backend(
@@ -446,23 +443,23 @@ async def export_transcript(
                     access_key=settings.AWS_ACCESS_KEY_ID,
                     secret_key=settings.AWS_SECRET_ACCESS_KEY,
                 )
-            
+
             async_service = AsyncExportService(session)
-            
+
             # Check cache first
             cached = async_service.get_cached_export(transcript, format)
             if cached and cached.presigned_url:
                 # Return redirect to presigned URL
                 from fastapi.responses import RedirectResponse
                 return RedirectResponse(url=cached.presigned_url, status_code=307)
-            
+
             # Generate new export
             artifact = async_service.generate_and_cache_export(
                 transcript,
                 format,
                 storage_backend,
             )
-            
+
             if artifact.presigned_url:
                 # Return redirect to presigned URL
                 from fastapi.responses import RedirectResponse
@@ -479,15 +476,15 @@ async def export_transcript(
                         "Content-Length": str(artifact.content_length),
                     },
                 )
-        
+
         # Synchronous export (backward compatible)
         content = ExportService.export_transcript(transcript, format)
         content_length = len(content.encode("utf-8"))
-        
+
         # Determine response type and headers
         content_type = ExportService.get_export_content_type(format)
         filename = ExportService.get_export_filename(transcript, format)
-        
+
         return PlainTextResponse(
             content=content,
             media_type=content_type,

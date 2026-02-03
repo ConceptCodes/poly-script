@@ -1,13 +1,11 @@
-import { useTranslation } from "react-i18next";
-import { Label } from "@poly/ui";
-import { Card, CardContent } from "@poly/ui";
-import { Badge } from "@poly/ui";
+import { Badge, Card, CardContent, Label } from "@poly/ui";
 import { Info } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type PlanSelectionStepProps = {
   data: {
     plan?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   updateData: (key: string, value: string) => void;
   onNext: () => void;
@@ -34,23 +32,14 @@ const plans = [
   },
 ];
 
-export function PlanSelectionStep({ data, updateData, onNext }: PlanSelectionStepProps) {
+export function PlanSelectionStep({ data, updateData, onNext: _onNext }: PlanSelectionStepProps) {
   const { t } = useTranslation();
-
-  const handleNext = () => {
-    if (!data.plan) {
-      updateData("plan", "FREE");
-    }
-    onNext();
-  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Info className="h-5 w-5 text-muted-foreground" />
-        <h2 className="text-2xl font-bold">
-          {t("onboarding.steps.plan")}
-        </h2>
+        <h2 className="text-2xl font-bold">{t("onboarding.steps.plan")}</h2>
       </div>
 
       <div role="radiogroup" className="grid gap-4">
@@ -70,7 +59,8 @@ export function PlanSelectionStep({ data, updateData, onNext }: PlanSelectionSte
                 <div className="space-y-2">
                   <Label className="text-xl font-semibold">{plan.name}</Label>
                   <div className="text-3xl font-bold text-primary">
-                    {plan.price}<span className="text-sm font-normal text-muted-foreground">/mo</span>
+                    {plan.price}
+                    <span className="text-sm font-normal text-muted-foreground">/mo</span>
                   </div>
                 </div>
                 <div

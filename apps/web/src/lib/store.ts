@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { useTranslation } from "react-i18next";
 
 export interface User {
   id: string;
@@ -90,7 +89,7 @@ interface AppState {
   initializeFromAuth: (user: User, team: Team) => void;
 }
 
-export const useAppStore = create<AppState>((set, get) => {
+export const useAppStore = create<AppState>((set, _get) => {
   return {
     auth: {
       isAuthenticated: false,
@@ -116,8 +115,7 @@ export const useAppStore = create<AppState>((set, get) => {
     setAuth: (authData: Partial<AuthState>) =>
       set((state) => ({
         auth: { ...state.auth, ...authData },
-        isAuthenticated:
-          !!authData.isAuthenticated || state.auth.isAuthenticated,
+        isAuthenticated: !!authData.isAuthenticated || state.auth.isAuthenticated,
         user: authData.user ?? state.user,
         team: authData.team ?? state.team,
         members: authData.members ?? state.members,
@@ -202,7 +200,7 @@ export const useAppStore = create<AppState>((set, get) => {
         onboarding: { ...state.onboarding, inviteMembers },
       })),
     resetOnboarding: () =>
-      set((state) => ({
+      set((_state) => ({
         onboarding: {
           step: 1,
           language: "en",

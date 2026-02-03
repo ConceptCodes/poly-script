@@ -1,6 +1,13 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@poly/ui";
-import { Badge } from "@poly/ui";
-import { Button } from "@poly/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@poly/ui";
 
 interface CurrentPlanCardProps {
   plan: string;
@@ -26,12 +33,10 @@ export function CurrentPlanCard({
   const periodLabel =
     currentPeriodStart && currentPeriodEnd
       ? `${new Date(currentPeriodStart).toLocaleDateString()} - ${new Date(
-          currentPeriodEnd
+          currentPeriodEnd,
         ).toLocaleDateString()}`
       : null;
-  const nextBillingDate = currentPeriodEnd
-    ? new Date(currentPeriodEnd).toLocaleDateString()
-    : null;
+  const nextBillingDate = currentPeriodEnd ? new Date(currentPeriodEnd).toLocaleDateString() : null;
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -45,9 +50,7 @@ export function CurrentPlanCard({
       </CardHeader>
       <CardContent>
         {planPrice !== undefined && (
-          <div className="text-sm text-muted-foreground mb-2">
-            ${planPrice}/month
-          </div>
+          <div className="text-sm text-muted-foreground mb-2">${planPrice}/month</div>
         )}
         <div className="text-2xl font-bold capitalize">
           {cancelAtPeriodEnd ? "Canceling" : status}
@@ -58,14 +61,10 @@ export function CurrentPlanCard({
             : `Your plan is currently ${status}.`}
         </p>
         {periodLabel && (
-          <p className="text-xs text-muted-foreground mt-2">
-            Current period: {periodLabel}
-          </p>
+          <p className="text-xs text-muted-foreground mt-2">Current period: {periodLabel}</p>
         )}
         {plan !== "FREE" && nextBillingDate && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Next billing date: {nextBillingDate}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">Next billing date: {nextBillingDate}</p>
         )}
       </CardContent>
       <CardFooter className="gap-2">

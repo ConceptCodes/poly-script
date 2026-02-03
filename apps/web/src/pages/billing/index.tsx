@@ -1,23 +1,23 @@
-import { Button, Skeleton } from "@poly/ui";
+import { Button, Skeleton, useToast } from "@poly/ui";
 import { useState } from "react";
-import { UsageCard } from "./components/cards/UsageCard";
-import { CurrentPlanCard } from "./components/cards/CurrentPlanCard";
-import { PlanComparisonCard } from "./components/cards/PlanComparisonCard";
-import { PaymentMethodsCard } from "./components/cards/PaymentMethodsCard";
-import { PurchaseCreditsForm } from "./components/forms/PurchaseCreditsForm";
-import { UpgradeModal } from "./components/modals/UpgradeModal";
-import { CancelSubscriptionModal } from "./components/modals/CancelSubscriptionModal";
-import { InvoicesCard } from "./components/cards/InvoicesCard";
-import { UsageHistoryCard } from "./components/cards/UsageHistoryCard";
 import {
-  useUsage,
-  useSubscription,
-  useCreatePortalSession,
-  useUpgradeSubscription,
-  useDowngradeSubscription,
   useCancelSubscription,
+  useCreatePortalSession,
+  useDowngradeSubscription,
   useReactivateSubscription,
+  useSubscription,
+  useUpgradeSubscription,
+  useUsage,
 } from "../../hooks/useBilling";
+import { CurrentPlanCard } from "./components/cards/CurrentPlanCard";
+import { InvoicesCard } from "./components/cards/InvoicesCard";
+import { PaymentMethodsCard } from "./components/cards/PaymentMethodsCard";
+import { PlanComparisonCard } from "./components/cards/PlanComparisonCard";
+import { UsageCard } from "./components/cards/UsageCard";
+import { UsageHistoryCard } from "./components/cards/UsageHistoryCard";
+import { PurchaseCreditsForm } from "./components/forms/PurchaseCreditsForm";
+import { CancelSubscriptionModal } from "./components/modals/CancelSubscriptionModal";
+import { UpgradeModal } from "./components/modals/UpgradeModal";
 
 const PLAN_PRICES: Record<string, number> = {
   FREE: 0,
@@ -25,12 +25,11 @@ const PLAN_PRICES: Record<string, number> = {
   PRO: 30,
 };
 
-const PLAN_ORDER = ["FREE", "STANDARD", "PRO"];
-
 export function BillingPage() {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [targetPlan, setTargetPlan] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Queries
   const { data: usage, isLoading: usageLoading, error: usageError } = useUsage();
@@ -45,20 +44,23 @@ export function BillingPage() {
 
   const loading = usageLoading || subscriptionLoading;
   const error = usageError?.message;
-  const processing = 
-    upgradeSubscription.isPending || 
-    downgradeSubscription.isPending || 
-    cancelSubscription.isPending || 
+  const processing =
+    upgradeSubscription.isPending ||
+    downgradeSubscription.isPending ||
+    cancelSubscription.isPending ||
     reactivateSubscription.isPending;
 
   // Combine usage and subscription data
-  const data = usage && subscription ? {
-    ...usage,
-    status: subscription.status || "active",
-    cancel_at_period_end: subscription.cancel_at_period_end,
-    current_period_start: subscription.current_period_start,
-    current_period_end: subscription.current_period_end,
-  } : null;
+  const data =
+    usage && subscription
+      ? {
+          ...usage,
+          status: subscription.status || "active",
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          current_period_start: subscription.current_period_start,
+          current_period_end: subscription.current_period_end,
+        }
+      : null;
 
   const handleManageBilling = () => {
     createPortalSession.mutate(undefined);
@@ -81,8 +83,13 @@ export function BillingPage() {
         onSuccess: () => {
           window.location.reload();
         },
-        onError: (err: any) => {
-          alert("Failed to change plan: " + err.message);
+        onError: (err: unknown) => {
+          const message = err instanceof Error ? err.message : "Unable to change plan.";
+          toast({
+            title: "Plan change failed",
+            description: message,
+            variant: "destructive",
+          });
           setUpgradeModalOpen(false);
         },
       });
@@ -98,8 +105,13 @@ export function BillingPage() {
       onSuccess: () => {
         window.location.reload();
       },
-      onError: (err: any) => {
-        alert("Failed to cancel: " + err.message);
+      onError: (err: unknown) => {
+        const message = err instanceof Error ? err.message : "Unable to cancel subscription.";
+        toast({
+          title: "Cancellation failed",
+          description: message,
+          variant: "destructive",
+        });
       },
     });
   };
@@ -109,8 +121,13 @@ export function BillingPage() {
       onSuccess: () => {
         window.location.reload();
       },
-      onError: (err: any) => {
-        alert("Failed to reactivate: " + err.message);
+      onError: (err: unknown) => {
+        const message = err instanceof Error ? err.message : "Unable to reactivate subscription.";
+        toast({
+          title: "Reactivation failed",
+          description: message,
+          variant: "destructive",
+        });
       },
     });
   };

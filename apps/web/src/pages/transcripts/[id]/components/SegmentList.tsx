@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { Button, Textarea } from "@poly/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@poly/ui/button";
-import Textarea from "@poly/uitextarea";
-import { Edit2, Save, X, Clock } from "lucide-react";
+import { Clock, Edit2, Save, X } from "lucide-react";
+import { useState } from "react";
 import { api } from "../../../../lib/api";
 
 interface Segment {
@@ -22,7 +21,7 @@ interface SegmentListProps {
 export function SegmentList({ transcriptId, segments, onUpdate }: SegmentListProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   const updateMutation = useMutation({
     mutationFn: ({ segmentId, text }: { segmentId: number; text: string }) =>
@@ -61,20 +60,13 @@ export function SegmentList({ transcriptId, segments, onUpdate }: SegmentListPro
   };
 
   if (segments.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        No segments available
-      </div>
-    );
+    return <div className="text-center py-8 text-muted-foreground">No segments available</div>;
   }
 
   return (
     <div className="space-y-4">
       {segments.map((segment) => (
-        <div
-          key={segment.id}
-          className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-        >
+        <div key={segment.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
           <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
             <Clock className="w-4 h-4" />
             <span className="font-mono">
@@ -117,11 +109,7 @@ export function SegmentList({ transcriptId, segments, onUpdate }: SegmentListPro
           ) : (
             <div className="flex items-start justify-between gap-4">
               <p className="flex-1">{segment.text}</p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEdit(segment)}
-              >
+              <Button variant="ghost" size="sm" onClick={() => handleEdit(segment)}>
                 <Edit2 className="w-4 h-4" />
               </Button>
             </div>

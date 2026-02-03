@@ -1,8 +1,19 @@
+import { Badge } from "@poly/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui/select";
+import {
+  AlertCircle,
+  BarChart3,
+  Briefcase,
+  Building2,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Users,
+  XCircle,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
-import { Card, CardHeader, CardTitle, CardContent } from "@poly/ui/card";
-import { Badge } from "@poly/ui/badge";
-import { BarChart3, Users, Building2, Briefcase, CheckCircle, XCircle, Clock, AlertCircle, Calendar } from "lucide-react";
 
 type UsageData = {
   users: number;
@@ -40,13 +51,33 @@ export function AnalyticsPage() {
     { label: "Users", value: usage?.users ?? "-", icon: Users, color: "text-blue-400" },
     { label: "Teams", value: usage?.teams ?? "-", icon: Building2, color: "text-purple-400" },
     { label: "Total Jobs", value: usage?.jobs ?? "-", icon: Briefcase, color: "text-amber-400" },
-    { label: "Successful Jobs", value: usage?.successful_jobs ?? "-", icon: CheckCircle, color: "text-green-400" },
+    {
+      label: "Successful Jobs",
+      value: usage?.successful_jobs ?? "-",
+      icon: CheckCircle,
+      color: "text-green-400",
+    },
   ];
 
   const errorMetrics = [
-    { label: "Total Errors", value: errors?.total_errors ?? "-", icon: AlertCircle, color: "text-red-400" },
-    { label: "Failed Jobs", value: errors?.failed_jobs ?? "-", icon: XCircle, color: "text-orange-400" },
-    { label: "Canceled Jobs", value: errors?.canceled_jobs ?? "-", icon: Clock, color: "text-slate-400" },
+    {
+      label: "Total Errors",
+      value: errors?.total_errors ?? "-",
+      icon: AlertCircle,
+      color: "text-red-400",
+    },
+    {
+      label: "Failed Jobs",
+      value: errors?.failed_jobs ?? "-",
+      icon: XCircle,
+      color: "text-orange-400",
+    },
+    {
+      label: "Canceled Jobs",
+      value: errors?.canceled_jobs ?? "-",
+      icon: Clock,
+      color: "text-slate-400",
+    },
   ];
 
   return (
@@ -58,17 +89,18 @@ export function AnalyticsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as TimeRange)}
-            className="bg-card border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            {timeRanges.map((range) => (
-              <option key={range.value} value={range.value}>
-                {range.label}
-              </option>
-            ))}
-          </select>
+          <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
+            <SelectTrigger className="w-[130px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {timeRanges.map((range) => (
+                <SelectItem key={range.value} value={range.value}>
+                  {range.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

@@ -1,17 +1,17 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button, ConfirmDialog } from "@poly/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
-import { Button } from "@poly/ui/button";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, RefreshCw } from "lucide-react";
-
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../../lib/api";
 import { PendingJobCard } from "./components/cards/PendingJobCard";
 import { JobListSkeleton } from "./components/JobListSkeleton";
-import { api } from "../../../lib/api";
 
 export function PendingJobsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
 
   const {
     data: jobsData,
@@ -36,8 +36,13 @@ export function PendingJobsPage() {
   };
 
   const handleCancelJob = (jobId: string) => {
-    if (window.confirm("Are you sure you want to cancel this job?")) {
-      cancelJobMutation.mutate(jobId);
+    setJobToDelete(jobId);
+  };
+
+  const confirmCancel = () => {
+    if (jobToDelete) {
+      cancelJobMutation.mutate(jobToDelete);
+      setJobToDelete(null);
     }
   };
 
@@ -70,14 +75,10 @@ export function PendingJobsPage() {
                 </p>
               </div>
             </div>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => refetch()}
-              >
-                <RefreshCw className="w-4 h-4" />
-                Retry
-              </Button>
+            <Button variant="outline" className="flex items-center gap-2" onClick={() => refetch()}>
+              <RefreshCw className="w-4 h-4" />
+              Retry
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -105,9 +106,7 @@ export function PendingJobsPage() {
           {jobs.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">No pending jobs</p>
-              <Button onClick={() => navigate("/upload")}>
-                Upload Audio
-              </Button>
+              <Button onClick={() => navigate("/upload")}>Upload Audio</Button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -129,6 +128,15 @@ export function PendingJobsPage() {
           )}
         </CardContent>
       </Card>
+      <ConfirmDialog
+        open={!!jobToDelete}
+        onOpenChange={(open) => !open && setJobToDelete(null)}
+        title="Cancel Job"
+        description="Are you sure you want to cancel this job? This action cannot be undone."
+        onConfirm={confirmCancel}
+        confirmText="Cancel Job"
+        variant="destructive"
+      />
     </div>
   );
 }

@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 
 from poly_core.constants import I18nKeys
 from poly_core.schemas.billing import (
-    CheckoutSessionResponse,
     CancelSubscriptionRequest,
+    CheckoutSessionResponse,
     CreditPurchaseResponse,
     CreditsResponse,
     DowngradeSubscriptionRequest,
@@ -25,8 +25,9 @@ from poly_core.schemas.billing import (
 )
 from poly_core.services.billing import BillingService
 from poly_db.database import get_db_session
-from ..config import get_settings
 from src.dependencies import get_current_team_id
+
+from ..config import get_settings
 
 router = APIRouter(prefix="/v1/billing", tags=["billing"])
 

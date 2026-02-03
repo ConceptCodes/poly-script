@@ -1,6 +1,6 @@
-import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@poly/ui";
 import { XCircle } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 
 export function CheckoutCancelPage() {
   const { type } = useParams<{ type: string }>();
@@ -8,21 +8,20 @@ export function CheckoutCancelPage() {
 
   const getMessage = () => {
     if (type === "subscription") {
-      return ({
+      return {
         title: "Subscription Not Started",
-        description:
-          "The subscription upgrade was canceled. You can try again anytime.",
-      });
+        description: "The subscription upgrade was canceled. You can try again anytime.",
+      };
     } else if (type === "credits") {
-      return ({
+      return {
         title: "Credits Purchase Canceled",
         description: "The credit purchase was canceled. You can try again anytime.",
-      });
+      };
     }
-    return ({
+    return {
       title: "Payment Canceled",
       description: "The payment was canceled. You can try again anytime.",
-    });
+    };
   };
 
   const { title, description } = getMessage();

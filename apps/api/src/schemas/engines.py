@@ -1,11 +1,10 @@
-from typing import Optional, List
 from pydantic import BaseModel
 
 
 class EngineCapabilitiesSchema(BaseModel):
     supports_timestamps: bool
     supports_diarization: bool
-    supported_languages: Optional[List[str]] = None
+    supported_languages: list[str] | None = None
 
 
 class EngineInfo(BaseModel):
@@ -14,5 +13,5 @@ class EngineInfo(BaseModel):
 
 
 class EnginesResponse(BaseModel):
-    engines: List[EngineInfo]
-    default: Optional[str] = None
+    engines: list[EngineInfo]
+    default: str | None = None

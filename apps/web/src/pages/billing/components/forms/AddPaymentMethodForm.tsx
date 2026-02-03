@@ -1,8 +1,7 @@
-import { useForm } from "@tanstack/react-form";
 import { Button, Input, Label } from "@poly/ui";
-import { useState } from "react";
-import { addPaymentMethodSchema } from "../../schemas";
+import { useForm } from "@tanstack/react-form";
 import { useAddPaymentMethod } from "../../../../hooks/useBilling";
+import { addPaymentMethodSchema } from "../../schemas";
 
 export function AddPaymentMethodForm() {
   const addPaymentMethod = useAddPaymentMethod();
@@ -36,7 +35,8 @@ export function AddPaymentMethodForm() {
             return result.success ? undefined : result.error.issues[0].message;
           },
         }}
-        children={(field) => (
+      >
+        {(field) => (
           <div className="space-y-2">
             <Label htmlFor={field.name}>Cardholder Name</Label>
             <Input
@@ -51,7 +51,7 @@ export function AddPaymentMethodForm() {
             ) : null}
           </div>
         )}
-      />
+      </form.Field>
       <Button type="submit" disabled={addPaymentMethod.isPending} className="w-full">
         {addPaymentMethod.isPending ? "Redirecting..." : "Add Payment Method"}
       </Button>

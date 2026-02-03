@@ -1,31 +1,23 @@
+import { Button } from "@poly/ui/button";
+import { Card, CardContent } from "@poly/ui/card";
+import { Checkbox } from "@poly/ui/checkbox";
+import { Input } from "@poly/ui/input";
+import { useToast } from "@poly/ui/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { Filter, Grid, List as ListIcon, Loader2, Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Button } from "@poly/ui/button";
-import { Input } from "@poly/ui/input";
-import { Card, CardContent } from "@poly/ui/card";
-import { Search, Filter, Grid, List as ListIcon, Loader2 } from "lucide-react";
 
 import { api } from "../../lib/api";
 import { TranscriptCard } from "./components/cards/TranscriptCard";
-import { AudioPreview } from "./components/cards/AudioPreview";
 import { LanguageFilter } from "./components/filters/LanguageFilter";
 import { SortFilter } from "./components/filters/SortFilter";
 import { BulkExportModal } from "./components/modals/BulkExportModal";
 import { DeleteConfirmModal } from "./components/modals/DeleteConfirmModal";
 
-interface TranscriptListItem {
-  id: string;
-  job_id: string;
-  job_filename: string | null;
-  text_preview: string;
-  language: string;
-  created_at: string;
-  updated_at: string | null;
-}
-
 export function LibraryPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [language, setLanguage] = useState<string | undefined>();
   const [sort, setSort] = useState("created_at:desc");
@@ -60,8 +52,28 @@ export function LibraryPage() {
   const toggleSelectAll = () => {
     if (data?.transcripts && selectedIds.size === data.transcripts.length) {
       setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(data!.transcripts.map((t) => t.id)));
+    } else if (data?.transcripts) {
+      setSelectedIds(new Set(data.transcripts.map((t) => t.id)));
+    }
+  };
+
+  const handleExport = async (transcriptId: string, format: "txt" | "json" | "srt" | "vtt") => {
+    try {
+      const blob = await api.exportTranscript(transcriptId, format);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `transcript-${transcriptId}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
 
@@ -78,20 +90,12 @@ export function LibraryPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Transcript Library</h1>
-          <p className="text-muted-foreground">
-            Browse and manage all your transcripts
-          </p>
+          <p className="text-muted-foreground">Browse and manage all your transcripts</p>
         </div>
         {selectedIds.size > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {selectedIds.size} selected
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowBulkExport(true)}
-            >
+            <span className="text-sm text-muted-foreground">{selectedIds.size} selected</span>
+            <Button variant="outline" size="sm" onClick={() => setShowBulkExport(true)}>
               Export Selected
             </Button>
           </div>
@@ -110,30 +114,31 @@ export function LibraryPage() {
           />
         </div>
 
-        <LanguageFilter
-          value={language}
-          onChange={setLanguage}
-        />
+        <LanguageFilter value={language} onChange={setLanguage} />
 
         <SortFilter value={sort} onChange={setSort} />
 
         <div className="flex items-center gap-1 border rounded-lg p-1">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setViewMode("grid")}
-            className={`p-2 rounded ${
-              viewMode === "grid" ? "bg-muted" : "hover:bg-muted/50"
-            }`}
+            className={viewMode === "grid" ? "bg-muted" : ""}
+            aria-label="Grid view"
           >
             <Grid className="w-4 h-4" />
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setViewMode("list")}
-            className={`p-2 rounded ${
-              viewMode === "list" ? "bg-muted" : "hover:bg-muted/50"
-            }`}
+            className={viewMode === "list" ? "bg-muted" : ""}
+            aria-label="List view"
           >
             <ListIcon className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -153,9 +158,7 @@ export function LibraryPage() {
                 : "Upload an audio file to get started"}
             </p>
             {!search && !language && (
-              <Button onClick={() => navigate("/upload")}>
-                Upload Audio
-              </Button>
+              <Button onClick={() => navigate("/upload")}>Upload Audio</Button>
             )}
           </CardContent>
         </Card>
@@ -163,18 +166,14 @@ export function LibraryPage() {
         <>
           {/* Select All */}
           <div className="flex items-center gap-2 mb-4">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={
-                data?.transcripts.length !== 0 &&
-                selectedIds.size === data?.transcripts.length
+                data?.transcripts.length !== 0 && selectedIds.size === data?.transcripts.length
               }
-              onChange={toggleSelectAll}
-              className="rounded border-gray-300"
+              onCheckedChange={toggleSelectAll}
+              aria-label="Select all transcripts on this page"
             />
-            <span className="text-sm text-muted-foreground">
-              Select all ({data?.total} total)
-            </span>
+            <span className="text-sm text-muted-foreground">Select all ({data?.total} total)</span>
           </div>
 
           {/* Grid/List View */}
@@ -185,20 +184,18 @@ export function LibraryPage() {
                 : "space-y-4"
             }
           >
-            {data?.transcripts.map((transcript) => (
-              <TranscriptCard
-                key={transcript.id}
-                transcript={transcript}
-                viewMode={viewMode}
-                isSelected={selectedIds.has(transcript.id)}
-                onSelect={() => toggleSelect(transcript.id)}
-                onView={() => navigate(`/transcripts/${transcript.id}`)}
-                onExport={(format) =>
-                  api.exportTranscript(transcript.id, format)
-                }
-                onDelete={() => setDeleteId(transcript.id)}
-              />
-            ))}
+              {data?.transcripts.map((transcript) => (
+                <TranscriptCard
+                  key={transcript.id}
+                  transcript={transcript}
+                  viewMode={viewMode}
+                  isSelected={selectedIds.has(transcript.id)}
+                  onSelect={() => toggleSelect(transcript.id)}
+                  onView={() => navigate(`/transcripts/${transcript.id}`)}
+                  onExport={(format) => handleExport(transcript.id, format)}
+                  onDelete={() => setDeleteId(transcript.id)}
+                />
+              ))}
           </div>
 
           {/* Pagination */}

@@ -1,24 +1,18 @@
+import { Card, CardContent } from "@poly/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@poly/ui/tabs";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { z } from "zod";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@poly/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from "@poly/ui/card";
-import { Button } from "@poly/ui/button";
-import { api } from "../../lib/api";
-import { useUsage, usePricing } from "../../hooks/useBilling";
+import type { z } from "zod";
+import { usePricing, useUsage } from "../../hooks/useBilling";
 import { useTeamSettings } from "../../hooks/useTeamSettings";
-import { UploadDropzone } from "./components/UploadDropzone";
-import { UploadForm } from "./components/forms/UploadForm";
+import { api } from "../../lib/api";
+import { AdvancedOptions } from "./components/AdvancedOptions";
 import { PlanLimitCard } from "./components/cards/PlanLimitCard";
 import { TeamLimitCard } from "./components/cards/TeamLimitCard";
-import { uploadOptionsSchema } from "./schemas";
+import { UploadDropzone } from "./components/UploadDropzone";
+import { UploadHero } from "./components/UploadHero";
+import { UrlInput } from "./components/UrlInput";
+import type { uploadOptionsSchema } from "./schemas";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -28,9 +22,7 @@ const LANGUAGES = [
   { code: "jp", label: "Japanese" },
 ];
 
-// URL validation regex patterns
-const YOUTUBE_REGEX =
-  /^(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+)$/;
+const YOUTUBE_REGEX = /^(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+)$/;
 const S3_REGEX = /^https?:\/\/[^\s]+\.s3[\w-]*\.amazonaws\.com\/[^\s]+$/;
 const DIRECT_URL_REGEX = /^https?:\/\/[^\s]+$/;
 
@@ -44,8 +36,7 @@ export default function UploadPage() {
 
   const { data: usage, isLoading: usageLoading } = useUsage();
   const { data: pricing, isLoading: pricingLoading } = usePricing();
-  const { data: teamSettings, isLoading: teamSettingsLoading } =
-    useTeamSettings();
+  const { data: teamSettings, isLoading: teamSettingsLoading } = useTeamSettings();
 
   const loading = usageLoading || pricingLoading || teamSettingsLoading;
 
@@ -55,7 +46,6 @@ export default function UploadPage() {
       usage.extra_credits <= 0
     : false;
 
-  // Team member limit check
   const memberLimit = (() => {
     if (!usage || !pricing) return "inf";
     if (Array.isArray(pricing.plans)) {
@@ -66,8 +56,7 @@ export default function UploadPage() {
   })();
 
   const memberCount = teamSettings?.members_count ?? 0;
-  const isMemberLimitReached =
-    memberLimit !== "inf" && memberCount >= memberLimit;
+  const isMemberLimitReached = memberLimit !== "inf" && memberCount >= memberLimit;
 
   const languageLimit = (() => {
     if (!usage || !pricing) return "inf";
@@ -80,9 +69,7 @@ export default function UploadPage() {
 
   const isLanguageRestricted = (code: string) => {
     if (languageLimit === "inf") return false;
-    return (
-      LANGUAGES.findIndex((l) => l.code === code) >= (languageLimit as number)
-    );
+    return LANGUAGES.findIndex((l) => l.code === code) >= (languageLimit as number);
   };
 
   const validateUrl = (url: string): string | null => {
@@ -109,8 +96,7 @@ export default function UploadPage() {
     setSelectedFile(file);
   };
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleUrlChange = (value: string) => {
     setUrlInput(value);
     const error = validateUrl(value);
     setUrlError(error || "");
@@ -138,7 +124,6 @@ export default function UploadPage() {
         const data = await api.createJob(formData);
         navigate(`/jobs/${data.job_id}/live`);
       } else {
-        // URL submission
         const urlValidationError = validateUrl(urlInput);
         if (urlValidationError) {
           setUrlError(urlValidationError);
@@ -155,9 +140,9 @@ export default function UploadPage() {
         });
         navigate(`/jobs/${data.job_id}/live`);
       }
-    } catch (error: any) {
-      if (error.status === 402) {
-        // Handle plan limit reached
+    } catch (error: unknown) {
+      const apiError = error as { status?: number };
+      if (apiError.status === 402) {
         navigate("/billing?reason=limit_reached");
       } else {
         console.error("Upload error:", error);
@@ -168,27 +153,14 @@ export default function UploadPage() {
   };
 
   if (loading) {
-    return (
-      <div className="p-6 text-center text-muted-foreground">Loading...</div>
-    );
+    return <div className="p-6 text-center text-muted-foreground">Loading...</div>;
   }
 
   const uploadDisabled = isLimitReached || isMemberLimitReached || isSubmitting;
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Upload Audio</h1>
-        {usage && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/billing")}
-          >
-            Billing
-          </Button>
-        )}
-      </div>
+    <div className="container mx-auto p-6 max-w-2xl space-y-8">
+      <UploadHero uploadMode={uploadMode} />
 
       {isLimitReached && usage && (
         <PlanLimitCard
@@ -210,66 +182,45 @@ export default function UploadPage() {
         />
       )}
 
-      <Card className={uploadDisabled ? "opacity-50 pointer-events-none" : ""}>
-        <CardHeader>
-          <CardTitle>Transcribe Audio</CardTitle>
-          <CardDescription>
-            Upload a file or provide a URL to transcribe.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <Tabs
-              value={uploadMode}
-              onValueChange={(v) => setUploadMode(v as "file" | "url")}
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="file">Upload File</TabsTrigger>
-                <TabsTrigger value="url">From URL</TabsTrigger>
-              </TabsList>
+      <Card
+        className={`precision-card smooth-transition ${
+          uploadDisabled ? "opacity-50 pointer-events-none" : ""
+        }`}
+      >
+        <CardContent className="p-6 space-y-6">
+          <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "file" | "url")}>
+            <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/30 p-1 rounded-xl">
+              <TabsTrigger
+                value="file"
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg smooth-transition"
+              >
+                Upload File
+              </TabsTrigger>
+              <TabsTrigger
+                value="url"
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg smooth-transition"
+              >
+                From URL
+              </TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="file">
-                <UploadDropzone
-                  onFileSelected={handleFileSelected}
-                  disabled={uploadDisabled}
-                />
-              </TabsContent>
+            <TabsContent value="file" className="mt-6 animate-fade-in-up">
+              <UploadDropzone onFileSelected={handleFileSelected} disabled={uploadDisabled} />
+            </TabsContent>
 
-              <TabsContent value="url">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="url-input" className="text-sm font-medium">
-                      Audio URL
-                    </label>
-                    <input
-                      id="url-input"
-                      type="url"
-                      placeholder="https://youtube.com/watch?v=... or direct audio URL"
-                      value={urlInput}
-                      onChange={handleUrlChange}
-                      disabled={uploadDisabled}
-                      className={`w-full px-3 py-2 border rounded-md ${
-                        urlError
-                          ? "border-destructive focus:ring-destructive"
-                          : "focus:ring-primary"
-                      }`}
-                    />
-                    {urlError && (
-                      <p className="text-sm text-destructive">{urlError}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Supported: YouTube URLs, S3 URLs, or direct HTTPS file
-                      URLs
-                    </p>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+            <TabsContent value="url" className="mt-6 animate-fade-in-up">
+              <UrlInput
+                value={urlInput}
+                onChange={handleUrlChange}
+                error={urlError}
+                disabled={uploadDisabled}
+              />
+            </TabsContent>
+          </Tabs>
 
-            <UploadForm
-              languageLimit={
-                typeof languageLimit === "number" ? languageLimit : undefined
-              }
+          <div className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+            <AdvancedOptions
+              languageLimit={typeof languageLimit === "number" ? languageLimit : undefined}
               isLanguageRestricted={isLanguageRestricted}
               isSubmitting={isSubmitting}
               onSubmit={handleSubmit}

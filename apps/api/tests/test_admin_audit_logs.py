@@ -1,9 +1,7 @@
-
 """Test admin audit logs and impersonation endpoints."""
+
 import pytest
-import uuid
-from unittest.mock import Mock
-from datetime import datetime, timezone
+
 
 class TestAdminAuditLogsEndpoints:
     """Test admin audit logs endpoints."""

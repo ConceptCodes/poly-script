@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Optional
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -20,7 +20,7 @@ class AdminLoginResponse(BaseModel):
 
 
 class AdminActionRequest(BaseModel):
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 class AdminCounts(BaseModel):
@@ -41,31 +41,31 @@ class AdminHealthResponse(BaseModel):
 
 
 class AdminUserDetailResponse(AdminUserListItem):
-    suspended_at: Optional[datetime] = None
-    suspended_by: Optional[uuid.UUID] = None
-    suspension_reason: Optional[str] = None
-    created_at: Optional[datetime] = None
+    suspended_at: datetime | None = None
+    suspended_by: uuid.UUID | None = None
+    suspension_reason: str | None = None
+    created_at: datetime | None = None
 
 
 class AdminTeamDetailResponse(AdminTeamListItem):
     is_suspended: bool
-    suspended_at: Optional[datetime] = None
-    suspended_by: Optional[uuid.UUID] = None
-    created_at: Optional[datetime] = None
+    suspended_at: datetime | None = None
+    suspended_by: uuid.UUID | None = None
+    created_at: datetime | None = None
 
 
 class AdminJobDetailResponse(AdminJobListItem):
-    progress_stage: Optional[str] = None
+    progress_stage: str | None = None
     attempts: int = 0
-    error_message: Optional[str] = None
-    created_at: Optional[datetime] = None
-    finished_at: Optional[datetime] = None
+    error_message: str | None = None
+    created_at: datetime | None = None
+    finished_at: datetime | None = None
 
 
 class AdminUserListItem(BaseModel):
     id: uuid.UUID
     email: EmailStr
-    full_name: Optional[str] = None
+    full_name: str | None = None
     is_active: bool
     is_verified: bool
     is_suspended: bool = False
@@ -75,31 +75,31 @@ class AdminTeamListItem(BaseModel):
     id: uuid.UUID
     name: str
     host_language: str
-    plan: Optional[str] = None
+    plan: str | None = None
     monthly_upload_count: int
     is_suspended: bool = False
 
 
 class AdminJobListItem(BaseModel):
     id: uuid.UUID
-    team_id: Optional[uuid.UUID] = None
+    team_id: uuid.UUID | None = None
     status: str
     progress: int
-    engine: Optional[str] = None
+    engine: str | None = None
 
 
 class AdminUsersResponse(BaseModel):
-    items: List[AdminUserListItem]
+    items: list[AdminUserListItem]
     total: int
 
 
 class AdminTeamsResponse(BaseModel):
-    items: List[AdminTeamListItem]
+    items: list[AdminTeamListItem]
     total: int
 
 
 class AdminJobsResponse(BaseModel):
-    items: List[AdminJobListItem]
+    items: list[AdminJobListItem]
     total: int
 
 
@@ -117,8 +117,8 @@ class AdminErrorAnalyticsResponse(BaseModel):
 
 
 class AdminSettingsResponse(BaseModel):
-    administrators: List[Dict[str, Any]]
-    system: Dict[str, Any]
+    administrators: list[dict[str, Any]]
+    system: dict[str, Any]
 
 
 class PaginationParams(BaseModel):
@@ -127,11 +127,11 @@ class PaginationParams(BaseModel):
 
 
 class AuditLogFilters(BaseModel):
-    admin_user_id: Optional[uuid.UUID] = None
-    action: Optional[str] = None
-    target_type: Optional[str] = None
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
+    admin_user_id: uuid.UUID | None = None
+    action: str | None = None
+    target_type: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
 
 
 class ImpersonationRequest(BaseModel):
@@ -145,28 +145,28 @@ class ImpersonationResponse(BaseModel):
 
 class AdminJobVolumeResponse(BaseModel):
     total: int
-    by_status: Dict[str, int]
-    timeframe: Dict[str, str]
+    by_status: dict[str, int]
+    timeframe: dict[str, str]
 
 
 class AdminSettingsUpdate(BaseModel):
-    plan_limits: Optional[Dict[str, Any]] = None
-    retention_windows: Optional[Dict[str, int]] = None
-    feature_flags: Optional[Dict[str, bool]] = None
+    plan_limits: dict[str, Any] | None = None
+    retention_windows: dict[str, int] | None = None
+    feature_flags: dict[str, bool] | None = None
 
 
 class AuditLogListItem(BaseModel):
     id: uuid.UUID
-    admin_user_id: Optional[uuid.UUID] = None
+    admin_user_id: uuid.UUID | None = None
     target_type: str
     target_id: str
     action: str
-    previous_state: Optional[Dict[str, Any]] = None
-    new_state: Optional[Dict[str, Any]] = None
-    reason: Optional[str] = None
+    previous_state: dict[str, Any] | None = None
+    new_state: dict[str, Any] | None = None
+    reason: str | None = None
     created_at: datetime
 
 
 class AuditLogListResponse(BaseModel):
-    logs: List[AuditLogListItem]
+    logs: list[AuditLogListItem]
     total: int

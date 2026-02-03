@@ -1,17 +1,17 @@
-import { expect, afterEach, vi } from "vitest";
-import { cleanup } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
+import { cleanup } from "@testing-library/react";
+import { afterEach, expect, vi } from "vitest";
 
 // Mock localStorage
-const localStorageMock = {
+const localStorageMock: Storage = {
   getItem: vi.fn(() => null),
   setItem: vi.fn(),
   removeItem: vi.fn(),
   clear: vi.fn(),
   length: 0,
-  key: vi.fn((index: number) => ""),
+  key: vi.fn((_index: number) => null),
 };
-global.localStorage = localStorageMock as any;
+globalThis.localStorage = localStorageMock;
 
 // Cleanup after each test
 afterEach(() => {

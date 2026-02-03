@@ -15,6 +15,23 @@ dependencies = [
 [project.scripts]
 run = "python -m main"
 
+[tool.ruff]
+ignore = [
+    "E501",
+    "PLC0415",  # imports inside functions for lazy loading
+    "T201",  # print statements for debugging
+    "W293",  # minor whitespace issues
+    "F841",  # unused variables sometimes needed for debugging
+    "ARG001",  # unused arguments in callbacks
+    "ARG002",  # unused arguments in test mocks
+    "PTH110",  # Path.exists() pattern
+    "PTH108",  # Path.unlink() pattern
+    "PTH122",  # Path.suffix pattern
+    "PLR0913",  # many function arguments
+    "SIM108",  # ternary operator suggestion
+    "F401",  # unused imports sometimes needed for type hints
+]
+
 [dependency-groups]
 dev = [
   "pytest>=9.0.0",

@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../lib/api";
 import type {
-  UsageResponse,
-  SubscriptionResponse,
   CheckoutResponse,
   PortalResponse,
   PricingData,
+  SubscriptionResponse,
+  UsageResponse,
 } from "../types/api";
 
 // Query Keys
@@ -44,21 +44,21 @@ export function usePricing() {
 export function useInvoices() {
   return useQuery({
     queryKey: billingKeys.invoices(),
-    queryFn: () => apiFetch<any[]>("/billing/invoices"),
+    queryFn: () => apiFetch<unknown[]>("/billing/invoices"),
   });
 }
 
 export function usePaymentMethods() {
   return useQuery({
     queryKey: billingKeys.paymentMethods(),
-    queryFn: () => apiFetch<any[]>("/billing/payment-methods"),
+    queryFn: () => apiFetch<unknown[]>("/billing/payment-methods"),
   });
 }
 
 export function useUsageHistory() {
   return useQuery({
     queryKey: billingKeys.usageHistory(),
-    queryFn: () => apiFetch<any>("/billing/usage-history"),
+    queryFn: () => apiFetch<unknown>("/billing/usage-history"),
   });
 }
 
@@ -68,7 +68,7 @@ export function useCreatePortalSession() {
     mutationFn: (returnUrl?: string) =>
       apiFetch<PortalResponse>("/billing/portal", {
         method: "POST",
-        body: { return_url: returnUrl || window.location.origin + "/billing" },
+        body: { return_url: returnUrl || `${window.location.origin}/billing` },
       }),
     onSuccess: (data) => {
       window.location.href = data.url;
@@ -77,16 +77,14 @@ export function useCreatePortalSession() {
 }
 
 export function useUpgradeSubscription() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (params: { plan: string }) =>
       apiFetch<CheckoutResponse>("/billing/subscription/upgrade", {
         method: "POST",
         body: {
           plan: params.plan,
-          success_url: window.location.origin + "/checkout/success?type=subscription",
-          cancel_url: window.location.origin + "/checkout/cancel?type=subscription",
+          success_url: `${window.location.origin}/checkout/success?type=subscription`,
+          cancel_url: `${window.location.origin}/checkout/cancel?type=subscription`,
         },
       }),
     onSuccess: (data) => {
@@ -97,7 +95,7 @@ export function useUpgradeSubscription() {
 
 export function useDowngradeSubscription() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (plan: string) =>
       apiFetch("/billing/subscription/downgrade", {
@@ -113,7 +111,7 @@ export function useDowngradeSubscription() {
 
 export function useCancelSubscription() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: () =>
       apiFetch("/billing/subscription/cancel", {
@@ -128,7 +126,7 @@ export function useCancelSubscription() {
 
 export function useReactivateSubscription() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: () =>
       apiFetch("/billing/subscription/reactivate", {
@@ -147,8 +145,8 @@ export function usePurchaseCredits() {
         method: "POST",
         body: {
           amount: params.amount,
-          success_url: window.location.origin + "/checkout/success?type=credits",
-          cancel_url: window.location.origin + "/checkout/cancel?type=credits",
+          success_url: `${window.location.origin}/checkout/success?type=credits`,
+          cancel_url: `${window.location.origin}/checkout/cancel?type=credits`,
         },
       }),
     onSuccess: (data) => {
@@ -172,7 +170,7 @@ export function useAddPaymentMethod() {
 
 export function useDeletePaymentMethod() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (paymentMethodId: string) =>
       apiFetch(`/billing/payment-methods/${paymentMethodId}`, {

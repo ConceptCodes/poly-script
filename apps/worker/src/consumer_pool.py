@@ -189,15 +189,15 @@ class ConcurrentConsumer:
                 progress=0,
                 progress_stage="queued",
             )
-            session.commit()\n        else:
+            session.commit()
+        else:
             # Max retries reached - already marked as FAILED by processor
             logger.error(
                 f"Job {job_id} failed after {job.attempts} attempts"
             )
     
     def _mark_job_failed(self, job_id: str, error_message: str) -> None:
-        """Mark a job as failed (emergency fallback).
-        """
+        """Mark a job as failed (emergency fallback)."""
         try:
             from poly_db.database import get_db_session
             from poly_db.repositories import TranscriptionJobRepository

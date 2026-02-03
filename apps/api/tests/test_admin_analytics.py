@@ -1,7 +1,8 @@
-
 """Test admin analytics endpoints."""
+
 import pytest
-from datetime import datetime, timedelta
+
+
 class TestAdminAnalyticsEndpoints:
     """Test admin analytics endpoints."""
 
@@ -16,7 +17,7 @@ class TestAdminAnalyticsEndpoints:
     def test_analytics_with_timeframe(self):
         """Analytics endpoints support timeframe parameters."""
         pytest.skip("To be implemented - start/end dates")
-    
+
     def test_analytics_with_granularity(self):
         """Analytics endpoints support granularity (day/week/month)."""
         pytest.skip("To be implemented")

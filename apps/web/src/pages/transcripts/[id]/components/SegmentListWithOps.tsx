@@ -1,26 +1,9 @@
+import { Button, Checkbox, Input, Textarea } from "@poly/ui";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@poly/ui/dialog";
+import { useMutation } from "@tanstack/react-query";
+import { Clock, Edit2, GitMerge, Save, Scissors, X } from "lucide-react";
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@poly/ui/button";
-import Input from "@poly/ui/input";
-import Textarea from "@poly/uitextarea";
-import {
-  Edit2,
-  Save,
-  X,
-  Clock,
-  Scissors,
-  GitMerge,
-  ChevronRight,
-  ChevronLeft,
-} from "lucide-react";
 import { api } from "../../../../lib/api";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@poly/ui/dialog";
 
 interface Segment {
   id: number;
@@ -54,8 +37,6 @@ export function SegmentListWithOps({
   const [splitTime, setSplitTime] = useState(0);
   const [selectedForMerge, setSelectedForMerge] = useState<Set<number>>(new Set());
 
-  const queryClient = useQueryClient();
-
   const updateMutation = useMutation({
     mutationFn: ({ segmentId, text }: { segmentId: number; text: string }) =>
       api.updateTranscriptSegment(transcriptId, segmentId, text),
@@ -75,8 +56,7 @@ export function SegmentListWithOps({
   });
 
   const mergeMutation = useMutation({
-    mutationFn: (segmentIds: number[]) =>
-      api.mergeSegments(transcriptId, segmentIds),
+    mutationFn: (segmentIds: number[]) => api.mergeSegments(transcriptId, segmentIds),
     onSuccess: () => {
       setSelectedForMerge(new Set());
       onUpdate();
@@ -92,8 +72,7 @@ export function SegmentListWithOps({
       segmentId: number;
       startMs: number;
       endMs: number;
-    }) =>
-      api.updateSegmentTimestamps(transcriptId, segmentId, startMs, endMs),
+    }) => api.updateSegmentTimestamps(transcriptId, segmentId, startMs, endMs),
     onSuccess: () => {
       setEditingTimestamps(null);
       onUpdate();
@@ -195,11 +174,7 @@ export function SegmentListWithOps({
   };
 
   if (segments.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        No segments available
-      </div>
-    );
+    return <div className="text-center py-8 text-muted-foreground">No segments available</div>;
   }
 
   return (
@@ -226,26 +201,23 @@ export function SegmentListWithOps({
       )}
 
       <div className="space-y-4">
-        {segments.map((segment, idx) => (
+        {segments.map((segment, _idx) => (
           <div
             key={segment.id}
             className={`p-4 border rounded-lg transition-colors ${
               activeSegmentId === segment.id
                 ? "bg-primary/10 border-primary"
                 : selectedForMerge.has(segment.id)
-                ? "bg-primary/5 border-primary"
-                : "hover:bg-muted/50"
+                  ? "bg-primary/5 border-primary"
+                  : "hover:bg-muted/50"
             }`}
-            onClick={() => onSegmentClick?.(segment)}
           >
             <div className="flex items-start justify-between gap-4 mb-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={selectedForMerge.has(segment.id)}
-                  onChange={() => toggleMergeSelection(segment.id)}
+                  onCheckedChange={() => toggleMergeSelection(segment.id)}
                   onClick={(e) => e.stopPropagation()}
-                  className="rounded border-gray-300"
                 />
                 {editingTimestamps === segment.id ? (
                   <div className="flex items-center gap-2">
@@ -288,15 +260,17 @@ export function SegmentListWithOps({
                 ) : (
                   <>
                     <Clock className="w-4 h-4" />
-                    <span
-                      className="font-mono cursor-pointer hover:text-foreground"
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="font-mono h-auto p-0 text-inherit hover:text-foreground"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleTimestampEdit(segment);
                       }}
                     >
                       {formatTimestamp(segment.start_ms)} - {formatTimestamp(segment.end_ms)}
-                    </span>
+                    </Button>
                   </>
                 )}
                 {segment.speaker && (
@@ -368,7 +342,14 @@ export function SegmentListWithOps({
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <p className="text-sm">{segment.text}</p>
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-left w-full h-auto p-0 justify-start"
+                onClick={() => onSegmentClick?.(segment)}
+              >
+                <p className="text-sm">{segment.text}</p>
+              </Button>
             )}
           </div>
         ))}
@@ -382,15 +363,19 @@ export function SegmentListWithOps({
               <DialogTitle>Split Segment</DialogTitle>
             </DialogHeader>
             <div className="py-4">
-              <label className="block text-sm font-medium mb-2">
+              <label
+                htmlFor={`split-time-${splitDialog}`}
+                className="block text-sm font-medium mb-2"
+              >
                 Split at timestamp (ms): {splitTime}
               </label>
               <input
+                id={`split-time-${splitDialog}`}
                 type="range"
                 min={segments[splitDialog]?.start_ms || 0}
                 max={segments[splitDialog]?.end_ms || 0}
                 value={splitTime}
-                onChange={(e) => setSplitTime(parseInt(e.target.value))}
+                onChange={(e) => setSplitTime(parseInt(e.target.value, 10))}
                 className="w-full"
               />
               <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
@@ -399,21 +384,15 @@ export function SegmentListWithOps({
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setSplitDialog(null)}
-              >
+              <Button variant="outline" onClick={() => setSplitDialog(null)}>
                 Cancel
               </Button>
-              <Button
-                onClick={confirmSplit}
-                disabled={splitMutation.isPending}
-              >
+              <Button onClick={confirmSplit} disabled={splitMutation.isPending}>
                 {splitMutation.isPending ? "Splitting..." : "Split"}
               </Button>
             </DialogFooter>
           </DialogContent>
- </Dialog>
+        </Dialog>
       )}
     </>
   );

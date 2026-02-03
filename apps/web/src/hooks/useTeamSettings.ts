@@ -29,6 +29,6 @@ export function useTeamSettings() {
 export function useTeamMembers() {
   return useQuery({
     queryKey: teamSettingsKeys.members(),
-    queryFn: () => apiFetch<any[]>("/v1/settings/team/members"),
+    queryFn: () => apiFetch<unknown[]>("/v1/settings/team/members"),
   });
 }

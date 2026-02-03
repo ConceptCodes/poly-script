@@ -1,12 +1,5 @@
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@poly/ui";
 import { useTranslation } from "react-i18next";
-import { Button } from "@poly/ui";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@poly/ui";
 import { useNavigate } from "react-router-dom";
 
 export function SessionExpiredPage() {

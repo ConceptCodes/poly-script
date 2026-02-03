@@ -1,4 +1,5 @@
 import logging
+
 from fastapi import APIRouter, Depends
 
 from src.schemas.contact import ContactRequest, ContactResponse

@@ -19,7 +19,11 @@ const { Content } = await doc.render();
 
 <SiteLayout lang={lang} title={`${doc.data.title} — PolyScript Docs`}>
   <section class="container post-header">
-    <a class="muted" href={`/${lang}/docs`} style="display:inline-flex;align-items:center;gap:8px;margin-bottom:24px;">
+    <a
+      class="muted link"
+      href={`/${lang}/docs`}
+      style="display:inline-flex;align-items:center;gap:8px;margin-bottom:24px;"
+    >
       ← Back to docs
     </a>
     <h1 class="hero-title" style="margin-top:16px;">{doc.data.title}</h1>

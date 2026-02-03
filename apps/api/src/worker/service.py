@@ -1,11 +1,11 @@
 import logging
 import threading
-from typing import Optional
 
+from apps.worker.src.consumer import TranscriptionConsumer
+
+from poly_core.services.storage_service import get_storage_backend
 from poly_redis.client import get_redis_client
 from poly_redis.queue import TranscriptionQueue
-from poly_core.services.storage_service import get_storage_backend
-from apps.worker.src.consumer import TranscriptionConsumer
 from src.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class WorkerService:
     """Manages background worker for transcription jobs."""
 
     def __init__(self):
-        self._consumer: Optional[TranscriptionConsumer] = None
+        self._consumer: TranscriptionConsumer | None = None
         self._shutdown = threading.Event()
         self._settings = get_settings()
 
@@ -28,12 +28,8 @@ class WorkerService:
         logger.info("Starting transcription worker...")
 
         # Get configuration
-        max_retries = getattr(
-            self._settings, "QUEUE_MAX_RETRIES", 3
-        )
-        retry_backoff = getattr(
-            self._settings, "QUEUE_RETRY_BACKOFF", 2
-        )
+        max_retries = getattr(self._settings, "QUEUE_MAX_RETRIES", 3)
+        retry_backoff = getattr(self._settings, "QUEUE_RETRY_BACKOFF", 2)
 
         # Initialize queue
         redis_client = get_redis_client()

@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { CheckCircle2 } from "lucide-react";
 import { Button } from "@poly/ui";
+import { CheckCircle2 } from "lucide-react";
+import { type ComponentType, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useAppStore } from "../../lib/store";
 import { apiFetch } from "../../lib/api";
-import { LanguageStep } from "./LanguageStep";
-import { TeamNameStep } from "./TeamNameStep";
-import { InviteMembersStep } from "./InviteMembersStep";
-import { PlanSelectionStep } from "./PlanSelectionStep";
+import { useAppStore } from "../../lib/store";
 import { CompleteStep } from "./CompleteStep";
+import { InviteMembersStep } from "./InviteMembersStep";
+import { LanguageStep } from "./LanguageStep";
+import { PlanSelectionStep } from "./PlanSelectionStep";
+import { TeamNameStep } from "./TeamNameStep";
 
 type DataType = {
   language: string;
@@ -17,6 +17,9 @@ type DataType = {
   plan: string;
   members: string[];
 };
+type UpdateData = <K extends keyof DataType>(key: K, value: DataType[K]) => void;
+type StepProps = { data: DataType; updateData: UpdateData; onNext: () => void };
+type StepComponent = ComponentType<StepProps>;
 
 export function OnboardingPage() {
   const { t } = useTranslation();
@@ -34,11 +37,11 @@ export function OnboardingPage() {
   ];
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [data, setData] = useState<DataType>({ 
-    language: "", 
-    teamName: "", 
+  const [data, setData] = useState<DataType>({
+    language: "",
+    teamName: "",
     plan: "",
-    members: [] 
+    members: [],
   });
 
   const handleNext = () => {
@@ -73,17 +76,18 @@ export function OnboardingPage() {
     }
   };
 
-  const updateData = <K extends keyof DataType>(key: K, value: DataType[K]) => {
+  const updateData: UpdateData = (key, value) => {
     setData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const CurrentStepComponent: any = [
-    LanguageStep, 
-    TeamNameStep, 
+  const stepComponents: StepComponent[] = [
+    LanguageStep,
+    TeamNameStep,
     PlanSelectionStep,
-    InviteMembersStep, 
-    CompleteStep
-  ][currentStep];
+    InviteMembersStep,
+    CompleteStep,
+  ];
+  const CurrentStepComponent = stepComponents[currentStep] ?? CompleteStep;
 
   return (
     <div className="min-h-screen bg-background py-8">
@@ -120,7 +124,7 @@ export function OnboardingPage() {
           </Button>
         </div>
 
-        <CurrentStepComponent data={data} updateData={updateData as any} onNext={handleNext} />
+        <CurrentStepComponent data={data} updateData={updateData} onNext={handleNext} />
       </div>
     </div>
   );

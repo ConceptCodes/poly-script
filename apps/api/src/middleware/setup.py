@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import get_settings
+from src.middleware.rate_limit import RateLimitMiddleware, RedisRateLimiter
 from src.middleware.request_context import RequestContextMiddleware
-from src.middleware.rate_limit import RateLimiter, RateLimitMiddleware
 
 
 def setup_middleware(app: FastAPI) -> None:
@@ -12,8 +12,8 @@ def setup_middleware(app: FastAPI) -> None:
     # Request context (request_id, team_id)
     app.add_middleware(RequestContextMiddleware)
 
-    # Rate limiting
-    limiter = RateLimiter(settings.RATE_LIMIT_PER_MINUTE)
+    # Rate limiting (Redis-based with per-plan limits)
+    limiter = RedisRateLimiter()
     app.add_middleware(RateLimitMiddleware, limiter=limiter)
 
     # CORS Middleware

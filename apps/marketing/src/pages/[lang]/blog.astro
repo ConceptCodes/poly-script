@@ -7,6 +7,11 @@ import { getCollection } from "astro:content";
 export { getStaticPaths };
 
 const { lang } = Astro.params;
+const dateFormatter = new Intl.DateTimeFormat(lang, {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
 
 const allPosts = await getCollection("blog");
 const posts = allPosts
@@ -20,10 +25,10 @@ const posts = allPosts
     <p class="hero-subtitle">
       Notes from the PolyScript team on transcription, reliability, and product ops.
     </p>
-    <div class="grid cols-3" class="grid-container" style="margin-top:40px;">
+    <div class="grid cols-3 grid-container" style="margin-top:40px;">
       {posts.map((post) => (
-        <a class="card" href={`/${lang}/blog/${post.slug}`} style="display:block;">
-          <div class="tag">{post.data.pubDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+        <a class="card link" href={`/${lang}/blog/${post.slug}`} style="display:block;">
+          <div class="tag">{dateFormatter.format(post.data.pubDate)}</div>
           <h3 style="margin-top:12px;">{post.data.title}</h3>
           <p class="muted">{post.data.description}</p>
         </a>

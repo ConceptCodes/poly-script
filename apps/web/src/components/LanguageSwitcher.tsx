@@ -1,5 +1,5 @@
-import { useTranslation } from "react-i18next";
 import { LanguageSwitcher as SharedLanguageSwitcher } from "@poly/ui";
+import { useTranslation } from "react-i18next";
 
 const languages = [
   { code: "en", name: "English" },

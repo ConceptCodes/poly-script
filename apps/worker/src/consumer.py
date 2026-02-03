@@ -4,19 +4,20 @@ Transcription Consumer Thread
 Consumer thread that processes transcription jobs from Redis queue.
 Implements retry logic with exponential backoff and graceful shutdown.
 """
-import json
+
+import asyncio
 import logging
 import threading
 import time
-import asyncio
-from typing import Optional
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
-from poly_redis.queue import TranscriptionQueue
-from poly_db.models.transcription_jobs import JobStatus, TranscriptionJob
-from poly_db.repositories import TranscriptionJobRepository
 from poly_db.database import get_db_session
+from poly_db.models.transcription_jobs import JobStatus
+from poly_db.repositories import TranscriptionJobRepository
+from poly_redis.queue import TranscriptionQueue
+
 from .processor import JobProcessor
 from .progress import ProgressPublisher
 
@@ -30,7 +31,7 @@ class TranscriptionConsumer:
         self,
         queue: TranscriptionQueue,
         storage_backend,
-        max_retries: int =3,
+        max_retries: int = 3,
         retry_backoff: int = 2,
     ):
         """
@@ -46,9 +47,9 @@ class TranscriptionConsumer:
         self.max_retries = max_retries
         self.retry_backoff = retry_backoff
 
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self._shutdown = threading.Event()
-        self._current_job_id: Optional[str] = None
+        self._current_job_id: str | None = None
 
         self.progress_publisher = ProgressPublisher()
 
@@ -87,11 +88,11 @@ class TranscriptionConsumer:
     def _run(self) -> None:
         """Main consumer loop with dedicated event loop."""
         logger.info("Consumer loop started with dedicated event loop")
-        
+
         # Create and run dedicated event loop for this thread
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        
+
         try:
             # Run the consumer loop in the event loop
             loop.run_until_complete(self._run_with_event_loop())
@@ -99,13 +100,13 @@ class TranscriptionConsumer:
             # Clean up event loop
             loop.close()
             logger.info("Consumer event loop closed")
-        
+
         logger.info("Consumer loop exited")
-    
+
     async def _run_with_event_loop(self) -> None:
         """Async consumer loop running in dedicated event loop."""
         logger.info("Async consumer loop running")
-        
+
         while not self._shutdown.is_set():
             try:
                 # Run dequeue in thread pool to avoid blocking event loop
@@ -135,10 +136,7 @@ class TranscriptionConsumer:
 
         self._current_job_id = job_id
 
-        logger.info(
-            f"Processing job {job_id} "
-            f"(engine={engine}, language={requested_language})"
-        )
+        logger.info(f"Processing job {job_id} (engine={engine}, language={requested_language})")
 
         try:
             with get_db_session() as session:
@@ -167,9 +165,7 @@ class TranscriptionConsumer:
         finally:
             self._current_job_id = None
 
-    def _handle_job_failure(
-        self, session: Session, job_id: str, work_item: dict
-    ) -> None:
+    def _handle_job_failure(self, session: Session, job_id: str, work_item: dict) -> None:
         """
         Handle job failure with retry logic.
 
@@ -188,11 +184,9 @@ class TranscriptionConsumer:
         # Check if we should retry
         if job.attempts < self.max_retries:
             # Calculate backoff delay
-            delay = self.retry_backoff ** job.attempts
+            delay = self.retry_backoff**job.attempts
             logger.info(
-                f"Retrying job {job_id} "
-                f"(attempt {job.attempts + 1}/{self.max_retries}) "
-                f"in {delay}s"
+                f"Retrying job {job_id} (attempt {job.attempts + 1}/{self.max_retries}) in {delay}s"
             )
 
             # Re-enqueue with delay
@@ -209,9 +203,7 @@ class TranscriptionConsumer:
             session.commit()
         else:
             # Max retries reached - already marked as FAILED by processor
-            logger.error(
-                f"Job {job_id} failed after {job.attempts} attempts"
-            )
+            logger.error(f"Job {job_id} failed after {job.attempts} attempts")
 
     def _mark_job_failed_in_db(self, job_id: str, error_message: str) -> None:
         """
@@ -232,7 +224,7 @@ class TranscriptionConsumer:
                     progress=0,
                     progress_stage="failed",
                     error_message=error_message,
-                    finished_at=datetime.now(timezone.utc),
+                    finished_at=datetime.now(UTC),
                 )
                 session.commit()
         except Exception as e:
@@ -244,6 +236,6 @@ class TranscriptionConsumer:
         return self._thread is not None and self._thread.is_alive()
 
     @property
-    def current_job_id(self) -> Optional[str]:
+    def current_job_id(self) -> str | None:
         """Get currently processing job ID."""
         return self._current_job_id

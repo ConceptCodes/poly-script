@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { Button, Textarea } from "@poly/ui";
 import { useForm } from "@tanstack/react-form";
-import { Button } from "@poly/ui/button";
-import Textarea from "@poly/uitextarea";
-import { Save, Loader2 } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
+import { type ChangeEvent, useState } from "react";
 
 interface FullTextEditorProps {
   initialText: string;
@@ -12,7 +11,6 @@ interface FullTextEditorProps {
 
 export function FullTextEditor({ initialText, onSave, isSaving }: FullTextEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(initialText);
 
   const form = useForm({
     defaultValues: {
@@ -25,7 +23,6 @@ export function FullTextEditor({ initialText, onSave, isSaving }: FullTextEditor
   });
 
   const handleCancel = () => {
-    setEditText(initialText);
     setIsEditing(false);
     form.reset();
   };
@@ -45,7 +42,7 @@ export function FullTextEditor({ initialText, onSave, isSaving }: FullTextEditor
 
   return (
     <form onSubmit={form.handleSubmit} className="space-y-4">
-  <form.Field
+      <form.Field
         name="text"
         validators={{
           onChange: (value) => {
@@ -58,8 +55,8 @@ export function FullTextEditor({ initialText, onSave, isSaving }: FullTextEditor
       >
         {(field) => (
           <Textarea
-        value={field.state.value}
-        onChange={(e: any) => field.handleChange(e.target.value)}
+            value={field.state.value}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => field.handleChange(e.target.value)}
             onBlur={field.handleBlur}
             className="min-h-[300px] font-mono text-sm"
             placeholder="Enter transcript text..."

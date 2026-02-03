@@ -1,9 +1,18 @@
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import { useAuthStore } from "../store/auth";
 import { Button } from "@poly/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@poly/ui/card";
-import { LogOut, LayoutDashboard, Users, Building2, Briefcase, BarChart3, Settings, FileText } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import {
+  BarChart3,
+  Briefcase,
+  Building2,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  Users,
+} from "lucide-react";
+import { useEffect } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/auth";
 
 const navItems = [
   { label: "Dashboard", to: "/", icon: LayoutDashboard },
@@ -43,7 +52,7 @@ export function AdminLayout() {
             <Button
               variant="outline"
               size="sm"
-              className="w-full mt-3"
+              className="w-full mt-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               onClick={() => {
                 clear();
                 navigate("/login");
@@ -61,7 +70,7 @@ export function AdminLayout() {
               to={item.to}
               end={item.to === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                `flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${
                   isActive
                     ? "bg-primary/10 text-primary border border-primary/20"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-transparent"

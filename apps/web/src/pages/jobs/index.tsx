@@ -1,71 +1,33 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle } from '@poly/ui/card'
-import { Button } from '@poly/ui/button'
-import { Input } from '@poly/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@poly/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@poly/ui/table'
-import {
-  ChevronLeft,
-  ChevronRight,
-  ArrowUpDown,
-  RefreshCw,
-  AlertCircle,
-} from 'lucide-react'
-import { api } from '../../lib/api'
-import { useNavigate } from 'react-router-dom'
-
-interface Job {
-  id: string
-  status: string
-  filename: string
-  language: string | null
-  progress_pct: number
-  progress_stage: string | null
-  created_at: string
-  started_at: string | null
-  finished_at: string | null
-}
-
-interface JobsResponse {
-  jobs: Job[]
-  total: number
-  page: number
-  page_size: number
-}
+import { Button } from "@poly/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Input } from "@poly/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@poly/ui/table";
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, ArrowUpDown, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../lib/api";
 
 const STATUS_OPTIONS = [
-  { value: 'all', label: 'All Status' },
-  { value: 'QUEUED', label: 'Queued' },
-  { value: 'RUNNING', label: 'Running' },
-  { value: 'SUCCEEDED', label: 'Succeeded' },
-  { value: 'FAILED', label: 'Failed' },
-  { value: 'CANCELED', label: 'Canceled' },
-]
+  { value: "all", label: "All Status" },
+  { value: "QUEUED", label: "Queued" },
+  { value: "RUNNING", label: "Running" },
+  { value: "SUCCEEDED", label: "Succeeded" },
+  { value: "FAILED", label: "Failed" },
+  { value: "CANCELED", label: "Canceled" },
+];
 
-const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export function JobsPage() {
-  const navigate = useNavigate()
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [sortField, setSortField] = useState('created_at')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const {
     data: jobsData,
@@ -73,41 +35,40 @@ export function JobsPage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ['jobs', page, pageSize, statusFilter, searchQuery],
+    queryKey: ["jobs", page, pageSize, statusFilter, searchQuery, sortField, sortOrder],
     queryFn: () =>
       api.getJobs({
         page,
         page_size: pageSize,
-        status: statusFilter === 'all' ? undefined : statusFilter,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        search: searchQuery || undefined,
+        sort_field: sortField,
+        sort_order: sortOrder,
       }),
-  })
+  });
 
   const handleSort = (field: string) => {
     if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
-      setSortField(field)
-      setSortOrder('desc')
+      setSortField(field);
+      setSortOrder("desc");
     }
-  }
+  };
 
-  const totalPages = jobsData ? Math.ceil(jobsData.total / pageSize) : 0
+  const totalPages = jobsData ? Math.ceil(jobsData.total / pageSize) : 0;
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
-      QUEUED: 'bg-yellow-100 text-yellow-800',
-      RUNNING: 'bg-blue-100 text-blue-800',
-      SUCCEEDED: 'bg-green-100 text-green-800',
-      FAILED: 'bg-red-100 text-red-800',
-      CANCELED: 'bg-gray-100 text-gray-800',
-    }
-    const color = colors[status] || 'bg-gray-100 text-gray-800'
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
-        {status}
-      </span>
-    )
-  }
+      QUEUED: "bg-yellow-100 text-yellow-800",
+      RUNNING: "bg-blue-100 text-blue-800",
+      SUCCEEDED: "bg-green-100 text-green-800",
+      FAILED: "bg-red-100 text-red-800",
+      CANCELED: "bg-gray-100 text-gray-800",
+    };
+    const color = colors[status] || "bg-gray-100 text-gray-800";
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>{status}</span>;
+  };
 
   if (isLoading) {
     return (
@@ -121,7 +82,7 @@ export function JobsPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -134,7 +95,7 @@ export function JobsPage() {
               <div>
                 <h3 className="font-semibold text-lg mb-1">Error Loading Jobs</h3>
                 <p className="text-sm text-muted-foreground">
-                  {error instanceof Error ? error.message : 'An unknown error occurred'}
+                  {error instanceof Error ? error.message : "An unknown error occurred"}
                 </p>
               </div>
             </div>
@@ -149,10 +110,10 @@ export function JobsPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
-  const jobs = jobsData?.jobs || []
+  const jobs = jobsData?.jobs || [];
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -210,7 +171,7 @@ export function JobsPage() {
           {jobs.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">No jobs found</p>
-              <Button onClick={() => navigate('/upload')}>Upload Audio</Button>
+              <Button onClick={() => navigate("/upload")}>Upload Audio</Button>
             </div>
           ) : (
             <>
@@ -220,13 +181,11 @@ export function JobsPage() {
                     <TableRow>
                       <TableHead
                         className="cursor-pointer hover:bg-muted"
-                        onClick={() => handleSort('created_at')}
+                        onClick={() => handleSort("created_at")}
                       >
                         <div className="flex items-center gap-1">
                           Created
-                          {sortField === 'created_at' && (
-                            <ArrowUpDown className="w-4 h-4" />
-                          )}
+                          {sortField === "created_at" && <ArrowUpDown className="w-4 h-4" />}
                         </div>
                       </TableHead>
                       <TableHead>Status</TableHead>
@@ -236,24 +195,20 @@ export function JobsPage() {
                       <TableHead>Progress</TableHead>
                       <TableHead
                         className="cursor-pointer hover:bg-muted"
-                        onClick={() => handleSort('started_at')}
+                        onClick={() => handleSort("started_at")}
                       >
                         <div className="flex items-center gap-1">
                           Started
-                          {sortField === 'started_at' && (
-                            <ArrowUpDown className="w-4 h-4" />
-                          )}
+                          {sortField === "started_at" && <ArrowUpDown className="w-4 h-4" />}
                         </div>
                       </TableHead>
                       <TableHead
                         className="cursor-pointer hover:bg-muted"
-                        onClick={() => handleSort('finished_at')}
+                        onClick={() => handleSort("finished_at")}
                       >
                         <div className="flex items-center gap-1">
                           Finished
-                          {sortField === 'finished_at' && (
-                            <ArrowUpDown className="w-4 h-4" />
-                          )}
+                          {sortField === "finished_at" && <ArrowUpDown className="w-4 h-4" />}
                         </div>
                       </TableHead>
                       <TableHead>Stage</TableHead>
@@ -271,12 +226,10 @@ export function JobsPage() {
                         </TableCell>
                         <TableCell>{getStatusBadge(job.status)}</TableCell>
                         <TableCell className="font-medium">{job.filename}</TableCell>
-                        <TableCell className="text-sm">
-                          {job.language || '-'}
-                        </TableCell>
+                        <TableCell className="text-sm">{job.language || "-"}</TableCell>
                         <TableCell className="text-sm">-</TableCell>
                         <TableCell className="text-sm">
-                          {job.status === 'RUNNING' || job.status === 'QUEUED' ? (
+                          {job.status === "RUNNING" || job.status === "QUEUED" ? (
                             <div className="flex items-center gap-2">
                               <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
                                 <div
@@ -288,23 +241,17 @@ export function JobsPage() {
                             </div>
                           ) : (
                             <span className="text-muted-foreground">
-                              {job.status === 'SUCCEEDED' ? '100%' : '-'}
+                              {job.status === "SUCCEEDED" ? "100%" : "-"}
                             </span>
                           )}
                         </TableCell>
                         <TableCell className="text-xs">
-                          {job.started_at
-                            ? new Date(job.started_at).toLocaleString()
-                            : '-'}
+                          {job.started_at ? new Date(job.started_at).toLocaleString() : "-"}
                         </TableCell>
                         <TableCell className="text-xs">
-                          {job.finished_at
-                            ? new Date(job.finished_at).toLocaleString()
-                            : '-'}
+                          {job.finished_at ? new Date(job.finished_at).toLocaleString() : "-"}
                         </TableCell>
-                        <TableCell className="text-xs">
-                          {job.progress_stage || '-'}
-                        </TableCell>
+                        <TableCell className="text-xs">{job.progress_stage || "-"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -315,8 +262,8 @@ export function JobsPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">
                   <p className="text-sm text-muted-foreground">
-                    Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, jobsData?.total || 0)} of{' '}
-                    {jobsData?.total || 0} jobs
+                    Showing {(page - 1) * pageSize + 1} to{" "}
+                    {Math.min(page * pageSize, jobsData?.total || 0)} of {jobsData?.total || 0} jobs
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
@@ -348,5 +295,5 @@ export function JobsPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

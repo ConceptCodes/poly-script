@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@poly/ui/button";
-import { AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
-
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { api } from "@/lib/api";
 import { ProgressCard } from "./components/cards/ProgressCard";
 import { LiveTranscriptArea } from "./components/LiveTranscriptArea";
-import { api } from "@/lib/api";
 
 interface ProgressData {
   job_id: string;
@@ -29,13 +28,13 @@ export function LiveTranscriptViewerPage() {
   const navigate = useNavigate();
 
   const [progress, setProgress] = useState<ProgressData | null>(null);
-  const [segments, setSegments] = useState<Segment[]>([]);
+  const [segments, _setSegments] = useState<Segment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
 
   const { data: jobDetail, isLoading } = useQuery({
     queryKey: ["job-detail", jobId],
-    queryFn: () => api.getJobDetail(jobId!),
+    queryFn: () => api.getJobDetail(jobId ?? ""),
     enabled: !!jobId,
   });
 
@@ -43,7 +42,7 @@ export function LiveTranscriptViewerPage() {
     if (!jobId) return;
 
     const eventSource = new EventSource(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/v1/jobs/${jobId}/live`
+      `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/v1/jobs/${jobId}/live`,
     );
 
     eventSource.onmessage = (event) => {
@@ -102,7 +101,7 @@ export function LiveTranscriptViewerPage() {
     );
   }
 
-  if (!jobDetail && !error) {
+  if (!jobId || (!jobDetail && !error)) {
     return (
       <div className="container mx-auto py-8 px-4">
         <div className="flex items-center gap-3 text-muted-foreground">
@@ -117,14 +116,15 @@ export function LiveTranscriptViewerPage() {
   }
 
   const currentProgress = progress || {
-    job_id: jobId!,
-    status: jobDetail!.status,
-    progress_pct: jobDetail!.progress_pct,
-    progress_stage: jobDetail!.progress_stage,
+    job_id: jobId,
+    status: jobDetail.status,
+    progress_pct: jobDetail.progress_pct,
+    progress_stage: jobDetail.progress_stage,
     timestamp: new Date().toISOString(),
   };
 
-  const isFinished = isComplete || ["SUCCEEDED", "FAILED", "CANCELED"].includes(currentProgress.status);
+  const isFinished =
+    isComplete || ["SUCCEEDED", "FAILED", "CANCELED"].includes(currentProgress.status);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -139,13 +139,13 @@ export function LiveTranscriptViewerPage() {
 
       <div className="space-y-6">
         <ProgressCard
-          filename={jobDetail!.filename}
+          filename={jobDetail.filename}
           status={currentProgress.status}
           progressPct={currentProgress.progress_pct}
           progressStage={currentProgress.progress_stage}
-          language={jobDetail!.requested_language}
-          createdAt={jobDetail!.created_at}
-          audioDuration={jobDetail!.audio_duration_seconds}
+          language={jobDetail.requested_language}
+          createdAt={jobDetail.created_at}
+          audioDuration={jobDetail.audio_duration_seconds}
         />
 
         {isFinished && currentProgress.status === "SUCCEEDED" && (
@@ -183,19 +183,12 @@ export function LiveTranscriptViewerPage() {
               <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
                 Job Canceled
               </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                This job was canceled.
-              </p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">This job was canceled.</p>
             </div>
           </div>
         )}
 
-        {!isFinished && (
-          <LiveTranscriptArea
-            segments={segments}
-            isComplete={isComplete}
-          />
-        )}
+        {!isFinished && <LiveTranscriptArea segments={segments} isComplete={isComplete} />}
       </div>
     </div>
   );

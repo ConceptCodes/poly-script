@@ -1,22 +1,10 @@
-import { useForm } from "@tanstack/react-form";
-import { z } from "zod";
 import { Button } from "@poly/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@poly/ui/select";
 import { Label } from "@poly/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui/select";
 import { Switch } from "@poly/ui/switch";
-import {
-  uploadOptionsSchema,
-  LANGUAGE_OPTIONS,
-  type UploadFormValues,
-  type PlanLimits,
-  type UploadPageProps,
-} from "../../schemas";
+import { useForm } from "@tanstack/react-form";
+import type { z } from "zod";
+import { LANGUAGE_OPTIONS, type UploadPageProps, type uploadOptionsSchema } from "../../schemas";
 
 const TARGET_LANGUAGES = [
   { code: "es", name: "Spanish" },
@@ -59,8 +47,8 @@ export function UploadForm({
   const targetLanguageValue =
     selectedTargetLanguage && selectedTargetLanguage.length > 0 ? selectedTargetLanguage : "none";
 
-  const shouldShowTargetLanguageOptions = !isLanguageRestricted || 
-    sourceLanguage !== selectedTargetLanguage;
+  const shouldShowTargetLanguageOptions =
+    !isLanguageRestricted || sourceLanguage !== selectedTargetLanguage;
 
   const getTranslationWarning = () => {
     if (selectedTargetLanguage && !shouldShowTargetLanguageOptions) {
@@ -80,7 +68,7 @@ export function UploadForm({
         <Select
           value={sourceLanguageValue}
           onValueChange={(value) =>
-            form.setFieldValue("language", value === "auto" ? "" : value ?? "")
+            form.setFieldValue("language", value === "auto" ? "" : (value ?? ""))
           }
           disabled={isSubmitting}
         >
@@ -90,11 +78,7 @@ export function UploadForm({
           <SelectContent>
             <SelectItem value={"auto"}>Auto-detect</SelectItem>
             {LANGUAGE_OPTIONS.map((lang) => (
-              <SelectItem
-                key={lang.code}
-                value={lang.code}
-                disabled={isSubmitting}
-              >
+              <SelectItem key={lang.code} value={lang.code} disabled={isSubmitting}>
                 {lang.label}
               </SelectItem>
             ))}
@@ -108,7 +92,7 @@ export function UploadForm({
         <Select
           value={targetLanguageValue}
           onValueChange={(value) =>
-            form.setFieldValue("target_language", value === "none" ? "" : value ?? "")
+            form.setFieldValue("target_language", value === "none" ? "" : (value ?? ""))
           }
           disabled={isSubmitting || !shouldShowTargetLanguageOptions}
         >
@@ -116,9 +100,7 @@ export function UploadForm({
             <SelectValue placeholder="No translation" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={"none"}>
-              No translation
-            </SelectItem>
+            <SelectItem value={"none"}>No translation</SelectItem>
             {TARGET_LANGUAGES.map((lang) => (
               <SelectItem
                 key={lang.code}
@@ -128,9 +110,7 @@ export function UploadForm({
                 <div className="flex items-center justify-between">
                   <span>{lang.name}</span>
                   {isLanguageRestricted(lang.code) && (
-                    <span className="text-xs text-muted-foreground ml-2">
-                      (Upgrade)
-                    </span>
+                    <span className="text-xs text-muted-foreground ml-2">(Upgrade)</span>
                   )}
                 </div>
               </SelectItem>

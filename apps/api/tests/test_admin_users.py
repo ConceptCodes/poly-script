@@ -1,11 +1,6 @@
-
 """Test admin user management endpoints."""
-import pytest
-import uuid
-from fastapi.testclient import TestClient
-from unittest.mock import Mock
 
-from datetime import datetime, timezone
+import pytest
 
 
 class TestAdminUsersEndpoints:

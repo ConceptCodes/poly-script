@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { TeamsPage } from "../TeamsPage";
 import { BrowserRouter } from "react-router-dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TeamsPage } from "../TeamsPage";
 
 vi.mock("../../lib/api", () => ({
   apiFetch: vi.fn().mockResolvedValue({ items: [] }),

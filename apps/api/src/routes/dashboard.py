@@ -1,13 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from src.dependencies import get_current_user, get_team_context
 from poly_core.services.dashboard import DashboardService
 from poly_db.database import get_db_session
+from src.dependencies import get_current_user, get_team_context
 from src.schemas.dashboard import (
+    ActivityItem,
     DashboardStatsResponse,
     RecentJobItem,
-    ActivityItem,
     UsageResponse,
 )
 

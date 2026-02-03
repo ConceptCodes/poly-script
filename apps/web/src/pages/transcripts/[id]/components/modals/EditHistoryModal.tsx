@@ -1,6 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, History, User } from "lucide-react";
-
 import { Button } from "@poly/ui/button";
 import {
   Dialog,
@@ -9,11 +6,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@poly/ui/dialog";
-import { api } from "../../../../lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { History, Loader2, User } from "lucide-react";
+import { api } from "../../../../../lib/api";
 
 interface EditHistoryModalProps {
   transcriptId: string;
   onClose: () => void;
+}
+
+interface TranscriptEdit {
+  id: string;
+  user_email?: string | null;
+  created_at: string;
+  field_edited: string;
+  segment_id: number | null;
+  previous_text: string | null;
+  new_text: string | null;
 }
 
 export function EditHistoryModal({ transcriptId, onClose }: EditHistoryModalProps) {
@@ -40,9 +49,7 @@ export function EditHistoryModal({ transcriptId, onClose }: EditHistoryModalProp
             <History className="w-5 h-5" />
             Edit History
           </DialogTitle>
-          <DialogDescription>
-            View all edits made to this transcript.
-          </DialogDescription>
+          <DialogDescription>View all edits made to this transcript.</DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
@@ -56,10 +63,10 @@ export function EditHistoryModal({ transcriptId, onClose }: EditHistoryModalProp
             </div>
           ) : (
             <div className="space-y-4">
-              {history.edits.map((edit) => (
+              {history.edits.map((edit: TranscriptEdit) => (
                 <div
                   key={edit.id}
-                  className="p-4 border rounded-lg space-y-2"
+                  className="p-4 border rounded-lg space-y-2 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -80,15 +87,11 @@ export function EditHistoryModal({ transcriptId, onClose }: EditHistoryModalProp
 
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="p-2 bg-red-50 dark:bg-red-950 rounded border border-red-200 dark:border-red-800">
-                      <div className="text-xs text-red-600 dark:text-red-400 mb-1">
-                        Before
-                      </div>
+                      <div className="text-xs text-red-600 dark:text-red-400 mb-1">Before</div>
                       <p className="line-clamp-2">{edit.previous_text}</p>
                     </div>
                     <div className="p-2 bg-green-50 dark:bg-green-950 rounded border border-green-200 dark:border-green-800">
-                      <div className="text-xs text-green-600 dark:text-green-400 mb-1">
-                        After
-                      </div>
+                      <div className="text-xs text-green-600 dark:text-green-400 mb-1">After</div>
                       <p className="line-clamp-2">{edit.new_text}</p>
                     </div>
                   </div>

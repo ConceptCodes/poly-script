@@ -1,15 +1,14 @@
-import { Card, CardContent } from "@poly/ui/card";
-import { Button } from "@poly/ui/button";
 import { Badge } from "@poly/ui/badge";
-import { FileText, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Button } from "@poly/ui/button";
+import { Card, CardContent } from "@poly/ui/card";
 import { formatDistanceToNow } from "date-fns";
+import { AlertCircle, CheckCircle2, Clock, FileText, XCircle } from "lucide-react";
 
 interface CompletedJobCardProps {
   jobId: string;
   filename: string;
   status: string;
   language: string | null;
-  createdAt: string;
   finishedAt: string | null;
   onView: (jobId: string) => void;
 }
@@ -19,7 +18,6 @@ export function CompletedJobCard({
   filename,
   status,
   language,
-  createdAt,
   finishedAt,
   onView,
 }: CompletedJobCardProps) {

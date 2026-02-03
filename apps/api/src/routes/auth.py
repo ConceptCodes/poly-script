@@ -1,19 +1,18 @@
 import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from src.dependencies import get_current_user, get_auth_service
 from poly_core.services.auth import AuthService
 from poly_core.services.oauth import OAuthService
 from poly_core.services.team import TeamService
 from poly_db.database import get_db_session
 from src.config import get_settings
+from src.dependencies import get_auth_service, get_current_user
 from src.schemas.auth import (
     ForgotPasswordRequest,
     LoginRequest,
     LogoutRequest,
-    OAuthAuthURLRequest,
-    OAuthCallbackRequest,
     RefreshTokenRequest,
     ResendVerificationRequest,
     ResetPasswordRequest,
@@ -21,8 +20,8 @@ from src.schemas.auth import (
     SignupResponse,
     TokenResponse,
     UserResponse,
-    VerifyEmailRequest,
     VerifyEmailCodeRequest,
+    VerifyEmailRequest,
 )
 
 router = APIRouter(prefix="/v1/auth", tags=["Auth"])

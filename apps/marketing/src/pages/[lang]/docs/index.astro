@@ -20,9 +20,9 @@ const docs = allDocs
     <p class="hero-subtitle">
       Everything you need to integrate PolyScript into your workflow.
     </p>
-    <div class="grid cols-3" class="grid-container" style="margin-top:40px;">
+    <div class="grid cols-3 grid-container" style="margin-top:40px;">
       {docs.map((doc) => (
-        <a class="card" href={`/${lang}/docs/${doc.slug}`} style="display:block;">
+        <a class="card link" href={`/${lang}/docs/${doc.slug}`} style="display:block;">
           <h3>{doc.data.title}</h3>
           <p class="muted">{doc.data.description}</p>
         </a>

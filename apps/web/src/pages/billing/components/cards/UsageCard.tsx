@@ -1,5 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@poly/ui";
-import { Progress } from "@poly/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Progress } from "@poly/ui";
 
 interface UsageCardProps {
   monthlyUploadCount: number;

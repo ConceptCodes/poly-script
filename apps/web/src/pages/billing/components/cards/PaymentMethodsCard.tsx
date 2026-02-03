@@ -1,15 +1,17 @@
 import {
+  Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
-  Button,
+  CardHeader,
+  CardTitle,
+  ConfirmDialog,
+  useToast, // Use toast for feedback
 } from "@poly/ui";
-import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
 import { Loader2, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api";
 import { AddPaymentMethodForm } from "../forms/AddPaymentMethodForm";
 
 interface PaymentMethod {
@@ -23,12 +25,10 @@ interface PaymentMethod {
 export function PaymentMethodsCard() {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
+  const [methodToDelete, setMethodToDelete] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    loadMethods();
-  }, []);
-
-  const loadMethods = async () => {
+  const loadMethods = useCallback(async () => {
     try {
       const data = await apiFetch<PaymentMethod[]>("/billing/payment-methods");
       setMethods(data);
@@ -37,24 +37,50 @@ export function PaymentMethodsCard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to remove this payment method?")) return;
+  useEffect(() => {
+    loadMethods();
+  }, [loadMethods]);
+
+  const confirmDelete = async () => {
+    if (!methodToDelete) return;
     try {
-      await apiFetch(`/billing/payment-methods/${id}`, { method: "DELETE" });
+      await apiFetch(`/billing/payment-methods/${methodToDelete}`, {
+        method: "DELETE",
+      });
       await loadMethods();
-    } catch (err) {
-      alert("Failed to delete payment method");
+      toast({
+        title: "Payment method removed",
+        description: "The payment method has been successfully removed.",
+      });
+    } catch (_err) {
+      toast({
+        title: "Error",
+        description: "Failed to delete payment method",
+        variant: "destructive",
+      });
+    } finally {
+      setMethodToDelete(null);
     }
   };
 
   const handleSetDefault = async (id: string) => {
     try {
-      await apiFetch(`/billing/payment-methods/${id}/default`, { method: "PATCH" });
+      await apiFetch(`/billing/payment-methods/${id}/default`, {
+        method: "PATCH",
+      });
       await loadMethods();
-    } catch (err) {
-      alert("Failed to set default payment method");
+      toast({
+        title: "Default updated",
+        description: "Your default payment method has been updated.",
+      });
+    } catch (_err) {
+      toast({
+        title: "Error",
+        description: "Failed to set default payment method",
+        variant: "destructive",
+      });
     }
   };
 
@@ -76,7 +102,6 @@ export function PaymentMethodsCard() {
             {methods.map((pm) => (
               <div key={pm.id} className="flex justify-between items-center border p-3 rounded">
                 <div className="flex items-center gap-2">
-                  {/* Simply text for brand/last4 for now, could use icons */}
                   <div className="flex flex-col">
                     <span className="capitalize font-medium text-sm">
                       {pm.brand} •••• {pm.last4}
@@ -90,7 +115,12 @@ export function PaymentMethodsCard() {
                   <Button variant="outline" size="sm" onClick={() => handleSetDefault(pm.id)}>
                     Set Default
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(pm.id)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMethodToDelete(pm.id)}
+                    aria-label="Delete payment method"
+                  >
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
@@ -107,6 +137,16 @@ export function PaymentMethodsCard() {
           </p>
         </div>
       </CardFooter>
+
+      <ConfirmDialog
+        open={!!methodToDelete}
+        onOpenChange={(open) => !open && setMethodToDelete(null)}
+        title="Remove Payment Method"
+        description="Are you sure you want to remove this payment method?"
+        onConfirm={confirmDelete}
+        confirmText="Remove"
+        variant="destructive"
+      />
     </Card>
   );
 }

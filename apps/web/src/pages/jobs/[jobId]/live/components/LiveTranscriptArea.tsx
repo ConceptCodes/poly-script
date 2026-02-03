@@ -1,5 +1,4 @@
 import { Card, CardContent } from "@poly/ui/card";
-import { CheckCircle2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 interface Segment {
@@ -20,10 +19,10 @@ export function LiveTranscriptArea({ segments, isComplete }: LiveTranscriptAreaP
   const latestSegmentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (latestSegmentRef.current) {
+    if (segments.length > 0 && latestSegmentRef.current) {
       latestSegmentRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [segments.length]);
+  }, [segments]);
 
   const formatTimestamp = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -36,9 +35,7 @@ export function LiveTranscriptArea({ segments, isComplete }: LiveTranscriptAreaP
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <p className="text-muted-foreground">
-            Waiting for transcript segments...
-          </p>
+          <p className="text-muted-foreground">Waiting for transcript segments...</p>
         </CardContent>
       </Card>
     );
@@ -47,10 +44,7 @@ export function LiveTranscriptArea({ segments, isComplete }: LiveTranscriptAreaP
   return (
     <Card className="h-[600px]">
       <CardContent className="p-0 h-full">
-        <div
-          ref={scrollRef}
-          className="h-full overflow-y-auto p-6"
-        >
+        <div ref={scrollRef} className="h-full overflow-y-auto p-6">
           <div className="space-y-3">
             {segments.map((segment, index) => (
               <div
@@ -65,9 +59,7 @@ export function LiveTranscriptArea({ segments, isComplete }: LiveTranscriptAreaP
                 <span className="text-sm font-mono text-muted-foreground whitespace-nowrap">
                   [{formatTimestamp(segment.start_ms)}]
                 </span>
-                <p className="flex-1 text-foreground leading-relaxed">
-                  {segment.text}
-                </p>
+                <p className="flex-1 text-foreground leading-relaxed">{segment.text}</p>
                 {segment.speaker && (
                   <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
                     {segment.speaker}

@@ -3,14 +3,15 @@ SSE endpoint integration tests.
 
 Tests Server-Sent Events endpoint for real-time job progress updates.
 """
-import pytest
-import json
-from httpx import AsyncClient, ASGITransport
-from unittest.mock import Mock, patch, AsyncMock
-import asyncio
 
-from poly_db.models import Team, User, TranscriptionJob, JobStatus
+import json
+from unittest.mock import Mock, patch
+
+import pytest
+from httpx import ASGITransport, AsyncClient
 from src.main import app
+
+from poly_db.models import JobStatus
 
 
 @pytest.fixture
@@ -25,6 +26,7 @@ async def client():
 def session():
     """Mock database session."""
     from sqlalchemy.orm import Session
+
     return Mock(spec=Session)
 
 
@@ -57,7 +59,7 @@ class TestSSEEndpoint:
 
                 response = await client.get(
                     f"/v1/jobs/{job_id}/live",
-                    headers={"Authorization": f"Bearer test-token"},
+                    headers={"Authorization": "Bearer test-token"},
                 )
 
                 # Check response
@@ -82,7 +84,7 @@ class TestSSEEndpoint:
 
                 response = await client.get(
                     f"/v1/jobs/{job_id}/live",
-                    headers={"Authorization": f"Bearer test-token"},
+                    headers={"Authorization": "Bearer test-token"},
                 )
 
                 # Get first event
@@ -120,7 +122,7 @@ class TestSSEEndpoint:
 
                 response = await client.get(
                     f"/v1/jobs/{job_id}/live",
-                    headers={"Authorization": f"Bearer test-token"},
+                    headers={"Authorization": "Bearer test-token"},
                 )
 
                 assert response.status_code == 404
@@ -140,7 +142,7 @@ class TestSSEEndpoint:
 
                 response = await client.get(
                     f"/v1/jobs/{job_id}/live",
-                    headers={"Authorization": f"Bearer test-token"},
+                    headers={"Authorization": "Bearer test-token"},
                 )
 
                 assert response.status_code == 403
@@ -171,7 +173,7 @@ class TestSSEEndpoint:
                             "status": "RUNNING",
                             "progress_pct": 0,
                             "progress_stage": "starting",
-                        }
+                        },
                     }
 
                     # Yield progress update
@@ -182,7 +184,7 @@ class TestSSEEndpoint:
                             "status": "RUNNING",
                             "progress_pct": 50,
                             "progress_stage": "transcribing",
-                        }
+                        },
                     }
 
                     # Yield completion
@@ -193,7 +195,7 @@ class TestSSEEndpoint:
                             "status": "SUCCEEDED",
                             "progress_pct": 100,
                             "progress_stage": "completed",
-                        }
+                        },
                     }
 
                 # This would normally stream from Redis
@@ -201,7 +203,7 @@ class TestSSEEndpoint:
 
                 response = await client.get(
                     f"/v1/jobs/{job_id}/live",
-                    headers={"Authorization": f"Bearer test-token"},
+                    headers={"Authorization": "Bearer test-token"},
                 )
 
                 # Verify connection

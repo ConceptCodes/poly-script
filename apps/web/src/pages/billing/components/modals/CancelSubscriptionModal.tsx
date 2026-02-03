@@ -1,14 +1,14 @@
 import {
+  Button,
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-  Button,
 } from "@poly/ui";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 interface CancelSubscriptionModalProps {
   open: boolean;

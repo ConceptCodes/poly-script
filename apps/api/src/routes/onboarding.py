@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from src.dependencies import get_current_user, get_auth_service
-from poly_core.constants import I18nKeys, PlanType
-from poly_core.services.team import TeamService
+from poly_core.constants import PlanType
 from poly_core.services.onboarding import OnboardingService
+from poly_core.services.team import TeamService
 from poly_db.database import get_db_session
+from src.dependencies import get_current_user
 from src.schemas.onboarding import CompleteOnboardingRequest, OnboardingResponse
 
 router = APIRouter(prefix="/v1/onboarding", tags=["Onboarding"])
@@ -36,7 +36,7 @@ def complete_onboarding(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid plan: {request.plan}",
                 )
-        
+
         team = onboarding_service.complete_onboarding(
             user_id=current_user["id"],
             team_name=request.team_name,
@@ -49,7 +49,7 @@ def complete_onboarding(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         )
-    
+
     return OnboardingResponse(
         team_id=team.id,
         name=team.name,

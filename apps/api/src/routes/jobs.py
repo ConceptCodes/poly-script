@@ -1,32 +1,36 @@
-import uuid
-import json
 import asyncio
-from typing import AsyncGenerator
+import json
+import uuid
+from collections.abc import AsyncGenerator
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
-from poly_db.repositories import TranscriptionJobRepository, TranscriptRepository, AudioAssetRepository
-from poly_db.models.transcription_jobs import JobStatus
-from poly_db.database import get_db_session
-from src.dependencies import get_current_team_id, get_current_user_id
-from src.schemas.jobs import (
-    JobSummary,
-    JobListResponse,
-    JobDetailResponse,
-    JobResultResponse,
-    CancelJobResponse,
-    CreateJobFromUrlRequest,
-    CreateJobResponse,
-)
-from poly_redis.client import get_redis_client
-from poly_redis.queue import TranscriptionQueue
+
 from poly_core.services.billing import BillingService
 from poly_core.services.job_manager import JobManagerService
 from poly_core.services.storage_service import get_storage_backend
+from poly_db.database import get_db_session
+from poly_db.models.transcription_jobs import JobStatus
+from poly_db.repositories import (
+    AudioAssetRepository,
+    TranscriptionJobRepository,
+    TranscriptRepository,
+)
+from poly_redis.client import get_redis_client
+from poly_redis.queue import TranscriptionQueue
 from src.config import get_settings
+from src.dependencies import get_current_team_id, get_current_user_id
+from src.schemas.jobs import (
+    CancelJobResponse,
+    CreateJobFromUrlRequest,
+    CreateJobResponse,
+    JobDetailResponse,
+    JobListResponse,
+    JobResultResponse,
+    JobSummary,
+)
 
 router = APIRouter(prefix="/v1/jobs", tags=["jobs"])
 
@@ -77,8 +81,8 @@ async def stream_job_progress(
     team_id: uuid.UUID = Depends(get_current_team_id),
     cancel_token: str | None = None,
 ):
-    from poly_db.repositories import TranscriptionJobRepository
     from poly_db.database import get_db_session
+    from poly_db.repositories import TranscriptionJobRepository
 
     with get_db_session() as session:
         job_repo = TranscriptionJobRepository(session)
@@ -107,7 +111,9 @@ async def stream_job_progress(
 async def list_jobs(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    status_filter: str = Query(None, description="Filter by status: queued, running, succeeded, failed, canceled"),
+    status_filter: str = Query(
+        None, description="Filter by status: queued, running, succeeded, failed, canceled"
+    ),
     team_id: uuid.UUID = Depends(get_current_team_id),
 ) -> JobListResponse:
     with get_db_session() as session:
@@ -378,9 +384,9 @@ async def cancel_job(
     job_id: uuid.UUID,
     team_id: uuid.UUID = Depends(get_current_team_id),
 ):
-    from poly_db.repositories import TranscriptionJobRepository
-    from poly_db.models.transcription_jobs import JobStatus
     from poly_db.database import get_db_session
+    from poly_db.models.transcription_jobs import JobStatus
+    from poly_db.repositories import TranscriptionJobRepository
     from poly_redis.client import get_redis_client
 
     with get_db_session() as session:
@@ -462,6 +468,23 @@ async def create_job_from_upload(
             detail="Upload exceeds maximum size",
         )
 
+    # Validate MIME type
+    allowed_mime_types = {
+        "audio/mpeg",
+        "audio/wav",
+        "audio/mp4",
+        "audio/ogg",
+        "audio/webm",
+        "audio/x-wav",
+        "audio/mp3",
+    }
+    content_type = file.content_type or ""
+    if content_type not in allowed_mime_types:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported audio format: {content_type}. Allowed: MP3, WAV, M4A, OGG, WEBM",
+        )
+
     with get_db_session() as session:
         manager = _build_job_manager(session)
         try:
@@ -530,6 +553,7 @@ async def create_job_from_url(
         status=job.status.value,
         message="Job created",
     )
+
 
 jobs_router = router
 jobs_router = router

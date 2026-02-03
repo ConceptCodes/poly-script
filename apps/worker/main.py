@@ -1,10 +1,10 @@
-
 """
 Worker Service Entry Point
 
 Standalone worker service that processes transcription jobs from Redis queue.
 Runs with a dedicated consumer thread and its own event loop.
 """
+
 import logging
 import sys
 from pathlib import Path
@@ -16,12 +16,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "storage" / "
 sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "core"))
 sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "stt"))
 
-from poly_redis.client import get_redis_client
-from poly_redis.queue import TranscriptionQueue
-from poly_stt.bootstrap import initialize_engines
-from poly_core.services.storage_service import get_storage_backend
 from src.config import get_settings
 from src.worker.service import WorkerService
+
+from poly_stt.bootstrap import initialize_engines
 
 # Setup logging
 logging.basicConfig(
@@ -75,6 +73,7 @@ if __name__ == "__main__":
 
         # Main thread just keeps alive
         import time
+
         while True:
             time.sleep(1)
 

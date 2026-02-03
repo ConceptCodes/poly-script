@@ -1,13 +1,6 @@
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@poly/ui";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@poly/ui";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@poly/ui";
 
 export function InternalServerErrorPage() {
   const { t } = useTranslation();
