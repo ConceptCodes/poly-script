@@ -14,6 +14,7 @@ from poly_stt.normalizer import normalize_language_code
 
 logger = logging.getLogger(__name__)
 
+
 class TranslateGemmaEngine:
     """TranslateGemma translation engine.
 
@@ -137,19 +138,40 @@ class TranslateGemmaEngine:
 
         inputs = self._tokenizer(prompt, return_tensors="pt", truncation=True).to(self._device)
 
-        with torch.no_grad():
-            outputs = self._model.generate(
-                **inputs,
-                max_new_tokens=self.MAX_TOKENS,
-                do_sample=False,
-                temperature=1.0,
-            )
+        outputs = self._generate_with_fallback(inputs)
 
         decoded = self._tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         translation = self._extract_translation(decoded)
 
         return translation.strip()
+
+    def _generate_with_fallback(self, inputs):
+        try:
+            with torch.no_grad():
+                return self._model.generate(
+                    **inputs,
+                    max_new_tokens=self.MAX_TOKENS,
+                    do_sample=False,
+                    temperature=1.0,
+                )
+        except RuntimeError as e:
+            if self._is_accelerator_error(e) and self._device != "cpu":
+                logger.warning(
+                    "TranslateGemma accelerator error on %s: %s. Falling back to CPU.",
+                    self._device,
+                    e,
+                )
+                self._switch_to_cpu()
+                cpu_inputs = inputs.to(self._device)
+                with torch.no_grad():
+                    return self._model.generate(
+                        **cpu_inputs,
+                        max_new_tokens=self.MAX_TOKENS,
+                        do_sample=False,
+                        temperature=1.0,
+                    )
+            raise
 
     def _translate_chunked(
         self,
@@ -374,3 +396,25 @@ class TranslateGemmaEngine:
     def _use_fp16(self) -> bool:
         """Check if fp16 precision should be used."""
         return self._device in ("cuda", "mps")
+
+    def _switch_to_cpu(self) -> None:
+        self._device = "cpu"
+        self._model = AutoModelForCausalLM.from_pretrained(
+            self._model_name,
+            torch_dtype=torch.float32,
+            device_map="cpu",
+        )
+
+    def _is_accelerator_error(self, error: Exception) -> bool:
+        message = str(error).lower()
+        return any(
+            marker in message
+            for marker in (
+                "cuda",
+                "cudnn",
+                "cublas",
+                "out of memory",
+                "mps",
+                "metal",
+            )
+        )

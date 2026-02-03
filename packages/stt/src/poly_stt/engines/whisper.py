@@ -13,6 +13,7 @@ from poly_stt.normalizer import normalize_language_code, normalize_result
 
 logger = logging.getLogger(__name__)
 
+
 class WhisperLocalEngine(STTEngine):
     """Whisper engine using faster-whisper for faster transcription."""
 
@@ -52,20 +53,21 @@ class WhisperLocalEngine(STTEngine):
         whisper_lang = self._convert_language(language) if language else None
 
         # Transcribe with faster-whisper
-        segments_generator, info = self._model.transcribe(
-            audio_path,
+        segments_generator, info = self._transcribe_with_fallback(
+            audio_path=audio_path,
             language=whisper_lang,
-            word_timestamps=timestamps,
-            vad_filter=True,  # Enable voice activity detection
+            timestamps=timestamps,
         )
 
         # Collect segments
         segments: list[Segment] = []
         full_text = []
 
+        total_speech_ms = 0
         for seg in segments_generator:
             text = seg.text.strip()
             if text:
+                total_speech_ms += int((seg.end - seg.start) * 1000)
                 segments.append(
                     Segment(
                         start_ms=int(seg.start * 1000),
@@ -88,7 +90,80 @@ class WhisperLocalEngine(STTEngine):
             engine=self.name,
         )
 
+        self._log_vad_stats(info, total_speech_ms)
+
         return normalize_result(transcription_result)
+
+    def _transcribe_with_fallback(
+        self,
+        audio_path: str,
+        language: str | None,
+        timestamps: bool,
+    ):
+        try:
+            return self._model.transcribe(
+                audio_path,
+                language=language,
+                word_timestamps=timestamps,
+                vad_filter=True,  # Enable voice activity detection
+            )
+        except RuntimeError as e:
+            if self._is_accelerator_error(e) and self._device != "cpu":
+                logger.warning(
+                    "Whisper accelerator error on %s: %s. Falling back to CPU.",
+                    self._device,
+                    e,
+                )
+                self._switch_to_cpu()
+                return self._model.transcribe(
+                    audio_path,
+                    language=language,
+                    word_timestamps=timestamps,
+                    vad_filter=True,
+                )
+            raise
+
+    def _switch_to_cpu(self) -> None:
+        self._device = "cpu"
+        self._model = WhisperModel(
+            self._model_size,
+            device="cpu",
+            compute_type="int8",
+        )
+
+    def _is_accelerator_error(self, error: Exception) -> bool:
+        message = str(error).lower()
+        return any(
+            marker in message
+            for marker in (
+                "cuda",
+                "cudnn",
+                "cublas",
+                "out of memory",
+                "mps",
+                "metal",
+            )
+        )
+
+    def _log_vad_stats(self, info, total_speech_ms: int) -> None:
+        total_duration = getattr(info, "duration", None)
+        if not total_duration or total_duration <= 0:
+            if total_speech_ms == 0:
+                logger.warning("VAD produced no segments and audio duration unavailable")
+            return
+
+        total_ms = int(total_duration * 1000)
+        if total_ms <= 0:
+            return
+
+        speech_ratio = total_speech_ms / total_ms
+        if speech_ratio < 0.1:
+            logger.warning(
+                "VAD filtered most of the audio (speech_ms=%s, total_ms=%s, ratio=%.2f)",
+                total_speech_ms,
+                total_ms,
+                speech_ratio,
+            )
 
     def _detect_device(self) -> str:
         """Detect available device for Whisper model."""

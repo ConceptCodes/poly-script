@@ -40,7 +40,15 @@ class WorkerService:
         self._queue = TranscriptionQueue(self._redis_client)
 
         # Initialize storage backend
-        self._storage_backend = get_storage_backend()
+        self._storage_backend = get_storage_backend(
+            backend_type=settings.STORAGE_BACKEND,
+            storage_path=settings.STORAGE_PATH,
+            min_free_bytes=settings.STORAGE_MIN_FREE_BYTES,
+            bucket=settings.AWS_S3_BUCKET,
+            region=settings.AWS_REGION,
+            access_key=settings.AWS_ACCESS_KEY_ID,
+            secret_key=settings.AWS_SECRET_ACCESS_KEY,
+        )
 
         # Initialize consumer
         self._consumer = TranscriptionConsumer(

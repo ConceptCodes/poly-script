@@ -9,9 +9,12 @@ Processes transcription jobs through a 5-stage pipeline:
 5. Save to Database (95-100%)
 """
 
+import hashlib
 import logging
 import os
 import tempfile
+import time
+from pathlib import Path
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
@@ -30,9 +33,18 @@ from poly_stt.engines.translategemma import TranslateGemmaEngine
 from poly_stt.interface import TranscriptionResult
 from poly_stt.registry import EngineRegistry
 
+from .config import get_settings
 from .progress import ProgressPublisher
 
 logger = logging.getLogger(__name__)
+
+
+class AudioDownloadError(RuntimeError):
+    """Raised when an audio download fails or is incomplete."""
+
+
+class AudioValidationError(ValueError):
+    """Raised when audio validation fails."""
 
 
 class JobProcessor:
@@ -43,10 +55,12 @@ class JobProcessor:
         session: Session,
         storage_backend,
         progress_publisher: ProgressPublisher,
+        settings=None,
     ):
         self.session = session
         self.storage_backend = storage_backend
         self.progress_publisher = progress_publisher
+        self.settings = settings or get_settings()
 
         self.job_repo = TranscriptionJobRepository(session)
         self.audio_repo = AudioAssetRepository(session)
@@ -185,25 +199,115 @@ class JobProcessor:
     def _download_audio(self, url: str) -> str:
         """Download audio from URL to temporary file."""
         import requests
+        from requests import RequestException
+
+        settings = self.settings
+        max_retries = settings.DOWNLOAD_MAX_RETRIES
+        retry_backoff = settings.DOWNLOAD_RETRY_BACKOFF
+        timeout = settings.DOWNLOAD_TIMEOUT_SECONDS
+        chunk_size = settings.DOWNLOAD_CHUNK_SIZE_BYTES
+        max_bytes = settings.DOWNLOAD_MAX_BYTES
 
         logger.info(f"Downloading audio from {url}")
-        response = requests.get(url, timeout=60, stream=True)
-        response.raise_for_status()
 
         # Determine extension
         ext = os.path.splitext(url)[1] or ".mp3"
 
-        # Save to temp file
-        with tempfile.NamedTemporaryFile(
-            delete=False,
-            suffix=ext,
-        ) as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-            temp_path = f.name
+        last_error: Exception | None = None
+        for attempt in range(1, max_retries + 1):
+            temp_path = None
+            try:
+                response = requests.get(url, timeout=timeout, stream=True)
+                response.raise_for_status()
 
-        logger.info(f"Downloaded audio to {temp_path}")
-        return temp_path
+                content_type = response.headers.get("Content-Type", "")
+                if content_type and not content_type.startswith("audio/"):
+                    logger.warning(
+                        "URL response Content-Type is not audio: %s (url=%s)",
+                        content_type,
+                        url,
+                    )
+
+                expected_length = response.headers.get("Content-Length")
+                expected_bytes = (
+                    int(expected_length)
+                    if expected_length and expected_length.isdigit()
+                    else 0
+                )
+                if max_bytes and expected_bytes and expected_bytes > max_bytes:
+                    raise AudioDownloadError(
+                        f"Audio exceeds max download size ({expected_bytes} bytes > {max_bytes} bytes)"
+                    )
+
+                # Save to temp file
+                with tempfile.NamedTemporaryFile(
+                    delete=False,
+                    suffix=ext,
+                ) as f:
+                    total_bytes = 0
+                    sha256 = hashlib.sha256()
+                    for chunk in response.iter_content(chunk_size=chunk_size):
+                        if not chunk:
+                            continue
+                        total_bytes += len(chunk)
+                        if max_bytes and total_bytes > max_bytes:
+                            raise AudioDownloadError(
+                                f"Audio exceeds max download size ({total_bytes} bytes > {max_bytes} bytes)"
+                            )
+                        sha256.update(chunk)
+                        f.write(chunk)
+                    temp_path = f.name
+
+                if total_bytes == 0:
+                    raise AudioDownloadError("Audio download produced empty file")
+
+                if expected_bytes and total_bytes != expected_bytes:
+                    raise AudioDownloadError(
+                        f"Incomplete download (expected {expected_bytes} bytes, got {total_bytes} bytes)"
+                    )
+
+                logger.info(
+                    "Downloaded audio to %s (bytes=%s, sha256=%s)",
+                    temp_path,
+                    total_bytes,
+                    sha256.hexdigest()[:12],
+                )
+                return temp_path
+            except (RequestException, AudioDownloadError) as e:
+                last_error = e
+                logger.warning(
+                    "Download attempt %s/%s failed for %s: %s",
+                    attempt,
+                    max_retries,
+                    url,
+                    e,
+                )
+                if temp_path and os.path.exists(temp_path):
+                    try:
+                        os.unlink(temp_path)
+                    except Exception:
+                        logger.debug("Failed to cleanup temp file after download failure")
+
+                if attempt < max_retries:
+                    time.sleep(retry_backoff ** (attempt - 1))
+            except Exception as e:
+                last_error = e
+                logger.warning(
+                    "Unexpected error downloading %s (attempt %s/%s): %s",
+                    url,
+                    attempt,
+                    max_retries,
+                    e,
+                )
+                if temp_path and os.path.exists(temp_path):
+                    try:
+                        os.unlink(temp_path)
+                    except Exception:
+                        logger.debug("Failed to cleanup temp file after unexpected download error")
+                if attempt < max_retries:
+                    time.sleep(retry_backoff ** (attempt - 1))
+
+        raise AudioDownloadError(str(last_error) if last_error else "Audio download failed")
 
     def _validate_audio(self, audio_path: str) -> int:
         """Validate audio format and get duration in milliseconds."""
@@ -213,20 +317,64 @@ class JobProcessor:
         logger.info(f"Validating audio: {audio_path}")
 
         try:
-            # Try loading with librosa for duration
+            info = None
+            try:
+                info = sf.info(audio_path)
+            except Exception as e:
+                logger.warning("Soundfile could not read audio metadata: %s", e)
+
+            # Try loading with librosa for duration/decoding
             y, sr = librosa.load(audio_path, sr=None)
+            if sr is None or sr <= 0:
+                raise AudioValidationError("Audio sample rate is invalid or missing")
+            if len(y) == 0:
+                raise AudioValidationError("Audio contains no samples")
+
             duration_seconds = len(y) / sr
             duration_ms = int(duration_seconds * 1000)
+            if duration_ms <= 0:
+                raise AudioValidationError("Audio duration is zero")
 
-            # Validate with soundfile
-            info = sf.info(audio_path)
-            logger.info(
-                f"Audio validated: {duration_ms}ms, {info.samplerate}Hz, {info.channels} channels"
-            )
+            if info:
+                self._validate_extension_matches_format(audio_path, info.format)
+                logger.info(
+                    "Audio validated: %sms, %sHz, %s channels, format=%s",
+                    duration_ms,
+                    info.samplerate,
+                    info.channels,
+                    info.format,
+                )
+            else:
+                logger.info("Audio validated: %sms, %sHz (format unknown)", duration_ms, sr)
 
             return duration_ms
         except Exception as e:
-            raise ValueError(f"Invalid audio file: {e}")
+            if isinstance(e, AudioValidationError):
+                raise
+            raise AudioValidationError(f"Invalid audio file: {e}") from e
+
+    def _validate_extension_matches_format(self, audio_path: str, detected_format: str | None) -> None:
+        if not detected_format:
+            return
+
+        ext = Path(audio_path).suffix.lower()
+        if not ext:
+            return
+
+        format_to_ext = {
+            "wav": {".wav", ".wave"},
+            "flac": {".flac"},
+            "ogg": {".ogg"},
+            "aiff": {".aiff", ".aif"},
+            "mp3": {".mp3"},
+            "m4a": {".m4a", ".mp4"},
+        }
+        detected = detected_format.lower()
+        expected_exts = format_to_ext.get(detected)
+        if expected_exts and ext not in expected_exts:
+            raise AudioValidationError(
+                f"Audio codec mismatch: file extension {ext} does not match detected {detected_format}"
+            )
 
     def _transcribe_audio(self, job: TranscriptionJob, audio_path: str) -> TranscriptionResult:
         """Transcribe audio using configured STT engine."""

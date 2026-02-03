@@ -136,7 +136,9 @@ class TranscriptionConsumer:
 
         self._current_job_id = job_id
 
-        logger.info(f"Processing job {job_id} (engine={engine}, language={requested_language})")
+        logger.info(
+            f"Processing job {job_id} (engine={engine}, language={requested_language})"
+        )
 
         try:
             with get_db_session() as session:
@@ -150,8 +152,12 @@ class TranscriptionConsumer:
                 # Process job
                 success = processor.process_job(job_id)
 
-                # Handle retry logic if failed
-                if not success:
+                # Log and handle retry logic if failed
+                if success:
+                    logger.info(
+                        f"Worker completed job {job_id} (engine={engine}, language={requested_language})"
+                    )
+                else:
                     self._handle_job_failure(session, job_id, work_item)
 
         except Exception as e:
@@ -165,7 +171,9 @@ class TranscriptionConsumer:
         finally:
             self._current_job_id = None
 
-    def _handle_job_failure(self, session: Session, job_id: str, work_item: dict) -> None:
+    def _handle_job_failure(
+        self, session: Session, job_id: str, work_item: dict
+    ) -> None:
         """
         Handle job failure with retry logic.
 

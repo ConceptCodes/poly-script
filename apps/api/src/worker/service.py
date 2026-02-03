@@ -39,6 +39,7 @@ class WorkerService:
         storage_backend = get_storage_backend(
             backend_type=self._settings.STORAGE_BACKEND,
             storage_path=self._settings.STORAGE_PATH,
+            min_free_bytes=self._settings.STORAGE_MIN_FREE_BYTES,
             bucket=self._settings.AWS_S3_BUCKET,
             region=self._settings.AWS_REGION,
             access_key=self._settings.AWS_ACCESS_KEY_ID,
