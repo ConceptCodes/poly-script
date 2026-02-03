@@ -1,18 +1,18 @@
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '4a8c9d2e5f61'
-down_revision = '3d7de3b9fb91'
+revision = "4a8c9d2e5f61"
+down_revision = "a1b2c3d4e5f6"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-    op.add_column('admin_users', sa.Column('is_suspended', sa.Boolean(), nullable=False, server_default='false'))
-    op.add_column('admin_users', sa.Column('role', sa.String(length=50), nullable=False, server_default='ADMIN'))
+    # Columns is_suspended and role were already added by a1b2c3d4e5f6
+    # This migration is now a no-op - indexes are added by 20260201_191007
+    pass
 
 
 def downgrade():
-    op.drop_column('admin_users', 'role')
-    op.drop_column('admin_users', 'is_suspended')
+    pass
