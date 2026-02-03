@@ -1,13 +1,13 @@
-from datetime import datetime, timedelta, timezone
-from typing import Optional
 import uuid
+from datetime import UTC, datetime, timedelta
+
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from poly_core.constants import I18nKeys
-from poly_db.repositories import AdminUserRepository, AuditLogRepository
 from poly_db.models import AdminUser
+from poly_db.repositories import AdminUserRepository, AuditLogRepository
 
 
 class AdminAuthService:
@@ -30,7 +30,7 @@ class AdminAuthService:
         return self.pwd_context.verify(password, hashed)
 
     def create_access_token(self, admin_id: uuid.UUID, role: str) -> str:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=self.jwt_expiry_minutes)
+        expire = datetime.now(UTC) + timedelta(minutes=self.jwt_expiry_minutes)
         exp_timestamp = int(expire.timestamp())
 
         payload = {
@@ -38,26 +38,26 @@ class AdminAuthService:
             "admin_user_id": str(admin_id),
             "role": role,
             "exp": exp_timestamp,
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
         }
         return jwt.encode(payload, self.jwt_secret, algorithm="HS256")
 
-    def verify_access_token(self, token: str) -> Optional[dict]:
+    def verify_access_token(self, token: str) -> dict | None:
         try:
             payload = jwt.decode(token, self.jwt_secret, algorithms=["HS256"])
             return payload
         except JWTError:
             return None
 
-    def _create_audit_log(
+    def _create_audit_log(  # noqa: PLR0913
         self,
-        admin_user_id: Optional[uuid.UUID],
+        admin_user_id: uuid.UUID | None,
         action: str,
         target_type: str = "admin_auth",
-        target_id: Optional[str] = None,
-        previous_state: Optional[dict] = None,
-        new_state: Optional[dict] = None,
-        reason: Optional[str] = None,
+        target_id: str | None = None,
+        previous_state: dict | None = None,
+        new_state: dict | None = None,
+        reason: str | None = None,
     ) -> None:
         """Helper to create audit log entries."""
         try:
@@ -132,7 +132,7 @@ class AdminAuthService:
             new_state={
                 "email": admin.email,
                 "role": admin.role,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             },
         )
 
@@ -151,7 +151,7 @@ class AdminAuthService:
         password: str,
         full_name: str,
         role: str,
-        created_by_admin_id: Optional[uuid.UUID] = None,
+        created_by_admin_id: uuid.UUID | None = None,
     ) -> AdminUser:
         admin_repo = AdminUserRepository(self.db_session)
         existing = admin_repo.get_by_email(email)

@@ -1,29 +1,27 @@
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Union
-import uuid
 import secrets
+import uuid
+from datetime import UTC, datetime, timedelta
+
 import bcrypt
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from poly_db.repositories import UserRepository, TeamRepository, TeamMemberRepository
+from poly_core.constants import I18nKeys
+from poly_core.services.notification import NotificationService
+from poly_core.types import JWTTokenPayload, RefreshTokenResponse, TokenResponse
+from poly_core.utils.token import generate_token
+from poly_db.models.password_resets import PasswordReset
+from poly_db.models.refresh_tokens import RefreshToken
+from poly_db.models.team_members import TeamRole
+from poly_db.models.users import User
+from poly_db.repositories import TeamMemberRepository, TeamRepository, UserRepository
 from poly_db.repositories.auth import (
     OAuthAccountRepository,
     PasswordResetRepository,
     RefreshTokenRepository,
 )
 from poly_db.repositories.users import UserSettingsRepository
-from poly_db.models.users import User
-from poly_db.models.team_members import TeamRole
-from poly_db.models.password_resets import PasswordReset
-from poly_db.models.refresh_tokens import RefreshToken
-from poly_db.models.oauth_accounts import OAuthAccount
-
-from ..constants import I18nKeys
-from ..types import JWTTokenPayload, TokenResponse, RefreshTokenResponse
-from ..utils.token import generate_token
-from .notification import NotificationService
 
 
 class AuthError(ValueError):
@@ -39,12 +37,12 @@ class PasswordResetError(AuthError):
 
 
 class AuthService:
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         db_session: Session,
-        jwt_secret: Optional[str] = None,
+        jwt_secret: str | None = None,
         jwt_expiry_minutes: int = 15,
-        notification_service: Optional[NotificationService] = None,
+        notification_service: NotificationService | None = None,
         email_verification_expiry_hours: int = 24,
         password_reset_expiry_hours: int = 1,
     ):
@@ -75,49 +73,49 @@ class AuthService:
         except ValueError:
             return False
 
-    def _generate_email_verification_token(self, user_id: str) -> str:
+    def _generate_email_verification_token(self, _user_id: str) -> str:
         return secrets.token_hex(16)
 
-    def _generate_password_reset_token(self, user_id: str) -> str:
+    def _generate_password_reset_token(self, _user_id: str) -> str:
         return secrets.token_hex(16)
 
-    def _create_access_token(self, user_id: Union[str, uuid.UUID]) -> str:
+    def _create_access_token(self, user_id: str | uuid.UUID) -> str:
         user_id_value = str(user_id)
-        expire = datetime.now(timezone.utc) + timedelta(minutes=self.jwt_expiry_minutes)
+        expire = datetime.now(UTC) + timedelta(minutes=self.jwt_expiry_minutes)
         exp_timestamp = int(expire.timestamp())
 
         payload: JWTTokenPayload = {
             "sub": user_id_value,
             "exp": exp_timestamp,
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
         }
         return jwt.encode(payload, self.jwt_secret, algorithm="HS256")
 
-    def _create_refresh_token(self, user_id: Union[str, uuid.UUID]) -> str:
+    def _create_refresh_token(self, user_id: str | uuid.UUID) -> str:
         user_id_value = str(user_id)
-        expire = datetime.now(timezone.utc) + timedelta(days=30)
+        expire = datetime.now(UTC) + timedelta(days=30)
         payload: JWTTokenPayload = {
             "sub": user_id_value,
             "exp": int(expire.timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
         }
         return jwt.encode(payload, self.jwt_secret, algorithm="HS256")
 
-    def create_access_token(self, user_id: Union[str, uuid.UUID]) -> str:
+    def create_access_token(self, user_id: str | uuid.UUID) -> str:
         user_id_value = str(user_id)
-        expire = datetime.now(timezone.utc) + timedelta(minutes=self.jwt_expiry_minutes)
+        expire = datetime.now(UTC) + timedelta(minutes=self.jwt_expiry_minutes)
         exp_timestamp = int(expire.timestamp())
 
         payload: JWTTokenPayload = {
             "sub": user_id_value,
             "exp": exp_timestamp,
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
         }
         return jwt.encode(payload, self.jwt_secret, algorithm="HS256")
 
     def create_refresh_token(self, user_id: uuid.UUID, expires_in_hours: int = 30 * 24) -> str:
         token = generate_token()
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
+        expires_at = datetime.now(UTC) + timedelta(hours=expires_in_hours)
 
         refresh_token = RefreshToken(
             user_id=user_id,
@@ -128,7 +126,7 @@ class AuthService:
         self.refresh_token_repo.create(refresh_token)
         return token
 
-    def verify_access_token(self, token: str) -> Optional[JWTTokenPayload]:
+    def verify_access_token(self, token: str) -> JWTTokenPayload | None:
         try:
             payload = jwt.decode(token, self.jwt_secret, algorithms=["HS256"])
             return payload
@@ -139,7 +137,7 @@ class AuthService:
         self,
         email: str,
         password: str,
-        full_name: Optional[str] = None,
+        full_name: str | None = None,
     ) -> User:
         existing = self.user_repo.get_by_email(email)
         if existing:
@@ -147,7 +145,7 @@ class AuthService:
 
         hashed_password = self.hash_password(password)
         verification_token = generate_token()
-        verification_token_expires_at = datetime.now(timezone.utc) + timedelta(
+        verification_token_expires_at = datetime.now(UTC) + timedelta(
             hours=self.email_verification_expiry_hours
         )
 
@@ -178,7 +176,7 @@ class AuthService:
 
         token = generate_token()
         user.verification_token = token
-        user.verification_token_expires_at = datetime.now(timezone.utc) + timedelta(
+        user.verification_token_expires_at = datetime.now(UTC) + timedelta(
             hours=self.email_verification_expiry_hours
         )
 
@@ -201,9 +199,10 @@ class AuthService:
             raise EmailVerificationError(I18nKeys.EMAIL_ALREADY_VERIFIED.value)
 
         verification_expires_at = getattr(user, "verification_token_expires_at", None)
-        if isinstance(verification_expires_at, datetime):
-            if verification_expires_at < datetime.now(timezone.utc):
-                raise EmailVerificationError(I18nKeys.EXPIRED_VERIFICATION_TOKEN.value)
+        if isinstance(verification_expires_at, datetime) and verification_expires_at < datetime.now(
+            UTC
+        ):
+            raise EmailVerificationError(I18nKeys.EXPIRED_VERIFICATION_TOKEN.value)
 
         user.is_verified = True
         user.verification_token = None
@@ -221,7 +220,7 @@ class AuthService:
             raise ValueError("User not found")
 
         token = generate_token()
-        expires_at = datetime.now(timezone.utc) + timedelta(hours=self.password_reset_expiry_hours)
+        expires_at = datetime.now(UTC) + timedelta(hours=self.password_reset_expiry_hours)
 
         password_reset = PasswordReset(
             user_id=user_id,
@@ -245,7 +244,7 @@ class AuthService:
         if not password_reset:
             raise PasswordResetError(I18nKeys.INVALID_PASSWORD_RESET_TOKEN.value)
 
-        if password_reset.expires_at < datetime.utcnow():
+        if password_reset.expires_at < datetime.now(UTC):
             raise PasswordResetError(I18nKeys.EXPIRED_PASSWORD_RESET_TOKEN.value)
 
         if password_reset.used_at:
@@ -260,7 +259,7 @@ class AuthService:
         user.hashed_password = hashed_password
         self.user_repo.update(user)
 
-        password_reset.used_at = datetime.utcnow()
+        password_reset.used_at = datetime.now(UTC)
         self.password_reset_repo.update(password_reset)
         self.db_session.add(user)
         self.db_session.add(password_reset)
@@ -317,7 +316,7 @@ class AuthService:
         if token.revoked:
             raise ValueError(I18nKeys.INVALID_REFRESH_TOKEN.value)
 
-        if token.expires_at < datetime.now(timezone.utc):
+        if token.expires_at < datetime.now(UTC):
             raise ValueError(I18nKeys.EXPIRED_REFRESH_TOKEN.value)
 
         user_id = token.user_id
@@ -342,7 +341,7 @@ class AuthService:
         if user.is_verified:
             raise ValueError(I18nKeys.EMAIL_ALREADY_VERIFIED.value)
 
-        token = self.generate_verification_token(user.id)
+        self.generate_verification_token(user.id)
 
     def send_password_reset_email(self, email: str) -> None:
         user = self.user_repo.get_by_email(email)
@@ -352,7 +351,7 @@ class AuthService:
 
         self.generate_password_reset_token(user.id)
 
-    def send_verification_email(self, email: str, locale: str) -> None:
+    def send_verification_email(self, email: str, _locale: str) -> None:
         user = self.user_repo.get_by_email(email)
         if not user:
             raise AuthError(I18nKeys.USER_NOT_FOUND.value)
@@ -360,7 +359,7 @@ class AuthService:
         token = self._generate_email_verification_token(str(user.id))
         user.verification_token = token
         if hasattr(user, "verification_token_expires_at"):
-            user.verification_token_expires_at = datetime.utcnow() + timedelta(
+            user.verification_token_expires_at = datetime.now(UTC) + timedelta(
                 hours=self.email_verification_expiry_hours
             )
 
@@ -374,7 +373,7 @@ class AuthService:
                 token=token,
             )
 
-    def request_password_reset(self, email: str, locale: str) -> None:
+    def request_password_reset(self, email: str, _locale: str) -> None:
         user = self.user_repo.get_by_email(email)
         if not user:
             raise AuthError(I18nKeys.USER_NOT_FOUND.value)
@@ -385,7 +384,7 @@ class AuthService:
         password_reset = PasswordReset(
             user_id=user.id,
             token=token,
-            expires_at=datetime.utcnow() + timedelta(hours=self.password_reset_expiry_hours),
+            expires_at=datetime.now(UTC) + timedelta(hours=self.password_reset_expiry_hours),
             used_at=None,
         )
         self.password_reset_repo.create(password_reset)
@@ -399,14 +398,14 @@ class AuthService:
                 token=token,
             )
 
-    def signup(self, email: str, password: str, full_name: str, locale: str) -> User:
+    def signup(self, email: str, password: str, full_name: str, _locale: str) -> User:
         existing = self.user_repo.get_by_email(email)
         if existing:
             raise AuthError(I18nKeys.EMAIL_ALREADY_EXISTS.value)
 
         hashed_password = self.hash_password(password)
         verification_token = self._generate_email_verification_token(email)
-        verification_token_expires_at = datetime.utcnow() + timedelta(
+        verification_token_expires_at = datetime.now(UTC) + timedelta(
             hours=self.email_verification_expiry_hours
         )
 

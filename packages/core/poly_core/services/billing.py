@@ -1,17 +1,25 @@
-import stripe
 import uuid
-from typing import Optional, Dict, Any, Tuple, List
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+import stripe
 from sqlalchemy.orm import Session
-from poly_db.repositories import (
-    TeamRepository,
-    SubscriptionRepository,
-    UsageLogRepository,
-    CreditPurchaseRepository,
-    InvoiceRepository,
+
+from poly_core.constants import (
+    CREDIT_PRICE_CENTS,
+    PLAN_LIMITS,
+    PLAN_STRIPE_IDS,
+    SUPPORTED_LANGUAGES,
+    I18nKeys,
 )
 from poly_db.models.teams import PlanType
-from ..constants import PLAN_LIMITS, PLAN_STRIPE_IDS, CREDIT_PRICE_CENTS, I18nKeys, SUPPORTED_LANGUAGES
+from poly_db.repositories import (
+    CreditPurchaseRepository,
+    InvoiceRepository,
+    SubscriptionRepository,
+    TeamRepository,
+    UsageLogRepository,
+)
 
 
 class BillingService:
@@ -44,13 +52,13 @@ class BillingService:
         """Returns the local subscription record if available."""
         return self.subscription_repo.get_by_team_id(team_id)
 
-    def get_subscription_or_default(self, team_id: uuid.UUID) -> Dict[str, Any]:
+    def get_subscription_or_default(self, team_id: uuid.UUID) -> dict[str, Any]:
         """Returns subscription data or a default FREE plan response."""
         sub = self.subscription_repo.get_by_team_id(team_id)
         if sub:
             return sub
         team = self.team_repo.get(team_id)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         plan_id = team.plan.value if team else PlanType.FREE.value
         return {
             "stripe_subscription_id": "",
@@ -67,7 +75,7 @@ class BillingService:
         """Creates a checkout session to upgrade a team to a paid plan."""
         return self.create_checkout_session(team_id, new_plan, success_url, cancel_url)
 
-    def check_upload_limit(self, team_id: uuid.UUID) -> Tuple[bool, str]:
+    def check_upload_limit(self, team_id: uuid.UUID) -> tuple[bool, str]:
         """Checks if a team can upload a new file based on their plan and extra credits."""
         team = self.team_repo.get(team_id)
         if not team:
@@ -84,7 +92,7 @@ class BillingService:
 
         return False, I18nKeys.ERR_JOBS_LIMIT_REACHED
 
-    def increment_usage(self, team_id: uuid.UUID, job_id: uuid.UUID = None):
+    def increment_usage(self, team_id: uuid.UUID, job_id: uuid.UUID | None = None):
         """Increments upload usage for a team."""
         team = self.team_repo.get(team_id)
         if not team:
@@ -139,7 +147,7 @@ class BillingService:
         if not team.stripe_customer_id:
             customer = stripe.Customer.create(
                 email="",  # Will be filled by Stripe checkout
-                metadata={"team_id": str(team_id)}
+                metadata={"team_id": str(team_id)},
             )
             self.team_repo.update(team_id, stripe_customer_id=customer.id)
             team.stripe_customer_id = customer.id
@@ -171,7 +179,7 @@ class BillingService:
         if not team.stripe_customer_id:
             customer = stripe.Customer.create(
                 email="",  # Will be filled by Stripe checkout
-                metadata={"team_id": str(team_id)}
+                metadata={"team_id": str(team_id)},
             )
             self.team_repo.update(team_id, stripe_customer_id=customer.id)
             team.stripe_customer_id = customer.id
@@ -179,8 +187,6 @@ class BillingService:
         # In a real app, you might have a specific price_id for credits,
         # or use ad-hoc line items if permitted.
         # For simplicity, we'll assume a unit price in cents.
-        from ..constants import CREDIT_PRICE_CENTS
-
         session = stripe.checkout.Session.create(
             customer=team.stripe_customer_id,
             payment_method_types=["card"],
@@ -226,15 +232,13 @@ class BillingService:
         reverse_map = {v: k for k, v in PLAN_STRIPE_IDS.items()}
         plan_type_str = reverse_map.get(plan_id, "FREE")
 
-        from datetime import datetime
-
         if local_sub:
             self.subscription_repo.update(
                 local_sub.id,
                 status=sub.status,
                 plan_id=plan_id,
-                current_period_start=datetime.fromtimestamp(sub.current_period_start),
-                current_period_end=datetime.fromtimestamp(sub.current_period_end),
+                current_period_start=datetime.fromtimestamp(sub.current_period_start, tz=UTC),
+                current_period_end=datetime.fromtimestamp(sub.current_period_end, tz=UTC),
                 cancel_at_period_end=sub.cancel_at_period_end,
                 stripe_data=sub.to_dict(),
             )
@@ -244,8 +248,8 @@ class BillingService:
                 stripe_subscription_id=sub.id,
                 status=sub.status,
                 plan_id=plan_id,
-                current_period_start=datetime.fromtimestamp(sub.current_period_start),
-                current_period_end=datetime.fromtimestamp(sub.current_period_end),
+                current_period_start=datetime.fromtimestamp(sub.current_period_start, tz=UTC),
+                current_period_end=datetime.fromtimestamp(sub.current_period_end, tz=UTC),
                 cancel_at_period_end=sub.cancel_at_period_end,
                 stripe_data=sub.to_dict(),
             )
@@ -255,8 +259,6 @@ class BillingService:
 
     def handle_payment_succeeded(self, team_id: uuid.UUID, amount: int, stripe_session_id: str):
         """Handles a successful checkout payment (e.g., for credits)."""
-        from poly_db.repositories import CreditPurchaseRepository
-
         purchase_repo = CreditPurchaseRepository(self.session)
 
         # Check if already processed
@@ -342,7 +344,7 @@ class BillingService:
             return []
 
         methods = stripe.PaymentMethod.list(customer=team.stripe_customer_id, type="card")
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for method in methods.data:
             card = method.get("card") if isinstance(method, dict) else method.card
             if not card:
@@ -358,13 +360,13 @@ class BillingService:
             )
         return results
 
-    def get_credits(self, team_id: uuid.UUID) -> Dict[str, Any]:
+    def get_credits(self, team_id: uuid.UUID) -> dict[str, Any]:
         team = self.team_repo.get(team_id)
         if not team:
             raise ValueError("Team not found")
         return {"plan": team.plan, "extra_credits": team.extra_credits}
 
-    def get_usage(self, team_id: uuid.UUID) -> Dict[str, Any]:
+    def get_usage(self, team_id: uuid.UUID) -> dict[str, Any]:
         team = self.team_repo.get(team_id)
         if not team:
             raise ValueError("Team not found")
@@ -379,28 +381,28 @@ class BillingService:
             "extra_credits": team.extra_credits,
         }
 
-    def get_usage_history(self, team_id: uuid.UUID) -> List[Any]:
+    def get_usage_history(self, team_id: uuid.UUID) -> list[Any]:
         return self.usage_repo.get_by_team_id(team_id)
 
-    def list_invoices(self, team_id: uuid.UUID) -> List[Any]:
+    def list_invoices(self, team_id: uuid.UUID) -> list[Any]:
         return self.invoice_repo.get_all_by_team(team_id)
 
-    def get_invoice_for_team(self, team_id: uuid.UUID, invoice_id: uuid.UUID) -> Optional[Any]:
+    def get_invoice_for_team(self, team_id: uuid.UUID, invoice_id: uuid.UUID) -> Any | None:
         invoice = self.invoice_repo.get(invoice_id)
         if not invoice or invoice.team_id != team_id:
             return None
         return invoice
 
-    def get_invoice_pdf_for_team(self, team_id: uuid.UUID, invoice_id: uuid.UUID) -> Optional[str]:
+    def get_invoice_pdf_for_team(self, team_id: uuid.UUID, invoice_id: uuid.UUID) -> str | None:
         invoice = self.get_invoice_for_team(team_id, invoice_id)
         if not invoice:
             return None
         return invoice.invoice_pdf or invoice.hosted_invoice_url
 
-    def list_credit_purchases(self, team_id: uuid.UUID) -> List[Any]:
+    def list_credit_purchases(self, team_id: uuid.UUID) -> list[Any]:
         return self.credit_repo.get_all_by_team(team_id)
 
-    def get_pricing(self) -> Dict[str, Any]:
+    def get_pricing(self) -> dict[str, Any]:
         plans = []
         for plan, limits in PLAN_LIMITS.items():
             normalized_limits = {
@@ -456,9 +458,7 @@ class BillingService:
             team.stripe_customer_id, invoice_settings={"default_payment_method": payment_method_id}
         )
 
-    def check_language_available(
-        self, team_id: uuid.UUID, language: Optional[str]
-    ) -> bool:
+    def check_language_available(self, team_id: uuid.UUID, language: str | None) -> bool:
         """Check if language is available in team's plan.
 
         Args:

@@ -1,14 +1,18 @@
-from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
+import uuid
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 from sqlalchemy.orm import Session
 
+from poly_core.services.admin_auth import AdminAuthService
+from poly_core.services.auth import AuthService
 from poly_db.models.teams import Team
-from poly_db.models.users import User
-from poly_db.models.transcription_jobs import TranscriptionJob, JobStatus
+from poly_db.models.teams import Team as TeamModel
+from poly_db.models.transcription_jobs import JobStatus
 from poly_db.repositories.admin import AdminUserRepository, AuditLogRepository
-from poly_db.repositories.user_repository import UserRepository
-from poly_db.repositories.jobs import TranscriptionJobRepository
 from poly_db.repositories.base import BaseRepository
+from poly_db.repositories.jobs import TranscriptionJobRepository
+from poly_db.repositories.user_repository import UserRepository
 
 
 class AdminService:
@@ -32,7 +36,7 @@ class AdminService:
 
         self.team_invite_repo = None
 
-    def dashboard(self) -> Dict[str, Any]:
+    def dashboard(self) -> dict[str, Any]:
         try:
             users_count = len(self.user_repo.list())
         except Exception:
@@ -57,9 +61,9 @@ class AdminService:
             "administrators": admins_count,
         }
 
-    def users(self) -> List[Dict[str, Any]]:
+    def users(self) -> list[dict[str, Any]]:
         users = self.user_repo.list()
-        result: List[Dict[str, Any]] = []
+        result: list[dict[str, Any]] = []
         for u in users:
             result.append(
                 {
@@ -73,9 +77,9 @@ class AdminService:
             )
         return result
 
-    def teams(self) -> List[Dict[str, Any]]:
+    def teams(self) -> list[dict[str, Any]]:
         teams = self.team_repo.list()
-        out: List[Dict[str, Any]] = []
+        out: list[dict[str, Any]] = []
         for t in teams:
             out.append(
                 {
@@ -89,9 +93,9 @@ class AdminService:
             )
         return out
 
-    def jobs(self) -> List[Dict[str, Any]]:
+    def jobs(self) -> list[dict[str, Any]]:
         jobs = self.job_repo.list()
-        out: List[Dict[str, Any]] = []
+        out: list[dict[str, Any]] = []
         for j in jobs:
             out.append(
                 {
@@ -104,7 +108,7 @@ class AdminService:
             )
         return out
 
-    def analytics(self) -> Dict[str, Any]:
+    def analytics(self) -> dict[str, Any]:
         users_count = len(self.user_repo.list())
         teams_count = len(self.team_repo.list())
         jobs = self.job_repo.list()
@@ -117,7 +121,6 @@ class AdminService:
             "successful_jobs": succeeded,
         }
 
-    
     # ============================================
     # Admin User Management Methods
     # ============================================
@@ -128,13 +131,11 @@ class AdminService:
         full_name: str,
         role: str,
         created_by_admin_id: uuid.UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a new admin user (SUPER_ADMIN only)."""
-        from poly_core.services.admin_auth import AdminAuthService
-        
         if role not in ["ADMIN", "SUPER_ADMIN"]:
             raise ValueError("Invalid admin role")
-        
+
         auth_service = AdminAuthService(self.session, "dummy-secret", 60)
         admin = auth_service.create_admin_user(
             email=email,
@@ -143,7 +144,7 @@ class AdminService:
             role=role,
             created_by_admin_id=created_by_admin_id,
         )
-        
+
         return {
             "id": str(admin.id),
             "email": admin.email,
@@ -157,22 +158,22 @@ class AdminService:
         self,
         admin_id: uuid.UUID,
         suspended_by_admin_id: uuid.UUID,
-        reason: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        reason: str | None = None,
+    ) -> dict[str, Any]:
         """Suspend an admin user (SUPER_ADMIN only)."""
         admin = self.admin_repo.get_by_id(admin_id)
         if not admin:
             raise ValueError("Admin user not found")
-        
+
         previous_state = {"is_suspended": admin.is_suspended}
-        
+
         self.admin_repo.update(
             admin_id,
             is_suspended=True,
-            suspended_at=datetime.now(timezone.utc),
+            suspended_at=datetime.now(UTC),
         )
         self.session.commit()
-        
+
         # Audit log
         self.audit_repo.create(
             admin_user_id=suspended_by_admin_id,
@@ -184,29 +185,29 @@ class AdminService:
             reason=reason,
         )
         self.session.commit()
-        
+
         return {"status": "success", "is_suspended": True}
 
     def unsuspend_admin_user(
         self,
         admin_id: uuid.UUID,
         unsuspended_by_admin_id: uuid.UUID,
-        reason: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        reason: str | None = None,
+    ) -> dict[str, Any]:
         """Unsuspend an admin user (SUPER_ADMIN only)."""
         admin = self.admin_repo.get_by_id(admin_id)
         if not admin:
             raise ValueError("Admin user not found")
-        
+
         previous_state = {"is_suspended": admin.is_suspended}
-        
+
         self.admin_repo.update(
             admin_id,
             is_suspended=False,
             suspended_at=None,
         )
         self.session.commit()
-        
+
         # Audit log
         self.audit_repo.create(
             admin_user_id=unsuspended_by_admin_id,
@@ -218,7 +219,7 @@ class AdminService:
             reason=reason,
         )
         self.session.commit()
-        
+
         return {"status": "success", "is_suspended": False}
 
     def change_admin_role(
@@ -226,25 +227,25 @@ class AdminService:
         admin_id: uuid.UUID,
         new_role: str,
         changed_by_admin_id: uuid.UUID,
-        reason: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        reason: str | None = None,
+    ) -> dict[str, Any]:
         """Change admin role (SUPER_ADMIN only)."""
         if new_role not in ["ADMIN", "SUPER_ADMIN"]:
             raise ValueError("Invalid admin role")
-        
+
         admin = self.admin_repo.get_by_id(admin_id)
         if not admin:
             raise ValueError("Admin user not found")
-        
+
         # Prevent self-modification
         if admin_id == changed_by_admin_id:
             raise ValueError("Cannot change your own role")
-        
+
         previous_state = {"role": admin.role}
-        
+
         self.admin_repo.update(admin_id, role=new_role)
         self.session.commit()
-        
+
         # Audit log
         self.audit_repo.create(
             admin_user_id=changed_by_admin_id,
@@ -256,34 +257,34 @@ class AdminService:
             reason=reason,
         )
         self.session.commit()
-        
+
         return {"status": "success", "role": new_role}
 
     def delete_admin_user(
         self,
         admin_id: uuid.UUID,
         deleted_by_admin_id: uuid.UUID,
-        reason: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        reason: str | None = None,
+    ) -> dict[str, Any]:
         """Delete an admin user (soft delete, SUPER_ADMIN only)."""
         admin = self.admin_repo.get_by_id(admin_id)
         if not admin:
             raise ValueError("Admin user not found")
-        
+
         # Prevent self-deletion
         if admin_id == deleted_by_admin_id:
             raise ValueError("Cannot delete your own account")
-        
+
         previous_state = {
             "email": admin.email,
             "full_name": admin.full_name,
             "role": admin.role,
             "is_active": admin.is_active,
         }
-        
-        self.admin_repo.update(admin_id, is_active=False, deleted_at=datetime.now(timezone.utc))
+
+        self.admin_repo.update(admin_id, is_active=False, deleted_at=datetime.now(UTC))
         self.session.commit()
-        
+
         # Audit log
         self.audit_repo.create(
             admin_user_id=deleted_by_admin_id,
@@ -291,11 +292,11 @@ class AdminService:
             target_id=str(admin_id),
             action="delete_admin",
             previous_state=previous_state,
-            new_state={"is_active": False, "deleted_at": datetime.now(timezone.utc).isoformat()},
+            new_state={"is_active": False, "deleted_at": datetime.now(UTC).isoformat()},
             reason=reason,
         )
         self.session.commit()
-        
+
         return {"status": "success"}
 
     # ============================================
@@ -305,23 +306,22 @@ class AdminService:
         self,
         team_id: uuid.UUID,
         suspended_by_admin_id: uuid.UUID,
-        reason: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        reason: str | None = None,
+    ) -> dict[str, Any]:
         """Suspend a team (SUPER_ADMIN only)."""
         team = self.team_repo.get_by_id(team_id)
         if not team:
             raise ValueError("Team not found")
-        
-        from poly_db.models.teams import Team as TeamModel
+
         team_obj = self.session.query(TeamModel).filter(TeamModel.id == team_id).first()
-        
+
         previous_state = {"is_suspended": getattr(team_obj, "is_suspended", False)}
-        
+
         self.session.query(TeamModel).filter(TeamModel.id == team_id).update(
-            {"is_suspended": True, "suspended_at": datetime.now(timezone.utc)}
+            {"is_suspended": True, "suspended_at": datetime.now(UTC)}
         )
         self.session.commit()
-        
+
         # Audit log
         self.audit_repo.create(
             admin_user_id=suspended_by_admin_id,
@@ -333,30 +333,29 @@ class AdminService:
             reason=reason,
         )
         self.session.commit()
-        
+
         return {"status": "success", "is_suspended": True}
 
     def unsuspend_team(
         self,
         team_id: uuid.UUID,
         unsuspended_by_admin_id: uuid.UUID,
-        reason: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        reason: str | None = None,
+    ) -> dict[str, Any]:
         """Unsuspend a team (SUPER_ADMIN only)."""
         team = self.team_repo.get_by_id(team_id)
         if not team:
             raise ValueError("Team not found")
-        
-        from poly_db.models.teams import Team as TeamModel
+
         team_obj = self.session.query(TeamModel).filter(TeamModel.id == team_id).first()
-        
+
         previous_state = {"is_suspended": getattr(team_obj, "is_suspended", False)}
-        
+
         self.session.query(TeamModel).filter(TeamModel.id == team_id).update(
             {"is_suspended": False, "suspended_at": None}
         )
         self.session.commit()
-        
+
         # Audit log
         self.audit_repo.create(
             admin_user_id=unsuspended_by_admin_id,
@@ -368,10 +367,9 @@ class AdminService:
             reason=reason,
         )
         self.session.commit()
-        
+
         return {"status": "success", "is_suspended": False}
 
-    
     # ============================================
     # Impersonation Methods
     # ============================================
@@ -379,13 +377,12 @@ class AdminService:
         self,
         target_user_id: uuid.UUID,
         admin_id: uuid.UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create an impersonation token for a user (SUPER_ADMIN only)."""
         user = self.user_repo.get_by_id(target_user_id)
         if not user:
             raise ValueError("User not found")
-        
-        from poly_core.services.auth import AuthService
+
         auth_service = AuthService(
             db_session=self.session,
             jwt_secret="impersonation-secret-placeholder",
@@ -394,10 +391,10 @@ class AdminService:
             email_verification_expiry_hours=24,
             password_reset_expiry_hours=1,
         )
-        
+
         # Create a user token for impersonation
         token = auth_service.create_access_token(target_user_id)
-        
+
         # Audit log impersonation
         self.audit_repo.create(
             admin_user_id=admin_id,
@@ -410,14 +407,14 @@ class AdminService:
             },
         )
         self.session.commit()
-        
+
         return {"impersonation_token": token, "user_id": str(target_user_id)}
 
     def revoke_impersonation_token(
         self,
         token_id: str,
         admin_id: uuid.UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Revoke an impersonation token (SUPER_ADMIN only)."""
         # For simplicity, we log the revocation
         # In production, you would track and invalidate specific tokens
@@ -429,7 +426,7 @@ class AdminService:
             new_state={"token_revoked": True},
         )
         self.session.commit()
-        
+
         return {"status": "success", "message": "Token revoked"}
 
     # ============================================
@@ -437,19 +434,19 @@ class AdminService:
     # ============================================
     def analytics_with_timeframe(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         granularity: str = "day",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get analytics with optional time range and granularity."""
         if not end_date:
-            end_date = datetime.now(timezone.utc)
+            end_date = datetime.now(UTC)
         if not start_date:
             start_date = end_date - timedelta(days=30)
-        
+
         # Base analytics
         base_analytics = self.analytics()
-        
+
         # Add time range and granularity info
         return {
             **base_analytics,
@@ -462,28 +459,25 @@ class AdminService:
 
     def job_volume_analytics(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> dict[str, Any]:
         """Get job volume analytics by status."""
         if not end_date:
-            end_date = datetime.now(timezone.utc)
+            end_date = datetime.now(UTC)
         if not start_date:
             start_date = end_date - timedelta(days=30)
-        
+
         jobs = self.job_repo.list()
-        
+
         # Filter by date range (naive implementation - in prod, use DB query)
-        recent_jobs = [
-            j for j in jobs
-            if j.created_at and start_date <= j.created_at <= end_date
-        ]
-        
+        recent_jobs = [j for j in jobs if j.created_at and start_date <= j.created_at <= end_date]
+
         status_counts = {}
         for job in recent_jobs:
             status = job.status.value if hasattr(job.status, "value") else str(job.status)
             status_counts[status] = status_counts.get(status, 0) + 1
-        
+
         return {
             "total": len(recent_jobs),
             "by_status": status_counts,
@@ -496,7 +490,7 @@ class AdminService:
     # ============================================
     # Settings Methods
     # ============================================
-    def get_system_settings(self) -> Dict[str, Any]:
+    def get_system_settings(self) -> dict[str, Any]:
         """Get system-wide settings."""
         # In production, these would come from a settings table
         return {
@@ -531,18 +525,18 @@ class AdminService:
 
     def update_system_settings(
         self,
-        settings_update: Dict[str, Any],
+        settings_update: dict[str, Any],
         admin_id: uuid.UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Update system settings (SUPER_ADMIN only)."""
         # In production, this would persist to a settings table
         current_settings = self.get_system_settings()
-        
+
         # Apply updates (shallow merge)
         for section, updates in settings_update.items():
             if section in current_settings:
                 current_settings[section].update(updates)
-        
+
         # Audit log settings changes
         self.audit_repo.create(
             admin_user_id=admin_id,
@@ -552,10 +546,10 @@ class AdminService:
             new_state=settings_update,
         )
         self.session.commit()
-        
+
         return current_settings
 
-    def settings(self) -> Dict[str, Any]:
+    def settings(self) -> dict[str, Any]:
         admins = self.admin_repo.list()
         admin_list = [
             {

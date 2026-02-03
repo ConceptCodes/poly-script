@@ -1,8 +1,9 @@
-from pydantic import BaseModel, HttpUrl, Field
-from datetime import datetime
-from typing import Optional, List, Union, Dict, Any
-from poly_db.models.teams import PlanType
 import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, Field
+
+from poly_db.models.teams import PlanType
 
 
 class SubscriptionResponse(BaseModel):
@@ -49,7 +50,7 @@ class InvoiceResponse(BaseModel):
     amount_paid: int
     status: str
     created_at: datetime
-    hosted_invoice_url: Optional[str]
+    hosted_invoice_url: str | None
     model_config = {"from_attributes": True}
 
 
@@ -95,25 +96,25 @@ class CreditsResponse(BaseModel):
 class UsageLogResponse(BaseModel):
     action: str
     amount: int
-    description: Optional[str]
+    description: str | None
     created_at: datetime
     model_config = {"from_attributes": True}
 
 
 class UsageHistoryResponse(BaseModel):
-    items: List[UsageLogResponse]
+    items: list[UsageLogResponse]
 
 
 class PricingPlanResponse(BaseModel):
     plan: str
-    limits: Dict[str, Union[int, float]]
-    price_id: Optional[str] = None
+    limits: dict[str, int | float]
+    price_id: str | None = None
 
 
 class PricingResponse(BaseModel):
-    plans: List[PricingPlanResponse]
+    plans: list[PricingPlanResponse]
     credit_price_cents: int
 
 
 class InvoicePdfResponse(BaseModel):
-    url: Optional[str]
+    url: str | None
