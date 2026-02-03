@@ -2,6 +2,7 @@
 from .dependencies import (
     get_admin_auth_service,
     get_auth_service,
+    get_current_admin,
     get_current_team_id,
     get_current_user,
     get_current_user_id,
@@ -12,6 +13,7 @@ from .dependencies import (
 __all__ = [
     "get_admin_auth_service",
     "get_auth_service",
+    "get_current_admin",
     "get_current_team_id",
     "get_current_user",
     "get_current_user_id",

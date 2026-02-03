@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from src.main import app
+from main import app
 
 from poly_db.models import JobStatus
 

@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 import uuid
+from enum import Enum
 
 from sqlalchemy import Boolean, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, TimestampMixin
+
+
+class AdminUserRole(str, Enum):
+    """Admin user role enum."""
+    ADMIN = "ADMIN"
+    SUPER_ADMIN = "SUPER_ADMIN"
 
 
 class AdminUser(Base, TimestampMixin):

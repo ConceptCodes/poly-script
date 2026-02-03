@@ -1,4 +1,4 @@
-from .admin_users import AdminUser
+from .admin_users import AdminUser, AdminUserRole
 from .audio_assets import AudioAsset
 from .audit_logs import AuditLog
 from .base import Base
@@ -22,6 +22,7 @@ from .users import User
 
 __all__ = [
     "AdminUser",
+    "AdminUserRole",
     "AudioAsset",
     "AuditLog",
     "Base",

@@ -66,4 +66,9 @@ line-ending = "lf"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["apps/api/tests", "packages/core/tests", "packages/stt/tests"]
+testpaths = [
+    "apps/api/tests",
+    "apps/worker/tests",
+    "packages/core/tests",
+    "packages/stt/tests",
+]
