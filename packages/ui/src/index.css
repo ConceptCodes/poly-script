@@ -6,35 +6,82 @@
  
 @layer base {
   :root {
+    /* Shadcn UI Base Tokens */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
- 
+
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
- 
+
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
- 
+
     --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
- 
+
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
- 
+
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
- 
+
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
- 
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
- 
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
- 
+
     --radius: 0.5rem;
+
+    /* Admin/Web mc-* Tokens */
+    --mc-bg-deep: #0A0B0F;
+    --mc-bg-card: #13141A;
+    --mc-bg-card-hover: #1A1B24;
+    --mc-cyan: #00D9FF;
+    --mc-cyan-dim: rgba(0, 217, 255, 0.1);
+    --mc-green: #00FF88;
+    --mc-green-dim: rgba(0, 255, 136, 0.1);
+    --mc-amber: #FFB800;
+    --mc-amber-dim: rgba(255, 184, 0, 0.1);
+    --mc-danger: #FF4757;
+    --mc-danger-dim: rgba(255, 71, 87, 0.1);
+    --mc-text-primary: #F8FAFC;
+    --mc-text-secondary: #94A3B8;
+    --mc-text-tertiary: #64748B;
+    --mc-border: #1E293B;
+    --mc-border-highlight: rgba(0, 217, 255, 0.3);
+
+    /* Brand Tokens */
+    --brand-primary: 222.2 47.4% 11.2%;
+    --brand-gradient: linear-gradient(135deg, hsl(199 89% 48%), hsl(15 95% 64%));
+
+    /* Marketing Font Tokens */
+    --font-display: 'Cabinet Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    /* Marketing Gradient Tokens */
+    --gradient-blue: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    --gradient-orange: linear-gradient(135deg, #f97316 0%, #f43f5e 100%);
+    --gradient-brand: linear-gradient(135deg, #0ea5e9 0%, #f97316 100%);
+    --gradient-brand-hover: linear-gradient(135deg, #38bdf8 0%, #fb923c 100%);
+    --gradient-mesh:
+      radial-gradient(at 0% 0%, hsla(199, 89%, 48%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(199, 89%, 48%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(15, 95%, 64%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(15, 95%, 64%, 0.1) 0px, transparent 50%);
+
+    /* Marketing Glow Tokens */
+    --glow-blue: 0 0 60px hsla(199, 89%, 48%, 0.3);
+    --glow-orange: 0 0 60px hsla(15, 95%, 64%, 0.2);
+    --glow-brand: 0 0 80px hsla(199, 89%, 48%, 0.4);
+
+    /* Marketing Ease Tokens */
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   }
  
   .dark {
@@ -70,9 +117,10 @@
  
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
