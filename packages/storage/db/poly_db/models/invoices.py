@@ -1,19 +1,22 @@
-from typing import Optional
-from sqlalchemy import String, ForeignKey, Integer, DateTime, Index
-from sqlalchemy.orm import Mapped, mapped_column
-from .base import Base, TimestampMixin
-from datetime import datetime
+from __future__ import annotations
+
 import uuid
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from .base import Base, TimestampMixin
 
 
 class Invoice(Base, TimestampMixin):
     __tablename__ = "invoices"
     __table_args__ = (
-        Index('ix_invoices_team_id', 'team_id'),
-        Index('ix_invoices_status', 'status'),
-        Index('ix_invoices_period_start', 'period_start'),
-        Index('ix_invoices_period_end', 'period_end'),
-        Index('ix_invoices_created_at', 'created_at'),
+        Index("ix_invoices_team_id", "team_id"),
+        Index("ix_invoices_status", "status"),
+        Index("ix_invoices_period_start", "period_start"),
+        Index("ix_invoices_period_end", "period_end"),
+        Index("ix_invoices_created_at", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -23,8 +26,8 @@ class Invoice(Base, TimestampMixin):
     amount_paid: Mapped[int] = mapped_column(Integer)
     currency: Mapped[str] = mapped_column(String(3), default="usd")
     status: Mapped[str] = mapped_column(String(50))
-    invoice_pdf: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    hosted_invoice_url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    invoice_pdf: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    hosted_invoice_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 

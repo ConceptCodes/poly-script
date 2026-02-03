@@ -1,14 +1,18 @@
-from sqlalchemy import String, ForeignKey, Boolean, Index
-from sqlalchemy.orm import Mapped, mapped_column
-from .base import Base, TimestampMixin
+from __future__ import annotations
+
 import uuid
+
+from sqlalchemy import Boolean, ForeignKey, Index, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from .base import Base, TimestampMixin
 
 
 class PaymentMethod(Base, TimestampMixin):
     __tablename__ = "payment_methods"
     __table_args__ = (
-        Index('ix_payment_methods_team_id', 'team_id'),
-        Index('ix_payment_methods_is_default', 'is_default'),
+        Index("ix_payment_methods_team_id", "team_id"),
+        Index("ix_payment_methods_is_default", "is_default"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

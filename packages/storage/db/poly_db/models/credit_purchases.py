@@ -1,14 +1,18 @@
-from sqlalchemy import String, ForeignKey, Integer, Index
-from sqlalchemy.orm import Mapped, mapped_column
-from .base import Base, TimestampMixin
+from __future__ import annotations
+
 import uuid
+
+from sqlalchemy import ForeignKey, Index, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from .base import Base, TimestampMixin
 
 
 class CreditPurchase(Base, TimestampMixin):
     __tablename__ = "credit_purchases"
     __table_args__ = (
-        Index('ix_credit_purchases_team_id', 'team_id'),
-        Index('ix_credit_purchases_created_at', 'created_at'),
+        Index("ix_credit_purchases_team_id", "team_id"),
+        Index("ix_credit_purchases_created_at", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

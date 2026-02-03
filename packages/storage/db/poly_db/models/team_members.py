@@ -1,8 +1,13 @@
-from sqlalchemy import String, ForeignKey, Enum as SQLEnum, UniqueConstraint, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .base import Base, TimestampMixin
+from __future__ import annotations
+
 import enum
 import uuid
+
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import ForeignKey, Index, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base, TimestampMixin
 
 
 class TeamRole(str, enum.Enum):
@@ -15,9 +20,9 @@ class TeamMember(Base, TimestampMixin):
     __tablename__ = "team_members"
     __table_args__ = (
         UniqueConstraint("team_id", "user_id", name="uq_team_user"),
-        Index('ix_team_members_team_id', 'team_id'),
-        Index('ix_team_members_user_id', 'user_id'),
-        Index('ix_team_members_role', 'role'),
+        Index("ix_team_members_team_id", "team_id"),
+        Index("ix_team_members_user_id", "user_id"),
+        Index("ix_team_members_role", "role"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

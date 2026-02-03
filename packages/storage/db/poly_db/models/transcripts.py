@@ -1,16 +1,19 @@
-from typing import List
-from sqlalchemy import String, ForeignKey, Text, JSON, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .base import Base, TimestampMixin
+from __future__ import annotations
+
 import uuid
+
+from sqlalchemy import JSON, ForeignKey, Index, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base, TimestampMixin
 
 
 class Transcript(Base, TimestampMixin):
     __tablename__ = "transcripts"
     __table_args__ = (
-        Index('ix_transcripts_job_id', 'job_id'),
-        Index('ix_transcripts_language', 'language'),
-        Index('ix_transcripts_created_at', 'created_at'),
+        Index("ix_transcripts_job_id", "job_id"),
+        Index("ix_transcripts_language", "language"),
+        Index("ix_transcripts_created_at", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -24,7 +27,7 @@ class Transcript(Base, TimestampMixin):
     engine_version: Mapped[str] = mapped_column(String(50))
 
     job: Mapped["TranscriptionJob"] = relationship(back_populates="transcript")
-    edits: Mapped[List["TranscriptEdit"]] = relationship(
+    edits: Mapped[list["TranscriptEdit"]] = relationship(
         back_populates="transcript", cascade="all, delete-orphan"
     )
 

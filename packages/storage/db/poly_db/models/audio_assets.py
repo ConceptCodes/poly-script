@@ -1,15 +1,18 @@
-from typing import Optional
-from sqlalchemy import String, ForeignKey, BigInteger, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .base import Base, TimestampMixin
+from __future__ import annotations
+
 import uuid
+
+from sqlalchemy import BigInteger, ForeignKey, Index, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base, TimestampMixin
 
 
 class AudioAsset(Base, TimestampMixin):
     __tablename__ = "audio_assets"
     __table_args__ = (
-        Index('ix_audio_assets_job_id', 'job_id'),
-        Index('ix_audio_assets_created_at', 'created_at'),
+        Index("ix_audio_assets_job_id", "job_id"),
+        Index("ix_audio_assets_created_at", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -20,7 +23,7 @@ class AudioAsset(Base, TimestampMixin):
     filename: Mapped[str] = mapped_column(String(255))
     mime_type: Mapped[str] = mapped_column(String(100))
     file_size: Mapped[int] = mapped_column(BigInteger)
-    duration_seconds: Mapped[Optional[float]] = mapped_column(nullable=True)
+    duration_seconds: Mapped[float | None] = mapped_column(nullable=True)
 
     job: Mapped["TranscriptionJob"] = relationship(back_populates="audio_asset")
 

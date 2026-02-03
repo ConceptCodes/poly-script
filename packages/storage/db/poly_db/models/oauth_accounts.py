@@ -1,15 +1,19 @@
-from sqlalchemy import String, ForeignKey, UniqueConstraint, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .base import Base, TimestampMixin
+from __future__ import annotations
+
 import uuid
+
+from sqlalchemy import ForeignKey, Index, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base, TimestampMixin
 
 
 class OAuthAccount(Base, TimestampMixin):
     __tablename__ = "oauth_accounts"
     __table_args__ = (
         UniqueConstraint("provider", "provider_user_id", name="uq_provider_user"),
-        Index('ix_oauth_accounts_user_id', 'user_id'),
-        Index('ix_oauth_accounts_provider', 'provider'),
+        Index("ix_oauth_accounts_user_id", "user_id"),
+        Index("ix_oauth_accounts_provider", "provider"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

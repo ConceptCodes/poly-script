@@ -1,16 +1,19 @@
-from typing import Optional
-from sqlalchemy import String, ForeignKey, Text, JSON, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .base import Base, TimestampMixin
+from __future__ import annotations
+
 import uuid
+
+from sqlalchemy import JSON, ForeignKey, Index, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base, TimestampMixin
 
 
 class TranscriptEdit(Base, TimestampMixin):
     __tablename__ = "transcript_edits"
     __table_args__ = (
-        Index('ix_transcript_edits_transcript_id', 'transcript_id'),
-        Index('ix_transcript_edits_user_id', 'user_id'),
-        Index('ix_transcript_edits_created_at', 'created_at'),
+        Index("ix_transcript_edits_transcript_id", "transcript_id"),
+        Index("ix_transcript_edits_user_id", "user_id"),
+        Index("ix_transcript_edits_created_at", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

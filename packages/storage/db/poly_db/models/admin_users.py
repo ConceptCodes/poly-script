@@ -1,15 +1,19 @@
-from sqlalchemy import String, Boolean, Index
-from sqlalchemy.orm import Mapped, mapped_column
-from .base import Base, TimestampMixin
+from __future__ import annotations
+
 import uuid
+
+from sqlalchemy import Boolean, Index, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from .base import Base, TimestampMixin
 
 
 class AdminUser(Base, TimestampMixin):
     __tablename__ = "admin_users"
     __table_args__ = (
-        Index('ix_admin_users_is_active', 'is_active'),
-        Index('ix_admin_users_is_suspended', 'is_suspended'),
-        Index('ix_admin_users_role', 'role'),
+        Index("ix_admin_users_is_active", "is_active"),
+        Index("ix_admin_users_is_suspended", "is_suspended"),
+        Index("ix_admin_users_role", "role"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

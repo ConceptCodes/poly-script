@@ -1,17 +1,21 @@
-from sqlalchemy import String, ForeignKey, DateTime, Boolean, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .base import Base, TimestampMixin
-from datetime import datetime
+from __future__ import annotations
+
 import uuid
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base, TimestampMixin
 
 
 class RefreshToken(Base, TimestampMixin):
     __tablename__ = "refresh_tokens"
     __table_args__ = (
-        Index('ix_refresh_tokens_user_id', 'user_id'),
-        Index('ix_refresh_tokens_expires_at', 'expires_at'),
-        Index('ix_refresh_tokens_revoked', 'revoked'),
-        Index('ix_refresh_tokens_created_at', 'created_at'),
+        Index("ix_refresh_tokens_user_id", "user_id"),
+        Index("ix_refresh_tokens_expires_at", "expires_at"),
+        Index("ix_refresh_tokens_revoked", "revoked"),
+        Index("ix_refresh_tokens_created_at", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
