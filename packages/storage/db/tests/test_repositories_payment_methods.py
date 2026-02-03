@@ -1,6 +1,7 @@
-from poly_db.models import Team, PlanType, PaymentMethod
-from poly_db.repositories import PaymentMethodRepository
 import uuid
+
+from poly_db.models import PaymentMethod, PlanType, Team
+from poly_db.repositories import PaymentMethodRepository
 
 
 def test_payment_method_repository(session):

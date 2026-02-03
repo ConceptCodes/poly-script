@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta, timezone
-from poly_db.models import User, OAuthAccount, PasswordReset, RefreshToken
+from datetime import UTC, datetime, timedelta
+
+from poly_db.models import OAuthAccount, PasswordReset, RefreshToken, User
 from poly_db.repositories import (
     OAuthAccountRepository,
     PasswordResetRepository,
     RefreshTokenRepository,
 )
-import uuid
 
 
 def test_auth_repositories(session):
@@ -19,25 +19,25 @@ def test_auth_repositories(session):
     reset = PasswordReset(
         user_id=user.id,
         token="reset-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
     expired_reset = PasswordReset(
         user_id=user.id,
         token="reset-expired",
-        expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
+        expires_at=datetime.now(UTC) - timedelta(hours=1),
     )
     session.add_all([reset, expired_reset])
 
     refresh = RefreshToken(
         user_id=user.id,
         token="refresh-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        expires_at=datetime.now(UTC) + timedelta(days=7),
         revoked=False,
     )
     revoked_refresh = RefreshToken(
         user_id=user.id,
         token="refresh-revoked",
-        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        expires_at=datetime.now(UTC) + timedelta(days=7),
         revoked=True,
     )
     session.add_all([refresh, revoked_refresh])
@@ -77,8 +77,8 @@ def test_auth_repositories_negative_cases(session):
     active_reset = PasswordReset(
         user_id=user.id,
         token="active-reset",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
-        used_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
+        used_at=datetime.now(UTC),
     )
     session.add(active_reset)
     session.commit()
@@ -117,11 +117,11 @@ def test_auth_repositories_base_methods(session):
     new_reset = reset_repo.create(
         user_id=user.id,
         token="new-reset-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=2),
+        expires_at=datetime.now(UTC) + timedelta(hours=2),
     )
     assert new_reset.id is not None
 
-    updated_reset = reset_repo.update(new_reset.id, used_at=datetime.now(timezone.utc))
+    updated_reset = reset_repo.update(new_reset.id, used_at=datetime.now(UTC))
     assert updated_reset.used_at is not None
 
     assert reset_repo.delete(new_reset.id) is True
@@ -130,7 +130,7 @@ def test_auth_repositories_base_methods(session):
     new_refresh = refresh_repo.create(
         user_id=user.id,
         token="new-refresh-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(days=14),
+        expires_at=datetime.now(UTC) + timedelta(days=14),
         revoked=False,
     )
     assert new_refresh.id is not None

@@ -1,5 +1,7 @@
-from poly_db.models import User, Team, PlanType, TeamMember, TeamRole
 import uuid
+from datetime import UTC, datetime
+
+from poly_db.models import PlanType, Team, TeamMember, TeamRole, User
 
 
 def test_create_user(session):
@@ -55,9 +57,7 @@ def test_soft_delete(session):
     session.add(user)
     session.commit()
 
-    from datetime import datetime, timezone
-
-    user.deleted_at = datetime.now(timezone.utc)
+    user.deleted_at = datetime.now(UTC)
     session.commit()
 
     assert user.deleted_at is not None

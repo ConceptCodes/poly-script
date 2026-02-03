@@ -1,6 +1,7 @@
+import uuid
+
 from poly_db.models import User, UserSettings
 from poly_db.repositories import UserRepository, UserSettingsRepository
-import uuid
 
 
 def test_user_repository(session):
@@ -65,11 +66,7 @@ def test_user_settings_repository(session):
     session.add(user2)
     session.commit()
 
-    new_settings = repo.create(
-        user_id=user2.id,
-        host_language="de",
-        notifications={"email": False}
-    )
+    new_settings = repo.create(user_id=user2.id, host_language="de", notifications={"email": False})
     assert new_settings.id is not None
     assert new_settings.host_language == "de"
 

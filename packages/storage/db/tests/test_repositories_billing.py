@@ -1,13 +1,14 @@
-from datetime import datetime, timedelta, timezone
-from poly_db.models import Team, PlanType, Subscription, UsageLog, CreditPurchase, Invoice
+import uuid
+from datetime import UTC, datetime, timedelta
+
+from poly_db.models import CreditPurchase, Invoice, PlanType, Subscription, Team, UsageLog
 from poly_db.repositories import (
-    TeamRepository,
-    SubscriptionRepository,
-    UsageLogRepository,
     CreditPurchaseRepository,
     InvoiceRepository,
+    SubscriptionRepository,
+    TeamRepository,
+    UsageLogRepository,
 )
-import uuid
 
 
 def test_billing_repositories(session):
@@ -25,8 +26,8 @@ def test_billing_repositories(session):
         stripe_subscription_id="sub_123",
         status="active",
         plan_id="price_pro",
-        current_period_start=datetime.now(timezone.utc),
-        current_period_end=datetime.now(timezone.utc) + timedelta(days=30),
+        current_period_start=datetime.now(UTC),
+        current_period_end=datetime.now(UTC) + timedelta(days=30),
         cancel_at_period_end=False,
     )
     session.add(sub)
@@ -53,8 +54,8 @@ def test_billing_repositories(session):
         status="paid",
         invoice_pdf=None,
         hosted_invoice_url=None,
-        period_start=datetime.now(timezone.utc),
-        period_end=datetime.now(timezone.utc) + timedelta(days=30),
+        period_start=datetime.now(UTC),
+        period_end=datetime.now(UTC) + timedelta(days=30),
     )
     session.add(invoice)
     session.commit()
@@ -122,8 +123,8 @@ def test_billing_repositories_base_methods(session):
         stripe_subscription_id="sub_new",
         status="active",
         plan_id="price_std",
-        current_period_start=datetime.now(timezone.utc),
-        current_period_end=datetime.now(timezone.utc) + timedelta(days=30),
+        current_period_start=datetime.now(UTC),
+        current_period_end=datetime.now(UTC) + timedelta(days=30),
     )
     assert new_sub.id is not None
 
@@ -159,8 +160,8 @@ def test_billing_repositories_base_methods(session):
         amount_paid=500,
         currency="usd",
         status="paid",
-        period_start=datetime.now(timezone.utc),
-        period_end=datetime.now(timezone.utc) + timedelta(days=30),
+        period_start=datetime.now(UTC),
+        period_end=datetime.now(UTC) + timedelta(days=30),
     )
     assert new_invoice.id is not None
 

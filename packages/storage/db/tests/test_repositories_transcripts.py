@@ -1,6 +1,7 @@
-from poly_db.models import Team, PlanType, TranscriptionJob, Transcript, TranscriptEdit, User
-from poly_db.repositories import TranscriptRepository, TranscriptEditRepository
 import uuid
+
+from poly_db.models import PlanType, Team, Transcript, TranscriptEdit, TranscriptionJob, User
+from poly_db.repositories import TranscriptEditRepository, TranscriptRepository
 
 
 def test_transcript_repositories(session):
@@ -53,9 +54,7 @@ def test_transcript_repositories(session):
     assert other_transcript.id not in [t.id for t in transcript_repo.list_recent(team.id, limit=5)]
 
     edit_repo = TranscriptEditRepository(session)
-    assert edit.id in [
-        e.id for e in edit_repo.get_history_by_transcript_id(team.id, transcript.id)
-    ]
+    assert edit.id in [e.id for e in edit_repo.get_history_by_transcript_id(team.id, transcript.id)]
     assert edit.id in [e.id for e in edit_repo.list_by_user_id(team.id, user.id)]
 
 

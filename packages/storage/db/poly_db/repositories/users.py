@@ -1,16 +1,17 @@
-from .base import BaseRepository
-from .user_repository import UserRepository
-from ..models.user_settings import UserSettings
-from sqlalchemy import select
 import uuid
-from typing import Optional
+
+from sqlalchemy import select
+
+from poly_db.models.user_settings import UserSettings
+from poly_db.repositories.base import BaseRepository
+from poly_db.repositories.user_repository import UserRepository
 
 
 class UserSettingsRepository(BaseRepository[UserSettings]):
     def __init__(self, session):
         super().__init__(UserSettings, session)
 
-    def get_by_user_id(self, user_id: uuid.UUID) -> Optional[UserSettings]:
+    def get_by_user_id(self, user_id: uuid.UUID) -> UserSettings | None:
         stmt = select(UserSettings).where(UserSettings.user_id == user_id)
         return self.session.execute(stmt).scalar_one_or_none()
 

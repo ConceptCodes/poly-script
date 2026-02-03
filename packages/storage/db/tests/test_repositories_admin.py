@@ -1,6 +1,7 @@
+import uuid
+
 from poly_db.models import AdminUser, AuditLog
 from poly_db.repositories import AdminUserRepository, AuditLogRepository
-import uuid
 
 
 def test_admin_repositories(session):
@@ -27,8 +28,8 @@ def test_admin_repositories(session):
     assert admin.id in [a.id for a in admin_repo.list_active()]
 
     audit_repo = AuditLogRepository(session)
-    assert log.id in [l.id for l in audit_repo.list_by_admin_user(admin.id)]
-    assert log.id in [l.id for l in audit_repo.list_by_target("team", "team-1")]
+    assert log.id in [log_item.id for log_item in audit_repo.list_by_admin_user(admin.id)]
+    assert log.id in [log_item.id for log_item in audit_repo.list_by_target("team", "team-1")]
 
 
 def test_admin_repositories_negative_cases(session):

@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
 from poly_db.models import Base
 
 
@@ -20,8 +21,8 @@ def engine():
 @pytest.fixture
 def session(engine):
     """Create a new database session for a test."""
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    session_maker = sessionmaker(bind=engine)
+    session = session_maker()
     try:
         yield session
         session.commit()

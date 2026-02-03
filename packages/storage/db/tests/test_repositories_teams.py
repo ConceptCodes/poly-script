@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta, timezone
-from poly_db.models import Team, PlanType, User, TeamMember, TeamRole, TeamInvitation
-from poly_db.repositories import TeamMemberRepository, TeamInvitationRepository
 import uuid
+from datetime import UTC, datetime, timedelta
+
+from poly_db.models import PlanType, Team, TeamInvitation, TeamMember, TeamRole, User
+from poly_db.repositories import TeamInvitationRepository, TeamMemberRepository
 
 
 def test_team_repositories(session):
@@ -18,7 +19,7 @@ def test_team_repositories(session):
         email="invitee@example.com",
         role=TeamRole.MEMBER,
         token="invite-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+        expires_at=datetime.now(UTC) + timedelta(days=1),
         accepted_at=None,
     )
     expired_invitation = TeamInvitation(
@@ -26,7 +27,7 @@ def test_team_repositories(session):
         email="expired@example.com",
         role=TeamRole.MEMBER,
         token="expired-token",
-        expires_at=datetime.now(timezone.utc) - timedelta(days=1),
+        expires_at=datetime.now(UTC) - timedelta(days=1),
         accepted_at=None,
     )
     session.add_all([invitation, expired_invitation])
@@ -78,7 +79,7 @@ def test_team_repositories_negative_cases(session):
         email="active@example.com",
         role=TeamRole.MEMBER,
         token="active-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+        expires_at=datetime.now(UTC) + timedelta(days=1),
     )
     session.add(active_invitation)
     session.commit()
@@ -113,7 +114,7 @@ def test_team_repositories_base_methods(session):
         email="new@example.com",
         role=TeamRole.MEMBER,
         token="new-token",
-        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        expires_at=datetime.now(UTC) + timedelta(days=7),
     )
     assert new_invitation.id is not None
 

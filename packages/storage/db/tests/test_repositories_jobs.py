@@ -1,6 +1,7 @@
-from poly_db.models import Team, PlanType, TranscriptionJob, JobStatus, AudioAsset
-from poly_db.repositories import TranscriptionJobRepository, AudioAssetRepository
 import uuid
+
+from poly_db.models import AudioAsset, JobStatus, PlanType, Team, TranscriptionJob
+from poly_db.repositories import AudioAssetRepository, TranscriptionJobRepository
 
 
 def test_job_repositories(session):

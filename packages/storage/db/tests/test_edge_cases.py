@@ -1,12 +1,12 @@
-from datetime import datetime, timedelta, timezone
-from poly_db.models import Team, PlanType, User, TeamMember, TeamRole, UsageLog
+from datetime import UTC, datetime
+
+from poly_db.models import PlanType, Team, TeamMember, TeamRole, UsageLog, User
 from poly_db.repositories import (
-    TeamRepository,
-    UserRepository,
     TeamMemberRepository,
+    TeamRepository,
     UsageLogRepository,
+    UserRepository,
 )
-import pytest
 
 
 def test_edge_case_zero_values(session):
@@ -56,9 +56,9 @@ def test_edge_case_future_and_past_dates(session):
     found = member_repo.get_by_user_and_team(user.id, team.id)
     assert found is not None
     if found.created_at.tzinfo is not None:
-        assert found.created_at < datetime.now(timezone.utc)
+        assert found.created_at < datetime.now(UTC)
     else:
-        assert found.created_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc)
+        assert found.created_at.replace(tzinfo=UTC) < datetime.now(UTC)
 
 
 def test_edge_case_multiple_same_values(session):

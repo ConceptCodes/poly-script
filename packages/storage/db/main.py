@@ -1,5 +1,9 @@
+import logging
+
+
 def main():
-    print("Hello from db!")
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger(__name__).info("Hello from db!")
 
 
 if __name__ == "__main__":
