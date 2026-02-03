@@ -3,17 +3,21 @@ Async Export Service
 
 Provides async transcript export with artifact caching and presigned URL support.
 """
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, Optional
+
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from poly_db.models.transcripts import Transcript
+
 from .export_service import ExportService, get_export_filename
 
 
 class ExportArtifact:
     """Represents a cached export artifact."""
-    def __init__(
+
+    def __init__(  # noqa: PLR0913
         self,
         format: str,
         content: str = "",
@@ -63,7 +67,7 @@ class AsyncExportService:
         # Check if URL is still valid (presigned URLs typically expire after 1 hour)
         if expires_at:
             expire_dt = datetime.fromisoformat(expires_at)
-            if datetime.now(timezone.utc) > expire_dt:
+            if datetime.now(UTC) > expire_dt:
                 # URL expired, need to regenerate
                 return None
 
@@ -74,7 +78,9 @@ class AsyncExportService:
             presigned_url=presigned_url,
             url_expires_at=expires_at,
             content_length=artifact_data.get("content_length", 0),
-            created_at=datetime.fromisoformat(artifact_data["created_at"]) if artifact_data.get("created_at") else None,
+            created_at=datetime.fromisoformat(artifact_data["created_at"])
+            if artifact_data.get("created_at")
+            else None,
         )
 
     def generate_and_cache_export(
@@ -115,14 +121,14 @@ class AsyncExportService:
         if not transcript.format_versions:
             transcript.format_versions = {}
 
-        expires_at = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+        expires_at = (datetime.now(UTC) + timedelta(hours=1)).isoformat()
 
         transcript.format_versions[format] = {
             "storage_uri": storage_uri,
             "presigned_url": presigned_url,
             "url_expires_at": expires_at,
             "content_length": content_length,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
 
         if self.session:
@@ -166,7 +172,7 @@ class AsyncExportService:
         # Generate new presigned URL
         presigned_url = storage_backend.get_url(storage_uri, expires_in=3600)
 
-        expires_at = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+        expires_at = (datetime.now(UTC) + timedelta(hours=1)).isoformat()
 
         # Update cache
         artifact_data["presigned_url"] = presigned_url
