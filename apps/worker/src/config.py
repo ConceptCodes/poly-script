@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # Storage
     STORAGE_BACKEND: str = "local"
     STORAGE_PATH: str = "./storage"
+    STORAGE_MIN_FREE_BYTES: int = 0
     AWS_S3_BUCKET: str | None = None
     AWS_REGION: str = "us-east-1"
     AWS_ACCESS_KEY_ID: str | None = None
@@ -30,6 +31,13 @@ class Settings(BaseSettings):
     # Worker
     WORKER_CONSUMER_THREADS: int = 1
     WORKER_SHUTDOWN_TIMEOUT: int = 30
+
+    # Download validation
+    DOWNLOAD_MAX_RETRIES: int = 3
+    DOWNLOAD_RETRY_BACKOFF: int = 2
+    DOWNLOAD_TIMEOUT_SECONDS: int = 60
+    DOWNLOAD_CHUNK_SIZE_BYTES: int = 8192
+    DOWNLOAD_MAX_BYTES: int = 0  # 0 disables max size checks
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

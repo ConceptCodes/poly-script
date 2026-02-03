@@ -3,6 +3,9 @@
 Supports local filesystem and AWS S3 backends with a unified interface.
 """
 
+import base64
+import hashlib
+import shutil
 import uuid
 from pathlib import Path
 from typing import Protocol, runtime_checkable
@@ -55,9 +58,10 @@ class StorageBackend(Protocol):
 class LocalStorageBackend:
     """Local filesystem storage backend."""
 
-    def __init__(self, storage_path: str = "./storage"):
+    def __init__(self, storage_path: str = "./storage", min_free_bytes: int = 0):
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
+        self.min_free_bytes = min_free_bytes
 
     def save(
         self, file_content: bytes, filename: str, _content_type: str = "audio/mpeg"
@@ -66,8 +70,25 @@ class LocalStorageBackend:
         unique_filename = f"{uuid.uuid4()}{file_extension}"
         file_path = self.storage_path / unique_filename
 
+        if self.min_free_bytes:
+            _, _, free = shutil.disk_usage(self.storage_path)
+            if free < self.min_free_bytes:
+                raise RuntimeError(
+                    f"Insufficient storage space (free={free} bytes, required={self.min_free_bytes})"
+                )
+
         with file_path.open("wb") as f:
             f.write(file_content)
+
+        file_size = file_path.stat().st_size
+        if file_size != len(file_content):
+            try:
+                file_path.unlink()
+            except Exception:
+                pass
+            raise RuntimeError(
+                f"Local storage write failed (expected {len(file_content)} bytes, got {file_size})"
+            )
 
         return f"local://{file_path}"
 
@@ -104,11 +125,14 @@ class S3StorageBackend:
         unique_key = f"audio/{uuid.uuid4()}{file_extension}"
 
         try:
+            md5_digest = hashlib.md5(file_content).digest()
+            content_md5 = base64.b64encode(md5_digest).decode("ascii")
             self.s3_client.put_object(
                 Bucket=self.bucket,
                 Key=unique_key,
                 Body=file_content,
                 ContentType=content_type,
+                ContentMD5=content_md5,
             )
         except ClientError as e:
             raise RuntimeError(f"Failed to upload to S3: {e}") from e
@@ -154,6 +178,7 @@ def get_storage_backend(  # noqa: PLR0913
     region: str = "us-east-1",
     access_key: str | None = None,
     secret_key: str | None = None,
+    min_free_bytes: int = 0,
 ) -> StorageBackend:
     """Factory function to get storage backend instance.
 
@@ -164,6 +189,7 @@ def get_storage_backend(  # noqa: PLR0913
         region: AWS region (for S3 backend)
         access_key: AWS access key (for S3 backend)
         secret_key: AWS secret key (for S3 backend)
+        min_free_bytes: Minimum free disk bytes required for local writes
 
     Returns:
         StorageBackend instance
@@ -172,7 +198,7 @@ def get_storage_backend(  # noqa: PLR0913
         ValueError: If backend_type is invalid
     """
     if backend_type == "local":
-        return LocalStorageBackend(storage_path=storage_path)
+        return LocalStorageBackend(storage_path=storage_path, min_free_bytes=min_free_bytes)
     elif backend_type == "s3":
         if not bucket or not access_key or not secret_key:
             raise ValueError("S3 backend requires bucket, access_key, and secret_key")

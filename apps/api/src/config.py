@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # Storage
     STORAGE_BACKEND: str = "local"  # local|s3
     STORAGE_PATH: str = "./storage"
+    STORAGE_MIN_FREE_BYTES: int = 0
     AWS_S3_BUCKET: str | None = None
     AWS_REGION: str = "us-east-1"
     AWS_ACCESS_KEY_ID: str | None = None

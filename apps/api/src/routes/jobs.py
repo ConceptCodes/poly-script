@@ -425,6 +425,7 @@ def _build_job_manager(session: Session) -> JobManagerService:
     storage_backend = get_storage_backend(
         backend_type=settings.STORAGE_BACKEND,
         storage_path=settings.STORAGE_PATH,
+        min_free_bytes=settings.STORAGE_MIN_FREE_BYTES,
         bucket=settings.AWS_S3_BUCKET,
         region=settings.AWS_REGION,
         access_key=settings.AWS_ACCESS_KEY_ID,
@@ -471,18 +472,26 @@ async def create_job_from_upload(
     # Validate MIME type
     allowed_mime_types = {
         "audio/mpeg",
-        "audio/wav",
         "audio/mp4",
+        "audio/mp3",
+        "audio/wav",
+        "audio/x-wav",
         "audio/ogg",
         "audio/webm",
-        "audio/x-wav",
-        "audio/mp3",
+        "audio/m4a",
+        "audio/flac",
+        "audio/amr",
+        "audio/amr-wb",
+        "audio/aac",
     }
     content_type = file.content_type or ""
     if content_type not in allowed_mime_types:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail=f"Unsupported audio format: {content_type}. Allowed: MP3, WAV, M4A, OGG, WEBM",
+            detail=(
+                f"Unsupported audio format: {content_type}. "
+                "Allowed: MP3, WAV, M4A, AAC, FLAC, AMR, AMR-WB, OGG, WEBM, MP4"
+            ),
         )
 
     with get_db_session() as session:
