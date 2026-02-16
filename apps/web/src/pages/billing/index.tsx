@@ -147,7 +147,7 @@ export function BillingPage() {
   if (error) {
     return (
       <div className="container mx-auto p-6 text-center">
-        <h1 className="text-2xl font-bold text-red-500">Error</h1>
+        <h1 className="text-2xl font-bold text-destructive">Error</h1>
         <p className="text-muted-foreground">{error}</p>
         <Button onClick={() => window.location.reload()} className="mt-4">
           Retry

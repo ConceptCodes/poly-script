@@ -72,7 +72,7 @@ export function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">
@@ -85,7 +85,7 @@ export function VerifyEmailPage() {
           {status === "pending" && (
             <div className="text-center space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-              <p className="text-sm text-gray-600">{t("auth.verifyEmail.pending.subtitle")}</p>
+              <p className="text-sm text-muted-foreground">{t("auth.verifyEmail.pending.subtitle")}</p>
               <div className="pt-2">
                 <Link
                   to="/auth/signup"
@@ -119,7 +119,7 @@ export function VerifyEmailPage() {
               </Alert>
               {token && (
                 <>
-                  <p className="text-sm text-center text-gray-600">
+                  <p className="text-sm text-center text-muted-foreground">
                     {t("auth.verifyEmail.failed.subtitle")}
                   </p>
                   <Button
@@ -133,7 +133,7 @@ export function VerifyEmailPage() {
                       : t("auth.verifyEmail.failed.resend")}
                   </Button>
                   {resendSuccess && (
-                    <p className="text-sm text-center text-green-600">
+                    <p className="text-sm text-center text-success">
                       {t("auth.verifyEmail.failed.resendSuccess")}
                     </p>
                   )}

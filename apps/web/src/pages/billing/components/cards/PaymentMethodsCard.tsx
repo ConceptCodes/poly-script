@@ -121,7 +121,7 @@ export function PaymentMethodsCard() {
                     onClick={() => setMethodToDelete(pm.id)}
                     aria-label="Delete payment method"
                   >
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
               </div>

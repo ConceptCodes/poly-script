@@ -55,7 +55,7 @@ export function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">{t("auth.signup.title")}</CardTitle>
@@ -256,7 +256,7 @@ export function SignupPage() {
         <CardFooter className="flex flex-col space-y-4">
           <p className="text-sm text-muted-foreground text-center">
             {t("auth.signup.hasAccount")}{" "}
-            <Link to="/auth/login" className="text-blue-600 hover:text-blue-500">
+            <Link to="/auth/login" className="text-primary hover:opacity-80">
               {t("auth.signup.signIn")}
             </Link>
           </p>

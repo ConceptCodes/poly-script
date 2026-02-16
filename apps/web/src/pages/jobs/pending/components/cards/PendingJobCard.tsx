@@ -31,11 +31,11 @@ export function PendingJobCard({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "QUEUED":
-        return "bg-yellow-500";
+        return "bg-warning";
       case "RUNNING":
-        return "bg-blue-500";
+        return "bg-info";
       default:
-        return "bg-gray-500";
+        return "bg-muted";
     }
   };
 

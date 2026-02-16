@@ -70,8 +70,8 @@ function NavLink({
           transition-all duration-300 ease-out
           ${
             isActive
-              ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/25"
-              : "text-foreground hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+              ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/20"
+              : "text-foreground hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/20"
           }
         `}
       >
@@ -101,17 +101,16 @@ function UsageIndicator({ usage }: { usage: SimpleUsage }) {
   const isUnlimited = usage.monthly_limit === "inf";
   const usagePercent = isUnlimited ? 100 : (usage.monthly_upload_count / usage.monthly_limit) * 100;
 
-  const planColors = {
-    PRO: "bg-gradient-to-r from-indigo-500 to-violet-500",
-    STANDARD: "bg-gradient-to-r from-blue-500 to-cyan-500",
-    FREE: "bg-gradient-to-r from-gray-400 to-gray-500",
+   const planColors = {
+    PRO: "bg-gradient-to-r from-primary to-accent",
+    STANDARD: "bg-gradient-to-r from-info to-info/90",
+    FREE: "bg-gradient-to-r from-muted to-muted/90",
   };
 
   const planBadgeColors = {
-    PRO: "bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border-indigo-500/20 text-indigo-600 dark:text-indigo-400",
-    STANDARD:
-      "bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
-    FREE: "bg-gradient-to-r from-gray-500/10 to-slate-500/10 border-gray-500/20 text-gray-600 dark:text-gray-400",
+    PRO: "bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20 text-primary dark:text-primary/80",
+    STANDARD: "bg-gradient-to-r from-info/10 to-info/20 border-info/20 text-info dark:text-info/80",
+    FREE: "bg-gradient-to-r from-muted/10 to-muted/20 border-muted/20 text-muted-foreground dark:text-muted-foreground/70",
   };
 
   return (
@@ -151,7 +150,7 @@ function UserAvatar() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full" aria-label="User menu">
           <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-500 text-white">
+            <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -390,10 +389,10 @@ export function Header() {
                   variant="outline"
                   className={`font-semibold text-xs px-2.5 py-1 rounded-full border ${
                     usage.plan === "PRO"
-                      ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-600 dark:text-indigo-400"
+                      ? "bg-primary/10 border-primary/20 text-primary dark:text-primary/80"
                       : usage.plan === "STANDARD"
-                        ? "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
-                        : "bg-gray-500/10 border-gray-500/20 text-gray-600 dark:text-gray-400"
+                        ? "bg-info/10 border-info/20 text-info dark:text-info/80"
+                        : "bg-muted/10 border-muted/20 text-muted-foreground dark:text-muted-foreground/70"
                   }`}
                 >
                   {usage.plan}

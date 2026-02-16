@@ -82,7 +82,7 @@ export function UploadDropzone({ onFileSelected, disabled = false }: UploadDropz
   };
 
   return (
-    <Card className="precision-card overflow-hidden smooth-transition">
+    <Card className="border-2 rounded-xl overflow-hidden transition-all">
       <CardContent className="p-0">
         <button
           type="button"
@@ -113,27 +113,27 @@ export function UploadDropzone({ onFileSelected, disabled = false }: UploadDropz
                 {uploadProgress < 100 ? (
                   <div className="space-y-4 animate-fade-in-up">
                     <div className="flex items-center justify-center">
-                      <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center animate-gentle-pulse">
+                      <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center animate-pulse">
                         <Upload className="h-10 w-10 text-primary" />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Uploading...</p>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full precision-gradient smooth-transition"
-                          style={{ width: `${uploadProgress}%` }}
-                        />
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-primary to-accent transition-all"
+                            style={{ width: `${uploadProgress}%` }}
+                          />
                       </div>
                       <p className="text-xs text-muted-foreground">{uploadProgress}%</p>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-4 animate-fade-in-up">
-                    <div className="flex items-center justify-center">
-                      <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 flex items-center justify-center">
-                        <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
-                      </div>
+                      <div className="flex items-center justify-center">
+                        <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-success/10 to-success/20 flex items-center justify-center">
+                          <CheckCircle2 className="h-10 w-10 text-success dark:text-success/80" />
+                        </div>
                     </div>
                     <div className="space-y-2">
                       <p className="text-base font-semibold text-foreground">{selectedFile.name}</p>
@@ -150,10 +150,10 @@ export function UploadDropzone({ onFileSelected, disabled = false }: UploadDropz
               </div>
             ) : (
               <div className="space-y-6 text-center animate-fade-in-up">
-                <div className="flex items-center justify-center">
-                  <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center smooth-transition hover:from-primary/20 hover:to-accent/20">
-                    <Upload className="h-10 w-10 text-primary" />
-                  </div>
+                 <div className="flex items-center justify-center">
+                   <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center transition-all hover:from-primary/20 hover:to-accent/20">
+                     <Upload className="h-10 w-10 text-primary" />
+                   </div>
                 </div>
                 <div className="space-y-3">
                   <p className="text-base font-medium text-foreground">

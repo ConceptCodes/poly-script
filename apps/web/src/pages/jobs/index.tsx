@@ -60,13 +60,13 @@ export function JobsPage() {
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
-      QUEUED: "bg-yellow-100 text-yellow-800",
-      RUNNING: "bg-blue-100 text-blue-800",
-      SUCCEEDED: "bg-green-100 text-green-800",
-      FAILED: "bg-red-100 text-red-800",
-      CANCELED: "bg-gray-100 text-gray-800",
+      QUEUED: "bg-warning/10 text-warning",
+      RUNNING: "bg-info/10 text-info",
+      SUCCEEDED: "bg-success/10 text-success",
+      FAILED: "bg-destructive/10 text-destructive",
+      CANCELED: "bg-muted/10 text-muted-foreground",
     };
-    const color = colors[status] || "bg-gray-100 text-gray-800";
+    const color = colors[status] || "bg-muted/10 text-muted-foreground";
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>{status}</span>;
   };
 
@@ -231,9 +231,9 @@ export function JobsPage() {
                         <TableCell className="text-sm">
                           {job.status === "RUNNING" || job.status === "QUEUED" ? (
                             <div className="flex items-center gap-2">
-                              <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                                 <div
-                                  className="h-full bg-blue-500 transition-all"
+                                  className="h-full bg-info transition-all"
                                   style={{ width: `${job.progress_pct}%` }}
                                 />
                               </div>

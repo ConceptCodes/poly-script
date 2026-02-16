@@ -26,17 +26,17 @@ export function ProgressCard({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "QUEUED":
-        return "bg-yellow-500";
+        return "bg-warning";
       case "RUNNING":
-        return "bg-blue-500";
+        return "bg-info";
       case "SUCCEEDED":
-        return "bg-green-500";
+        return "bg-success";
       case "FAILED":
-        return "bg-red-500";
+        return "bg-destructive";
       case "CANCELED":
-        return "bg-gray-500";
+        return "bg-muted";
       default:
-        return "bg-gray-500";
+        return "bg-muted";
     }
   };
 

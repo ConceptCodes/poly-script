@@ -157,7 +157,7 @@ export function AdvancedOptions({
         </CollapsibleTrigger>
 
         <CollapsibleContent className="mt-4 animate-fade-in-up">
-          <Card className="precision-card">
+          <Card className="border-2 rounded-xl transition-all">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium flex items-center gap-2">
                 <Settings className="h-4 w-4 text-muted-foreground" />
@@ -223,7 +223,7 @@ export function AdvancedOptions({
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full h-12 text-base font-medium precision-gradient shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 smooth-transition"
+          className="w-full h-12 text-base font-medium bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
         >
           {isSubmitting ? "Processing..." : "Start Transcription"}
         </Button>

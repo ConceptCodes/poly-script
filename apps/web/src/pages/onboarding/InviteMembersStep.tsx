@@ -100,7 +100,7 @@ export function InviteMembersStep({
               ))}
             </div>
             {!emailsValid && (
-              <p className="text-sm text-red-500">{t("onboarding.error.invalidEmail")}</p>
+              <p className="text-sm text-destructive">{t("onboarding.error.invalidEmail")}</p>
             )}
           </div>
           <Button type="button" onClick={addMember}>

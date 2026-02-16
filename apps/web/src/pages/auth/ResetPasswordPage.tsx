@@ -66,7 +66,7 @@ export function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
         <Alert variant="destructive" className="max-w-md">
           <AlertDescription>{t("auth.resetPassword.error")}</AlertDescription>
         </Alert>
@@ -75,13 +75,13 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">{t("auth.resetPassword.title")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-center text-gray-600 mb-6">
+          <p className="text-sm text-center text-muted-foreground mb-6">
             {t("auth.resetPassword.subtitle")}
           </p>
 

@@ -44,8 +44,8 @@ export function UrlInput({ value, onChange, error, disabled }: UrlInputProps) {
   };
 
   const getStatusIcon = () => {
-    if (error) return <AlertCircle className="h-4 w-4 text-destructive" />;
-    if (isValid) return <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
+     if (error) return <AlertCircle className="h-4 w-4 text-destructive" />;
+    if (isValid) return <CheckCircle2 className="h-4 w-4 text-success dark:text-success/80" />;
     return null;
   };
 
@@ -58,8 +58,8 @@ export function UrlInput({ value, onChange, error, disabled }: UrlInputProps) {
   };
 
   return (
-    <Card
-      className={`precision-card smooth-transition ${
+     <Card
+      className={`border-2 rounded-xl transition-all ${
         focused ? "ring-2 ring-primary/20 shadow-lg" : error ? "ring-2 ring-destructive/20" : ""
       }`}
     >
@@ -69,28 +69,28 @@ export function UrlInput({ value, onChange, error, disabled }: UrlInputProps) {
             Audio URL
           </label>
 
-          <div
-            className={`relative flex items-center gap-3 px-4 py-3 rounded-xl border-2 smooth-transition ${
-              focused
-                ? "border-primary bg-primary/5"
-                : error
-                  ? "border-destructive bg-destructive/5"
-                  : "border-border/60 bg-background hover:border-primary/40"
-            }`}
-          >
-            <div
-              className={`flex items-center justify-center h-9 w-9 rounded-lg smooth-transition ${
-                urlType === "youtube"
-                  ? "bg-red-500/10 text-red-600 dark:text-red-400"
-                  : urlType === "s3"
-                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                    : urlType === "direct"
-                      ? "bg-primary/10 text-primary"
-                      : urlType === "invalid"
-                        ? "bg-destructive/10 text-destructive"
-                        : "bg-muted/50 text-muted-foreground"
-              }`}
-            >
+             <div
+               className={`relative flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${
+                 focused
+                   ? "border-primary bg-primary/5"
+                   : error
+                     ? "border-destructive bg-destructive/5"
+                     : "border-border bg-background hover:border-primary/40"
+               }`}
+             >
+             <div
+               className={`flex items-center justify-center h-9 w-9 rounded-lg transition-all ${
+                 urlType === "youtube"
+                   ? "bg-destructive/10 text-destructive dark:text-destructive/80"
+                   : urlType === "s3"
+                     ? "bg-warning/10 text-warning dark:text-warning/80"
+                     : urlType === "direct"
+                       ? "bg-primary/10 text-primary"
+                       : urlType === "invalid"
+                         ? "bg-destructive/10 text-destructive"
+                         : "bg-muted/30 text-muted-foreground"
+               }`}
+             >
               {getUrlIcon()}
             </div>
 
@@ -103,7 +103,7 @@ export function UrlInput({ value, onChange, error, disabled }: UrlInputProps) {
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
               disabled={disabled}
-              className="flex-1 bg-transparent border-0 outline-none text-foreground placeholder:text-muted-foreground/60 precision-input"
+               className="flex-1 bg-transparent border-0 outline-none text-foreground placeholder:text-muted-foreground/60"
               aria-label="Audio URL input"
             />
 

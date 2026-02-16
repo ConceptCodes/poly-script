@@ -86,12 +86,12 @@ export function EditHistoryModal({ transcriptId, onClose }: EditHistoryModalProp
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="p-2 bg-red-50 dark:bg-red-950 rounded border border-red-200 dark:border-red-800">
-                      <div className="text-xs text-red-600 dark:text-red-400 mb-1">Before</div>
+                    <div className="p-2 bg-destructive/10 dark:bg-destructive/20 rounded border border-destructive/30 dark:border-destructive/40">
+                      <div className="text-xs text-destructive dark:text-destructive/80 mb-1">Before</div>
                       <p className="line-clamp-2">{edit.previous_text}</p>
                     </div>
-                    <div className="p-2 bg-green-50 dark:bg-green-950 rounded border border-green-200 dark:border-green-800">
-                      <div className="text-xs text-green-600 dark:text-green-400 mb-1">After</div>
+                    <div className="p-2 bg-success/10 dark:bg-success/20 rounded border border-success/30 dark:border-success/40">
+                      <div className="text-xs text-success dark:text-success/80 mb-1">After</div>
                       <p className="line-clamp-2">{edit.new_text}</p>
                     </div>
                   </div>

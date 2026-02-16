@@ -45,7 +45,7 @@ export function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl text-center">{t("auth.forgotPassword.title")}</CardTitle>
@@ -54,7 +54,7 @@ export function ForgotPasswordPage() {
             <Alert className="mb-6">
               <AlertDescription>{t("auth.forgotPassword.success")}</AlertDescription>
             </Alert>
-            <p className="text-sm text-center text-gray-600 mb-6">
+            <p className="text-sm text-center text-muted-foreground mb-6">
               {t("auth.forgotPassword.subtitle")}
             </p>
             <div className="flex justify-center">
@@ -69,13 +69,13 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">{t("auth.forgotPassword.title")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-center text-gray-600 mb-6">
+          <p className="text-sm text-center text-muted-foreground mb-6">
             {t("auth.forgotPassword.subtitle")}
           </p>
 

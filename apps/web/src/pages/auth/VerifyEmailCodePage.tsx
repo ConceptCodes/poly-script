@@ -73,7 +73,7 @@ export function VerifyEmailCodePage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">{t("auth.verifyEmailCode.title")}</CardTitle>
@@ -84,9 +84,9 @@ export function VerifyEmailCodePage() {
         <CardContent>
           {success ? (
             <div className="text-center space-y-4">
-              <div className="text-green-600 text-6xl">✓</div>
+              <div className="text-success text-6xl">✓</div>
               <p className="text-lg font-medium">Email verified!</p>
-              <p className="text-sm text-gray-600">Redirecting to onboarding...</p>
+              <p className="text-sm text-muted-foreground">Redirecting to onboarding...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -101,7 +101,7 @@ export function VerifyEmailCodePage() {
                   maxLength={6}
                   className="text-center text-2xl tracking-widest"
                 />
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-muted-foreground/70 text-center">
                   Enter the 6-digit code sent to your email
                 </p>
               </div>
@@ -117,7 +117,7 @@ export function VerifyEmailCodePage() {
               </Button>
 
               <div className="text-center">
-                <p className="text-sm text-gray-600">Didn't receive the code?</p>
+                <p className="text-sm text-muted-foreground">Didn't receive the code?</p>
                 <Button
                   type="button"
                   variant="link"

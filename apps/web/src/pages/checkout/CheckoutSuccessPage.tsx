@@ -30,7 +30,7 @@ export function CheckoutSuccessPage() {
   return (
     <div className="container mx-auto flex min-h-[60vh] items-center justify-center p-6">
       <div className="flex max-w-md flex-col items-center space-y-6 text-center">
-        <CheckCircle2 className="h-24 w-24 text-green-500" />
+        <CheckCircle2 className="h-24 w-24 text-success" />
         <h1 className="text-3xl font-bold">{title}</h1>
         <p className="text-muted-foreground">{description}</p>
         <div className="flex gap-4">

@@ -149,13 +149,13 @@ export function LiveTranscriptViewerPage() {
         />
 
         {isFinished && currentProgress.status === "SUCCEEDED" && (
-          <div className="flex items-center justify-center gap-3 p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-            <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+          <div className="flex items-center justify-center gap-3 p-4 bg-success/10 dark:bg-success/20 rounded-lg border border-success/30 dark:border-success/40">
+            <CheckCircle2 className="w-8 h-8 text-success dark:text-success/80" />
             <div>
-              <h3 className="font-semibold text-lg text-green-900 dark:text-green-100">
+              <h3 className="font-semibold text-lg text-success dark:text-success/90">
                 Transcription Complete
               </h3>
-              <p className="text-sm text-green-700 dark:text-green-300">
+              <p className="text-sm text-success/80 dark:text-success/70">
                 Redirecting to transcript editor...
               </p>
             </div>
@@ -163,13 +163,13 @@ export function LiveTranscriptViewerPage() {
         )}
 
         {isFinished && currentProgress.status === "FAILED" && (
-          <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-950 rounded-lg border border-red-200 dark:border-red-800">
-            <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+          <div className="flex items-center gap-3 p-4 bg-destructive/10 dark:bg-destructive/20 rounded-lg border border-destructive/30 dark:border-destructive/40">
+            <AlertCircle className="w-8 h-8 text-destructive dark:text-destructive/80" />
             <div>
-              <h3 className="font-semibold text-lg text-red-900 dark:text-red-100">
+              <h3 className="font-semibold text-lg text-destructive dark:text-destructive/90">
                 Transcription Failed
               </h3>
-              <p className="text-sm text-red-700 dark:text-red-300">
+              <p className="text-sm text-destructive/80 dark:text-destructive/70">
                 The transcription encountered an error. Please try again.
               </p>
             </div>
@@ -177,13 +177,13 @@ export function LiveTranscriptViewerPage() {
         )}
 
         {isFinished && currentProgress.status === "CANCELED" && (
-          <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-950 rounded-lg border border-gray-200 dark:border-gray-800">
-            <CheckCircle2 className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+          <div className="flex items-center gap-3 p-4 bg-muted/30 dark:bg-muted/20 rounded-lg border border-border dark:border-border">
+            <CheckCircle2 className="w-8 h-8 text-muted-foreground dark:text-muted-foreground/80" />
             <div>
-              <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+              <h3 className="font-semibold text-lg text-foreground dark:text-foreground">
                 Job Canceled
               </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300">This job was canceled.</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground/70">This job was canceled.</p>
             </div>
           </div>
         )}

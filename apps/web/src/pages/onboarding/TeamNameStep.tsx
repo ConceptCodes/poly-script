@@ -39,7 +39,7 @@ export function TeamNameStep(_props: {
                   placeholder={t("onboarding.teamName.placeholder")}
                 />
                 {field.state.meta.errors && (
-                  <p className="text-sm text-red-500">{field.state.meta.errors[0]}</p>
+                  <p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
                 )}
               </div>
             )}

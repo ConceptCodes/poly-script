@@ -10,8 +10,8 @@ export function CompleteStep(_props: { onNext?: () => void }) {
       <Card>
         <CardHeader className="text-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle2 className="h-10 w-10 text-green-600" />
+            <div className="h-16 w-16 rounded-full bg-success/10 flex items-center justify-center">
+              <CheckCircle2 className="h-10 w-10 text-success" />
             </div>
             <CardTitle className="text-2xl">{t("onboarding.complete.title")}</CardTitle>
             <CardDescription>{t("onboarding.complete.description")}</CardDescription>

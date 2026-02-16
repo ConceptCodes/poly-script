@@ -24,26 +24,26 @@ export function CompletedJobCard({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "SUCCEEDED":
-        return "bg-green-500";
+        return "bg-success";
       case "FAILED":
-        return "bg-red-500";
+        return "bg-destructive";
       case "CANCELED":
-        return "bg-gray-500";
+        return "bg-muted";
       default:
-        return "bg-gray-500";
+        return "bg-muted";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "SUCCEEDED":
-        return <CheckCircle2 className="w-5 h-5 text-green-500" />;
+        return <CheckCircle2 className="w-5 h-5 text-success" />;
       case "FAILED":
-        return <XCircle className="w-5 h-5 text-red-500" />;
+        return <XCircle className="w-5 h-5 text-destructive" />;
       case "CANCELED":
-        return <AlertCircle className="w-5 h-5 text-gray-500" />;
+        return <AlertCircle className="w-5 h-5 text-muted-foreground" />;
       default:
-        return <AlertCircle className="w-5 h-5 text-gray-500" />;
+        return <AlertCircle className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
