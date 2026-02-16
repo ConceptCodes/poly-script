@@ -26,16 +26,58 @@ const t = getCopy(lang);
         {t.nav.cta}
       </a>
       <div class="lang">
-        {locales.map((locale) => (
-          <a
-            class="link"
-            href={`/${locale}`}
-            aria-current={locale === lang ? "page" : undefined}
-          >
-            {locale.toUpperCase()}
-          </a>
-        ))}
+        <select id="lang-switcher" aria-label="Select Language">
+          {locales.map((locale) => (
+            <option value={locale} selected={locale === lang}>
+              {locale.toUpperCase()}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   </div>
 </header>
+
+<script>
+  const switcher = document.getElementById('lang-switcher');
+  if (switcher) {
+    switcher.addEventListener('change', (e) => {
+      const target = e.target as HTMLSelectElement;
+      const newLang = target.value;
+      // Get the current path segments
+      const segments = window.location.pathname.split('/').filter(Boolean);
+      // Replace the first segment (the lang) if it exists and matches our locales
+      // In Astro's layout for this site, the lang is always the first segment.
+      segments[0] = newLang;
+      window.location.pathname = `/${segments.join('/')}`;
+    });
+  }
+</script>
+
+<style>
+  .lang select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+    padding-right: 28px;
+    transition: all 0.2s var(--ease-smooth);
+    border: 1px solid hsla(var(--border) / 0.5);
+    background-color: hsla(var(--secondary) / 0.3);
+    backdrop-filter: blur(4px);
+  }
+
+  .lang select:hover {
+    background-color: hsla(var(--secondary) / 0.5);
+    border-color: hsla(var(--foreground) / 0.2);
+  }
+
+  .lang select:focus {
+    outline: none;
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px hsla(var(--primary) / 0.2);
+  }
+</style>
+
