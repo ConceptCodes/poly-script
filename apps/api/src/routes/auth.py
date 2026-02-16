@@ -123,13 +123,13 @@ async def verify_email(
     auth_service: AsyncAuthService = Depends(get_async_auth_service),
 ):
     try:
-        auth_service.verify_email(token=request.token)
+        await auth_service.verify_email(token=request.token)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 @router.post("/verify-email-code", status_code=status.HTTP_204_NO_CONTENT)
-def verify_email_code(
+async def verify_email_code(
     request: VerifyEmailCodeRequest,
     auth_service: AsyncAuthService = Depends(get_async_auth_service),
 ):
@@ -137,51 +137,51 @@ def verify_email_code(
     try:
         # For now, treat the code as the verification token
         # In production, you would generate a separate 6-digit code
-        auth_service.verify_email(token=request.code)
+        await auth_service.verify_email(token=request.code)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 @router.post("/resend-verification", status_code=status.HTTP_204_NO_CONTENT)
-def resend_verification(
+async def resend_verification(
     request: ResendVerificationRequest,
     auth_service: AsyncAuthService = Depends(get_async_auth_service),
 ):
     try:
-        auth_service.resend_verification_email(email=request.email)
+        await auth_service.resend_verification_email(email=request.email)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 @router.post("/forgot-password", status_code=status.HTTP_204_NO_CONTENT)
-def forgot_password(
+async def forgot_password(
     request: ForgotPasswordRequest, auth_service: AsyncAuthService = Depends(get_async_auth_service)
 ):
     try:
-        auth_service.send_password_reset_email(email=request.email)
+        await auth_service.send_password_reset_email(email=request.email)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
-def reset_password(
+async def reset_password(
     request: ResetPasswordRequest, auth_service: AsyncAuthService = Depends(get_async_auth_service)
 ):
     try:
-        auth_service.reset_password(token=request.token, new_password=request.new_password)
+        await auth_service.reset_password(token=request.token, new_password=request.new_password)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 @router.get("/oauth/google", response_model=dict)
-def get_oauth_auth_url(
+async def get_oauth_auth_url(
     redirect_url: str | None = None,
     state: str | None = None,
     code_challenge: str | None = None,
     code_challenge_method: str | None = None,
     oauth_service: AsyncOAuthService = Depends(get_oauth_service),
 ):
-    auth_url = oauth_service.get_google_auth_url(
+    auth_url = await oauth_service.get_google_auth_url(
         redirect_url=redirect_url,
         state=state,
         code_challenge=code_challenge,
@@ -191,7 +191,7 @@ def get_oauth_auth_url(
 
 
 @router.get("/oauth/google/callback", response_model=TokenResponse)
-def oauth_callback(
+async def oauth_callback(
     code: str,
     state: str | None = None,
     code_verifier: str | None = None,
@@ -199,14 +199,14 @@ def oauth_callback(
     auth_service: AsyncAuthService = Depends(get_async_auth_service),
 ):
     # Handle complete OAuth flow: exchange code → find/create user → generate JWTs
-    user_data = oauth_service.handle_google_oauth_callback(
+    user_data = await oauth_service.handle_google_oauth_callback(
         code=code, state=state, code_verifier=code_verifier
     )
 
     # Generate JWTs for the user
     user_id = uuid.UUID(user_data["user_id"])
-    access_token = auth_service.create_access_token(user_id)
-    refresh_token = auth_service.create_refresh_token(user_id)
+    access_token = await auth_service.create_access_token(user_id)
+    refresh_token = await auth_service.create_refresh_token(user_id)
 
     return TokenResponse(
         access_token=access_token,

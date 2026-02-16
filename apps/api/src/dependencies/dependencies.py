@@ -11,7 +11,7 @@ from poly_core.services.admin_auth import AdminAuthService
 from poly_core.services.auth import AuthService
 from poly_core.services.auth_async import AsyncAuthService
 from poly_core.services.notification import NotificationService
-from poly_db.database import get_db_session
+from poly_db.database import get_db, get_db_session
 from poly_db.models.teams import Team
 from poly_db.repositories import AdminUserRepository, TeamMemberRepository, UserRepository
 from src.config import get_settings
@@ -63,7 +63,7 @@ def get_notification_service() -> NotificationService:
     )
 
 
-def get_auth_service(db: Session = Depends(get_db_session)) -> AuthService:
+def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
     settings = get_settings()
     notification_service = get_notification_service()
     return AuthService(
@@ -132,7 +132,7 @@ async def get_async_auth_service(db: AsyncSession = Depends(get_async_db)) -> As
     )
 
 
-def get_admin_auth_service(db: Session = Depends(get_db_session)) -> AdminAuthService:
+def get_admin_auth_service(db: Session = Depends(get_db)) -> AdminAuthService:
     settings = get_settings()
     return AdminAuthService(
         db_session=db,
@@ -143,7 +143,7 @@ def get_admin_auth_service(db: Session = Depends(get_db_session)) -> AdminAuthSe
 
 async def get_current_user(
     authorization: str | None = Header(None),
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(get_db),
     auth_service: AuthService = Depends(get_auth_service),
 ):
     if not authorization or not authorization.startswith("Bearer "):
@@ -176,7 +176,7 @@ async def get_current_user_id(current_user: dict = Depends(get_current_user)) ->
 
 async def get_current_admin(
     authorization: str | None = Header(None),
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(get_db),
     admin_auth_service: AdminAuthService = Depends(get_admin_auth_service),
 ):
     if not authorization or not authorization.startswith("Bearer "):
@@ -202,7 +202,7 @@ async def get_current_admin(
 
 async def get_current_team_id(
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(get_db),
     team_id: str | None = Header(None, alias="X-Team-Id"),
 ) -> uuid.UUID:
     member_repo = TeamMemberRepository(db)
@@ -221,7 +221,7 @@ async def get_current_team_id(
 
 async def get_team_context(
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db_session),
+    db: Session = Depends(get_db),
     team_id: str | None = Header(None, alias="X-Team-Id"),
 ) -> dict:
     """Get full team context including team details."""

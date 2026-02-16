@@ -102,7 +102,7 @@ class AsyncOAuthService:
         return authorization_url
 
     def exchange_google_code(
-        self, code: str, _state: str | None = None, code_verifier: str | None = None
+        self, code: str, state: str | None = None, code_verifier: str | None = None
     ) -> GoogleUserInfo | None:
         """Exchange Google OAuth authorization code for user info.
 
