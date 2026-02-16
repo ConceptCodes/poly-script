@@ -5,9 +5,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from fastapi import Depends, Header, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from poly_core.services.admin_auth import AdminAuthService
 from poly_core.services.auth import AuthService
+from poly_core.services.auth_async import AsyncAuthService
 from poly_core.services.notification import NotificationService
 from poly_db.database import get_db_session
 from poly_db.models.teams import Team
@@ -61,9 +63,7 @@ def get_notification_service() -> NotificationService:
     )
 
 
-def get_auth_service(
-    db: Session = Depends(get_db_session)
-) -> AuthService:
+def get_auth_service(db: Session = Depends(get_db_session)) -> AuthService:
     settings = get_settings()
     notification_service = get_notification_service()
     return AuthService(
@@ -76,9 +76,63 @@ def get_auth_service(
     )
 
 
-def get_admin_auth_service(
-    db: Session = Depends(get_db_session)
-) -> AdminAuthService:
+# Async session factory cached at module level
+_async_session_factory = None
+
+
+def _get_async_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Get or create async session factory."""
+    global _async_session_factory
+    if _async_session_factory is None:
+        from poly_db.database_async import get_async_engine
+
+        engine = get_async_engine()
+        _async_session_factory = async_sessionmaker(
+            bind=engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,
+        )
+    return _async_session_factory
+
+
+async def get_async_db() -> AsyncSession:
+    """
+    Async database session dependency for FastAPI routes.
+
+    Provides an async database session that automatically handles
+    commit on success, rollback on exception, and cleanup.
+
+    Usage:
+        @router.get("/")
+        async def endpoint(session: AsyncSession = Depends(get_async_db)):
+            await session.execute(select(User))
+    """
+    factory = _get_async_session_factory()
+    async with factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+
+
+async def get_async_auth_service(db: AsyncSession = Depends(get_async_db)) -> AsyncAuthService:
+    """Async version of auth service dependency."""
+    settings = get_settings()
+    notification_service = get_notification_service()
+    return AsyncAuthService(
+        db_session=db,
+        jwt_secret=settings.JWT_SECRET,
+        jwt_expiry_minutes=_parse_expiry_to_minutes(settings.JWT_EXPIRY),
+        notification_service=notification_service,
+        email_verification_expiry_hours=settings.EMAIL_VERIFICATION_EXPIRY,
+        password_reset_expiry_hours=settings.PASSWORD_RESET_EXPIRY,
+    )
+
+
+def get_admin_auth_service(db: Session = Depends(get_db_session)) -> AdminAuthService:
     settings = get_settings()
     return AdminAuthService(
         db_session=db,
@@ -90,7 +144,7 @@ def get_admin_auth_service(
 async def get_current_user(
     authorization: str | None = Header(None),
     db: Session = Depends(get_db_session),
-    auth_service: AuthService = Depends(get_auth_service)
+    auth_service: AuthService = Depends(get_auth_service),
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
@@ -116,16 +170,14 @@ async def get_current_user(
     }
 
 
-async def get_current_user_id(
-    current_user: dict = Depends(get_current_user)
-) -> str:
+async def get_current_user_id(current_user: dict = Depends(get_current_user)) -> str:
     return str(current_user["id"])
 
 
 async def get_current_admin(
     authorization: str | None = Header(None),
     db: Session = Depends(get_db_session),
-    admin_auth_service: AdminAuthService = Depends(get_admin_auth_service)
+    admin_auth_service: AdminAuthService = Depends(get_admin_auth_service),
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")

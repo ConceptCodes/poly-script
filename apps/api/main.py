@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from poly_core.constants import I18nKeys
 from poly_core.services.i18n import I18nService
-from src.logging import StructuredLogger, setup_logging
+from src.structured_logging import StructuredLogger, setup_logging
 from src.middleware.setup import setup_middleware
 from src.routes.admin import router as admin_router
 
@@ -30,6 +30,10 @@ from src.routes.user import router as user_router
 from src.routes.webhooks import webhooks_router
 from poly_core.logging_context import set_request_context
 
+# Import standardized exception handlers
+from poly_core.exceptions.handlers import setup_exception_handlers
+from poly_core.exceptions.base import ErrorResponse
+
 logger = logging.getLogger(__name__)
 
 # Global scheduler for cron jobs
@@ -48,7 +52,7 @@ async def add_request_id(request: Request, call_next):
 
 def setup_cron_jobs(scheduler: AsyncIOScheduler) -> None:
     """Configure scheduled jobs for maintenance tasks."""
-    from poly_core.tasks.billing_tasks import reset_monthly_usage, sync_stripe_subscriptions
+    from poly_core.tasks.billing_tasks import reset_all_monthly_usage, sync_active_subscriptions
     from poly_core.tasks.cleanup_tasks import (
         cleanup_audio_files,
         cleanup_expired_invitations,
@@ -68,7 +72,7 @@ def setup_cron_jobs(scheduler: AsyncIOScheduler) -> None:
     )
 
     scheduler.add_job(
-        reset_monthly_usage,
+        reset_all_monthly_usage,
         "cron",
         minute=5,
         id="reset_monthly_usage",
@@ -122,7 +126,7 @@ def setup_cron_jobs(scheduler: AsyncIOScheduler) -> None:
     )
 
     scheduler.add_job(
-        sync_stripe_subscriptions,
+        sync_active_subscriptions,
         "cron",
         hour=1,
         minute=30,
@@ -166,6 +170,16 @@ def create_app() -> FastAPI:
         title="PolyScript API",
         version="0.1.0",
         lifespan=lifespan,
+        responses={
+            400: {"description": "Bad Request", "model": ErrorResponse},
+            401: {"description": "Unauthorized", "model": ErrorResponse},
+            403: {"description": "Forbidden", "model": ErrorResponse},
+            404: {"description": "Not Found", "model": ErrorResponse},
+            409: {"description": "Conflict", "model": ErrorResponse},
+            422: {"description": "Validation Error", "model": ErrorResponse},
+            429: {"description": "Rate Limit Exceeded", "model": ErrorResponse},
+            500: {"description": "Internal Server Error", "model": ErrorResponse},
+        },
     )
     logger.info("FastAPI app created.")
 
@@ -180,6 +194,11 @@ def create_app() -> FastAPI:
     logger.info(f"Initializing I18nService with {locales_dir}...")
     i18n_service = I18nService(locales_dir)
     logger.info("I18nService initialized.")
+
+    # Setup global exception handlers with i18n support
+    logger.info("Setting up global exception handlers...")
+    setup_exception_handlers(app, i18n_service)
+    logger.info("Global exception handlers registered.")
 
     logger.info("Setting up middleware...")
     setup_middleware(app)
