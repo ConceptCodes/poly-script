@@ -1,9 +1,11 @@
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class DashboardStatsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     total_jobs: int
     succeeded_jobs: int
     failed_jobs: int
@@ -15,6 +17,8 @@ class DashboardStatsResponse(BaseModel):
 
 
 class RecentJobItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     file_name: str
     state: str
@@ -24,6 +28,8 @@ class RecentJobItem(BaseModel):
 
 
 class ActivityItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     type: str
     display_name: str
     icon: str
@@ -32,6 +38,8 @@ class ActivityItem(BaseModel):
 
 
 class UsageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     jobs_created: int
     jobs_succeeded: int
     jobs_failed: int

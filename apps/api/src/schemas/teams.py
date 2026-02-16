@@ -1,7 +1,7 @@
 import uuid
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class TeamRoleSchema(str, Enum):
@@ -17,7 +17,7 @@ class PlanTypeSchema(str, Enum):
 
 class CreateTeamRequest(BaseModel):
     name: str = Field(min_length=1, max_length=128)
-    host_language: str = "en"
+    host_language: str = Field("en", max_length=10)
 
 
 class UpdateTeamRequest(BaseModel):
@@ -26,11 +26,12 @@ class UpdateTeamRequest(BaseModel):
 
 
 class TeamResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     name: str
     host_language: str
     plan: PlanTypeSchema
-    stripe_customer_id: str | None = None
     monthly_upload_count: int
     extra_credits: int
     created_at: str
@@ -38,6 +39,8 @@ class TeamResponse(BaseModel):
 
 
 class TeamMemberResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     user_id: uuid.UUID
     team_id: uuid.UUID
@@ -52,11 +55,13 @@ class UpdateMemberRoleRequest(BaseModel):
 
 
 class CreateInvitationRequest(BaseModel):
-    email: str
+    email: EmailStr
     role: TeamRoleSchema
 
 
 class InvitationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     team_id: uuid.UUID
     email: str
@@ -67,4 +72,4 @@ class InvitationResponse(BaseModel):
 
 
 class AcceptInvitationRequest(BaseModel):
-    token: str
+    token: str = Field(..., max_length=512)

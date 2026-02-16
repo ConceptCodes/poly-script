@@ -1,9 +1,9 @@
 from fastapi import Form
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class ContactRequest(BaseModel):
-    name: str = Field(..., min_length=1)
+    name: str = Field(..., min_length=1, max_length=128)
     email: EmailStr
     message: str = Field(..., min_length=1, max_length=4000)
     company: str | None = None
@@ -20,4 +20,6 @@ class ContactRequest(BaseModel):
 
 
 class ContactResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     status: str

@@ -2,15 +2,17 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class AdminLoginRequest(BaseModel):
     email: EmailStr
-    password: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1, max_length=128)
 
 
 class AdminLoginResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     access_token: str
     refresh_token: str
     admin_id: uuid.UUID
@@ -24,6 +26,8 @@ class AdminActionRequest(BaseModel):
 
 
 class AdminCounts(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     users: int
     teams: int
     jobs: int
@@ -31,38 +35,22 @@ class AdminCounts(BaseModel):
 
 
 class AdminDashboardResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     counts: AdminCounts
 
 
 class AdminHealthResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     api: str
     queue_depth: int
     worker_status: str
 
 
-class AdminUserDetailResponse(AdminUserListItem):
-    suspended_at: datetime | None = None
-    suspended_by: uuid.UUID | None = None
-    suspension_reason: str | None = None
-    created_at: datetime | None = None
-
-
-class AdminTeamDetailResponse(AdminTeamListItem):
-    is_suspended: bool
-    suspended_at: datetime | None = None
-    suspended_by: uuid.UUID | None = None
-    created_at: datetime | None = None
-
-
-class AdminJobDetailResponse(AdminJobListItem):
-    progress_stage: str | None = None
-    attempts: int = 0
-    error_message: str | None = None
-    created_at: datetime | None = None
-    finished_at: datetime | None = None
-
-
 class AdminUserListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     email: EmailStr
     full_name: str | None = None
@@ -72,6 +60,8 @@ class AdminUserListItem(BaseModel):
 
 
 class AdminTeamListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     name: str
     host_language: str
@@ -81,6 +71,8 @@ class AdminTeamListItem(BaseModel):
 
 
 class AdminJobListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     team_id: uuid.UUID | None = None
     status: str
@@ -88,22 +80,58 @@ class AdminJobListItem(BaseModel):
     engine: str | None = None
 
 
+class AdminUserDetailResponse(AdminUserListItem):
+    model_config = ConfigDict(from_attributes=True)
+
+    suspended_at: datetime | None = None
+    suspended_by: uuid.UUID | None = None
+    suspension_reason: str | None = None
+    created_at: datetime | None = None
+
+
+class AdminTeamDetailResponse(AdminTeamListItem):
+    model_config = ConfigDict(from_attributes=True)
+
+    is_suspended: bool
+    suspended_at: datetime | None = None
+    suspended_by: uuid.UUID | None = None
+    created_at: datetime | None = None
+
+
+class AdminJobDetailResponse(AdminJobListItem):
+    model_config = ConfigDict(from_attributes=True)
+
+    progress_stage: str | None = None
+    attempts: int = 0
+    error_message: str | None = None
+    created_at: datetime | None = None
+    finished_at: datetime | None = None
+
+
 class AdminUsersResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     items: list[AdminUserListItem]
     total: int
 
 
 class AdminTeamsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     items: list[AdminTeamListItem]
     total: int
 
 
 class AdminJobsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     items: list[AdminJobListItem]
     total: int
 
 
 class AdminAnalyticsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     users: int
     teams: int
     jobs: int
@@ -111,12 +139,16 @@ class AdminAnalyticsResponse(BaseModel):
 
 
 class AdminErrorAnalyticsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     total_errors: int
     failed_jobs: int
     canceled_jobs: int
 
 
 class AdminSettingsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     administrators: list[dict[str, Any]]
     system: dict[str, Any]
 
@@ -139,11 +171,15 @@ class ImpersonationRequest(BaseModel):
 
 
 class ImpersonationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     impersonation_token: str
     user_id: uuid.UUID
 
 
 class AdminJobVolumeResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     total: int
     by_status: dict[str, int]
     timeframe: dict[str, str]
@@ -156,6 +192,8 @@ class AdminSettingsUpdate(BaseModel):
 
 
 class AuditLogListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     admin_user_id: uuid.UUID | None = None
     target_type: str
@@ -168,5 +206,7 @@ class AuditLogListItem(BaseModel):
 
 
 class AuditLogListResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     logs: list[AuditLogListItem]
     total: int

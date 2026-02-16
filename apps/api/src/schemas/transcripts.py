@@ -4,11 +4,13 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SegmentResponse(BaseModel):
     """Response model for a transcript segment."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
     start_ms: int
@@ -19,6 +21,8 @@ class SegmentResponse(BaseModel):
 
 class TranscriptResponse(BaseModel):
     """Response model for a complete transcript."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
     job_id: uuid.UUID
@@ -33,6 +37,8 @@ class TranscriptResponse(BaseModel):
 class TranscriptListItem(BaseModel):
     """Summary model for transcript list items."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     job_id: uuid.UUID
     job_filename: str | None = None
@@ -45,6 +51,8 @@ class TranscriptListItem(BaseModel):
 class TranscriptListResponse(BaseModel):
     """Response model for listing transcripts."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     transcripts: list[TranscriptListItem]
     total: int
     page: int
@@ -53,6 +61,8 @@ class TranscriptListResponse(BaseModel):
 
 class SegmentsResponse(BaseModel):
     """Response model for transcript segments."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     segments: list[SegmentResponse]
 
@@ -72,6 +82,8 @@ class UpdateSegmentRequest(BaseModel):
 class EditEntry(BaseModel):
     """Model for a single edit entry in history."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     user_id: uuid.UUID | None = None
     user_email: str | None = None
@@ -84,6 +96,8 @@ class EditEntry(BaseModel):
 
 class EditHistoryResponse(BaseModel):
     """Response model for transcript edit history."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     edits: list[EditEntry]
     total: int
@@ -98,6 +112,8 @@ class RevertTranscriptRequest(BaseModel):
 class RevertTranscriptResponse(BaseModel):
     """Response model for transcript revert."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     message: str
     transcript_id: uuid.UUID
 
@@ -110,6 +126,8 @@ class ExportFormat(BaseModel):
 
 class ExportResponse(BaseModel):
     """Response model for export request."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     message: str
     format: str
@@ -129,6 +147,8 @@ class SplitSegmentRequest(BaseModel):
 class SplitSegmentResponse(BaseModel):
     """Response model for split segment operation."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     message: str
     original_segment_id: int
     new_segment_ids: list[int] = Field(..., min_items=2, max_items=2)
@@ -145,6 +165,8 @@ class MergeSegmentsRequest(BaseModel):
 class MergeSegmentsResponse(BaseModel):
     """Response model for merge segments operation."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     message: str
     merged_segment_id: int
     removed_segment_ids: list[int]
@@ -159,6 +181,8 @@ class UpdateSegmentTimestampsRequest(BaseModel):
 
 class UpdateSegmentTimestampsResponse(BaseModel):
     """Response model for updating segment timestamps."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     message: str
     segment: SegmentResponse

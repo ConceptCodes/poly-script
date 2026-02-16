@@ -13,7 +13,6 @@ class SubscriptionResponse(BaseModel):
     current_period_start: datetime
     current_period_end: datetime
     cancel_at_period_end: bool
-    model_config = {"from_attributes": True}
 
 
 class UpgradeSubscriptionRequest(BaseModel):
@@ -41,7 +40,6 @@ class UsageResponse(BaseModel):
     monthly_upload_count: int
     monthly_limit: float | int | str  # "inf" or number
     extra_credits: int
-    model_config = {"from_attributes": True}
 
 
 class InvoiceResponse(BaseModel):
@@ -51,7 +49,6 @@ class InvoiceResponse(BaseModel):
     status: str
     created_at: datetime
     hosted_invoice_url: str | None
-    model_config = {"from_attributes": True}
 
 
 class CheckoutSessionResponse(BaseModel):
@@ -84,13 +81,11 @@ class CreditPurchaseResponse(BaseModel):
     amount: int
     price_paid: int
     currency: str
-    model_config = {"from_attributes": True}
 
 
 class CreditsResponse(BaseModel):
     plan: PlanType
     extra_credits: int
-    model_config = {"from_attributes": True}
 
 
 class UsageLogResponse(BaseModel):
@@ -98,7 +93,6 @@ class UsageLogResponse(BaseModel):
     amount: int
     description: str | None
     created_at: datetime
-    model_config = {"from_attributes": True}
 
 
 class UsageHistoryResponse(BaseModel):

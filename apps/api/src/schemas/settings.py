@@ -1,9 +1,11 @@
 import uuid
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
 
 
 class UserSettingsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     email: str
     full_name: str | None = None
@@ -17,7 +19,7 @@ class UserSettingsResponse(BaseModel):
 
 class UpdateUserProfileRequest(BaseModel):
     full_name: str | None = Field(None, min_length=1, max_length=128)
-    avatar_url: str | None = None
+    avatar_url: HttpUrl | None = None
 
 
 class UpdateEmailRequest(BaseModel):
@@ -34,11 +36,13 @@ class UpdateUserNotificationsRequest(BaseModel):
 
 
 class UpdatePasswordRequest(BaseModel):
-    current_password: str
+    current_password: str = Field(..., max_length=128)
     new_password: str = Field(min_length=8, max_length=128)
 
 
 class TeamSettingsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     name: str
     host_language: str
@@ -54,6 +58,8 @@ class UpdateTeamSettingsRequest(BaseModel):
 
 
 class TeamMemberItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     user_id: uuid.UUID
     email: str
@@ -63,6 +69,8 @@ class TeamMemberItem(BaseModel):
 
 
 class BillingInfoResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     plan: str
     credits_balance: int
     stripe_customer_id: str | None = None

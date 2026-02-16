@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
 class CreateJobOptions(BaseModel):
@@ -18,11 +18,13 @@ class CreateJobOptions(BaseModel):
 
 
 class CreateJobFromUrlRequest(BaseModel):
-    url: str = Field(..., min_length=1)
+    url: HttpUrl = Field(..., min_length=1)
     options: CreateJobOptions = Field(default_factory=CreateJobOptions)
 
 
 class CreateJobResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     job_id: uuid.UUID
     status: str
     message: str
@@ -34,6 +36,8 @@ class JobLimitError(BaseModel):
 
 # Response schemas for job endpoints
 class JobSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     status: str  # QUEUED|RUNNING|SUCCEEDED|FAILED|CANCELED
     filename: str
@@ -46,6 +50,8 @@ class JobSummary(BaseModel):
 
 
 class JobListResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     jobs: list[JobSummary]
     total: int
     page: int
@@ -53,6 +59,8 @@ class JobListResponse(BaseModel):
 
 
 class JobDetailResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     status: str
     filename: str
@@ -73,6 +81,8 @@ class JobDetailResponse(BaseModel):
 
 
 class SegmentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int  # segment index
     start_ms: int
     end_ms: int
@@ -81,6 +91,8 @@ class SegmentResponse(BaseModel):
 
 
 class JobResultResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     job_id: uuid.UUID
     translation: dict[str, Any] | None = None  # Translation artifact if available
     transcript_id: uuid.UUID
@@ -91,4 +103,6 @@ class JobResultResponse(BaseModel):
 
 
 class CancelJobResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     message: str
