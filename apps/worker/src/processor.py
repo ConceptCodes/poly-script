@@ -430,7 +430,6 @@ class JobProcessor:
             language=result.language,
             segments=segments_json,
             engine_version=result.engine,
-            audio_duration_ms=duration_ms,
         )
 
     def _translate_transcript(
