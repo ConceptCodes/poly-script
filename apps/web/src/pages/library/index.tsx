@@ -118,7 +118,7 @@ export function LibraryPage() {
 
         <SortFilter value={sort} onChange={setSort} />
 
-        <div className="flex items-center gap-1 border rounded-lg p-1">
+        <div className="flex items-center gap-1 border rounded-lg p-1" data-testid="view-toggle">
           <Button
             type="button"
             variant="ghost"

@@ -14,14 +14,26 @@ const LANGUAGES = [
   { code: "zh", name: "Chinese" },
 ];
 
+const ALL_LANGUAGES_VALUE = "__all__";
+
 export function LanguageFilter({ value, onChange }: LanguageFilterProps) {
+  const handleValueChange = (v: string) => {
+    if (v === ALL_LANGUAGES_VALUE) {
+      onChange(undefined);
+    } else {
+      onChange(v);
+    }
+  };
+
+  const selectValue = value || ALL_LANGUAGES_VALUE;
+
   return (
-    <Select value={value || ""} onValueChange={(v) => onChange(v || undefined)}>
+    <Select value={selectValue} onValueChange={handleValueChange}>
       <SelectTrigger className="w-[150px]">
         <SelectValue placeholder="All Languages" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">All Languages</SelectItem>
+        <SelectItem value={ALL_LANGUAGES_VALUE}>All Languages</SelectItem>
         {LANGUAGES.map((lang) => (
           <SelectItem key={lang.code} value={lang.code}>
             {lang.name}

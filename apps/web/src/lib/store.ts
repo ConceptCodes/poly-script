@@ -97,7 +97,7 @@ export const useAppStore = create<AppState>((set, _get) => {
       team: null,
       members: [],
       invitations: [],
-      isLoading: false,
+      isLoading: true,
       error: null,
     },
     onboarding: {

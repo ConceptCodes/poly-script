@@ -1,7 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import "@poly/ui/styles/vite-base.css";
 import { useEffect } from "react";
 
 import { Toaster } from "@poly/ui/toaster";
@@ -38,35 +37,46 @@ function AuthBootstrap() {
   const setAuthenticated = useAppStore((state) => state.setAuthenticated);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    const userId = localStorage.getItem("user_id");
-    if (token && userId) {
-      setAuth({
-        isAuthenticated: true,
-        user: {
-          id: userId,
-          email: "test@example.com",
-          name: "Test User",
-          verified: true,
-          createdAt: new Date().toISOString(),
-          host_language: "en",
-          theme: "system",
-          notifications: {
-            email: true,
-            job_completion: true,
-            in_app: true,
+    const initAuth = () => {
+      const token = localStorage.getItem("access_token");
+      const userId = localStorage.getItem("user_id");
+      if (token && userId) {
+        setAuth({
+          isAuthenticated: true,
+          user: {
+            id: userId,
+            email: "test@example.com",
+            name: "Test User",
+            verified: true,
+            createdAt: new Date().toISOString(),
+            host_language: "en",
+            theme: "system",
+            notifications: {
+              email: true,
+              job_completion: true,
+              in_app: true,
+            },
           },
-        },
-        team: {
-          id: "mock-team-id",
-          name: "Test Team",
-          defaultLanguage: "en",
-          createdAt: new Date().toISOString(),
-        },
-        isLoading: false,
-        error: null,
-      });
-      setAuthenticated(true);
+          team: {
+            id: "mock-team-id",
+            name: "Test Team",
+            defaultLanguage: "en",
+            createdAt: new Date().toISOString(),
+          },
+          isLoading: false,
+          error: null,
+        });
+        setAuthenticated(true);
+      } else {
+        // Mark auth as initialized even if not authenticated
+        setAuth({ isLoading: false });
+      }
+    };
+
+    initAuth();
+
+    if (typeof window !== "undefined") {
+      (window as Window & { __initAuth?: () => void }).__initAuth = initAuth;
     }
   }, [setAuth, setAuthenticated]);
 
