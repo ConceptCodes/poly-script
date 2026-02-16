@@ -1,6 +1,13 @@
+import sys
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+# Get the project root directory (go up from worker/src to project root)
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+ENV_FILE = PROJECT_ROOT / ".env"
 
 
 class Settings(BaseSettings):
@@ -39,7 +46,7 @@ class Settings(BaseSettings):
     DOWNLOAD_CHUNK_SIZE_BYTES: int = 8192
     DOWNLOAD_MAX_BYTES: int = 0  # 0 disables max size checks
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=str(ENV_FILE), extra="ignore")
 
 
 @lru_cache

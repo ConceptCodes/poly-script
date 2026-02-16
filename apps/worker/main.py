@@ -12,12 +12,14 @@ from pathlib import Path
 # Add parent directories to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "storage" / "db"))
-sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "storage" / "poly-redis"))
+sys.path.insert(
+    0, str(Path(__file__).parent.parent / "packages" / "storage" / "poly-redis")
+)
 sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "core"))
 sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "stt"))
 
 from src.config import get_settings
-from src.worker.service import WorkerService
+from src.worker_service import SimpleWorker
 
 from poly_stt.bootstrap import initialize_engines
 
@@ -41,7 +43,7 @@ def start_worker():
     logger.info("✅ STT engines initialized")
 
     # Create and start worker
-    worker = WorkerService()
+    worker = SimpleWorker()
     worker.start()
     logger.info("✅ Worker service started")
 
