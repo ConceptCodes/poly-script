@@ -1,6 +1,7 @@
-const API_URL = typeof window === "undefined"
-  ? "http://localhost:8000/v1"
-  : import.meta.env?.VITE_API_URL || "http://localhost:8000/v1";
+const API_URL =
+  typeof window === "undefined"
+    ? "http://localhost:8000/v1"
+    : import.meta.env?.VITE_API_URL || "http://localhost:8000/v1";
 
 export interface ApiFetchOptions {
   body?: Record<string, unknown> | FormData | null;
@@ -15,12 +16,28 @@ export interface ApiFetchConfig {
 }
 
 const DEFAULT_ERROR_TRANSFORMER = (error: unknown, status: number) => {
-  const errorObj = {
-    ...((error as Record<string, unknown>) || {}),
+  const errorRecord = (error as Record<string, unknown>) || {};
+  const nestedError = errorRecord.error as Record<string, unknown> | undefined;
+
+  if (nestedError) {
+    return {
+      status,
+      code: nestedError.code || null,
+      message: nestedError.message || "An error occurred",
+      details: nestedError.details || null,
+      request_id: nestedError.request_id || null,
+      documentation_url: nestedError.documentation_url || null,
+    };
+  }
+
+  return {
     status,
-    code: (error as Record<string, unknown>).code || null,
+    code: errorRecord.code || null,
+    message: errorRecord.message || errorRecord.detail || "An error occurred",
+    details: errorRecord.details || null,
+    request_id: errorRecord.request_id || null,
+    documentation_url: errorRecord.documentation_url || null,
   };
-  return errorObj;
 };
 
 export function createApiFetch(config: ApiFetchConfig) {
@@ -46,7 +63,7 @@ export function createApiFetch(config: ApiFetchConfig) {
     }
 
     if (token && !headers.Authorization) {
-      headers.Authorization = 'Bearer ' + token;
+      headers.Authorization = "Bearer " + token;
     }
 
     let body: BodyInit | undefined;

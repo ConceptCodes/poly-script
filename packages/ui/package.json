@@ -30,8 +30,7 @@
     "./separator": "./src/components/ui/separator.tsx",
     "./empty": "./src/components/ui/empty.tsx",
     "./textarea": "./src/components/ui/textarea.tsx",
-    "./use-toast": "./src/hooks/use-toast.ts",
-    "./vite-base.css": "./src/styles/vite-base.css"
+    "./hooks/use-toast": "./src/hooks/use-toast.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
