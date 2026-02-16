@@ -56,7 +56,14 @@ class BillingService:
         """Returns subscription data or a default FREE plan response."""
         sub = self.subscription_repo.get_by_team_id(team_id)
         if sub:
-            return sub
+            return {
+                "stripe_subscription_id": sub.stripe_subscription_id,
+                "status": sub.status,
+                "plan_id": sub.plan_id,
+                "current_period_start": sub.current_period_start,
+                "current_period_end": sub.current_period_end,
+                "cancel_at_period_end": sub.cancel_at_period_end,
+            }
         team = self.team_repo.get(team_id)
         now = datetime.now(UTC)
         plan_id = team.plan.value if team else PlanType.FREE.value
@@ -381,26 +388,65 @@ class BillingService:
             "extra_credits": team.extra_credits,
         }
 
-    def get_usage_history(self, team_id: uuid.UUID) -> list[Any]:
-        return self.usage_repo.get_by_team_id(team_id)
+    def get_usage_history(self, team_id: uuid.UUID) -> list[dict[str, Any]]:
+        logs = self.usage_repo.get_by_team_id(team_id)
+        return [
+            {
+                "action": log.action,
+                "amount": log.amount,
+                "description": log.description,
+                "created_at": log.created_at,
+            }
+            for log in logs
+        ]
 
-    def list_invoices(self, team_id: uuid.UUID) -> list[Any]:
-        return self.invoice_repo.get_all_by_team(team_id)
+    def list_invoices(self, team_id: uuid.UUID) -> list[dict[str, Any]]:
+        invoices = self.invoice_repo.get_all_by_team(team_id)
+        return [
+            {
+                "id": invoice.id,
+                "stripe_invoice_id": invoice.stripe_invoice_id,
+                "amount_paid": invoice.amount_paid,
+                "status": invoice.status,
+                "created_at": invoice.created_at,
+                "hosted_invoice_url": invoice.hosted_invoice_url,
+            }
+            for invoice in invoices
+        ]
 
-    def get_invoice_for_team(self, team_id: uuid.UUID, invoice_id: uuid.UUID) -> Any | None:
+    def get_invoice_for_team(
+        self, team_id: uuid.UUID, invoice_id: uuid.UUID
+    ) -> dict[str, Any] | None:
         invoice = self.invoice_repo.get(invoice_id)
         if not invoice or invoice.team_id != team_id:
             return None
-        return invoice
+        return {
+            "id": invoice.id,
+            "stripe_invoice_id": invoice.stripe_invoice_id,
+            "amount_paid": invoice.amount_paid,
+            "status": invoice.status,
+            "created_at": invoice.created_at,
+            "hosted_invoice_url": invoice.hosted_invoice_url,
+            "invoice_pdf": invoice.invoice_pdf,
+        }
 
     def get_invoice_pdf_for_team(self, team_id: uuid.UUID, invoice_id: uuid.UUID) -> str | None:
         invoice = self.get_invoice_for_team(team_id, invoice_id)
         if not invoice:
             return None
-        return invoice.invoice_pdf or invoice.hosted_invoice_url
+        return invoice.get("invoice_pdf") or invoice.get("hosted_invoice_url")
 
-    def list_credit_purchases(self, team_id: uuid.UUID) -> list[Any]:
-        return self.credit_repo.get_all_by_team(team_id)
+    def list_credit_purchases(self, team_id: uuid.UUID) -> list[dict[str, Any]]:
+        purchases = self.credit_repo.get_all_by_team(team_id)
+        return [
+            {
+                "created_at": purchase.created_at,
+                "amount": purchase.amount,
+                "price_paid": purchase.price_paid,
+                "currency": purchase.currency,
+            }
+            for purchase in purchases
+        ]
 
     def get_pricing(self) -> dict[str, Any]:
         plans = []

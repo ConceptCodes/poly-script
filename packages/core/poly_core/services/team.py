@@ -15,6 +15,20 @@ class TeamError(Exception):
     pass
 
 
+def _team_to_dict(team: Team) -> dict:
+    """Convert Team model to safe dictionary matching TeamResponse schema."""
+    return {
+        "id": str(team.id),
+        "name": team.name,
+        "host_language": team.host_language,
+        "plan": team.plan.value if hasattr(team.plan, "value") else str(team.plan),
+        "monthly_upload_count": team.monthly_upload_count,
+        "extra_credits": team.extra_credits,
+        "created_at": team.created_at.isoformat() if team.created_at else None,
+        "updated_at": team.updated_at.isoformat() if team.updated_at else None,
+    }
+
+
 class TeamService:
     def __init__(self, db_session: Session):
         self.db_session = db_session
@@ -47,7 +61,7 @@ class TeamService:
         name: str,
         host_language: str = "en",
         plan: PlanType = PlanType.FREE,
-    ) -> Team | None:
+    ) -> dict | None:
         existing = []
         if hasattr(self.team_repo, "get_by_user_id"):
             existing = self.team_repo.get_by_user_id(user_id) or []
@@ -83,9 +97,9 @@ class TeamService:
 
         self.db_session.commit()
 
-        return created_team
+        return _team_to_dict(created_team)
 
-    def get_team(self, team_id: uuid.UUID, user_id: uuid.UUID) -> Team | None:
+    def get_team(self, team_id: uuid.UUID, user_id: uuid.UUID) -> dict | None:
         team = self.team_repo.get(team_id)
         if not team:
             raise TeamError("Team not found")
@@ -95,7 +109,7 @@ class TeamService:
         if not member:
             raise TeamError("User is not a team member")
 
-        return team
+        return _team_to_dict(team)
 
     def update_team(
         self,
@@ -103,8 +117,14 @@ class TeamService:
         user_id: uuid.UUID,
         name: str | None = None,
         host_language: str | None = None,
-    ) -> Team | None:
-        team = self.get_team(team_id, user_id)
+    ) -> dict | None:
+        # Check permissions first
+        _ = self.get_team(team_id, user_id)
+
+        # Get the actual team model for updates
+        team = self.team_repo.get(team_id)
+        if not team:
+            raise TeamError("Team not found")
 
         if name is not None:
             team.name = name
@@ -114,10 +134,16 @@ class TeamService:
         team.updated_at = datetime.now(UTC)
         self.db_session.commit()
 
-        return team
+        return _team_to_dict(team)
 
     def delete_team(self, team_id: uuid.UUID, user_id: uuid.UUID) -> bool:
-        team = self.get_team(team_id, user_id)
+        # Check permissions first
+        _ = self.get_team(team_id, user_id)
+
+        # Get the actual team model for soft delete
+        team = self.team_repo.get(team_id)
+        if not team:
+            raise TeamError("Team not found")
 
         team.deleted_at = datetime.now(UTC)
         self.db_session.commit()
@@ -264,17 +290,19 @@ class TeamService:
         self.db_session.commit()
         return True
 
-    def get_user_teams(self, user_id: uuid.UUID) -> list[Team]:
+    def get_user_teams(self, user_id: uuid.UUID) -> list[dict]:
         team_ids = [m.team_id for m in self.member_repo.list_by_user_id(user_id)]
 
         if not team_ids:
             return []
 
-        return (
+        teams = (
             self.db_session.query(Team)
             .filter(Team.id.in_(team_ids), Team.deleted_at.is_(None))
             .all()
         )
+
+        return [_team_to_dict(team) for team in teams]
 
     def check_plan_limits(
         self, team_id: uuid.UUID, team: Team | None = None

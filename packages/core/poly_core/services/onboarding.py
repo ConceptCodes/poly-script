@@ -29,7 +29,7 @@ class OnboardingService:
         host_language: str,
         plan: PlanType = PlanType.FREE,
         invite_emails: list[str] | None = None,
-    ) -> Team:
+    ) -> dict:
         """Complete onboarding with team creation and plan selection."""
         user = self.user_repo.get_by_id(user_id)
         if not user:
@@ -56,7 +56,13 @@ class OnboardingService:
             for email in invite_emails:
                 self._create_invitation(team.id, user_id, email)
 
-        return team
+        # Return dictionary instead of raw DB model
+        return {
+            "team_id": team.id,
+            "name": team.name,
+            "host_language": team.host_language,
+            "plan": team.plan.value,
+        }
 
     def update_onboarding_step(
         self,

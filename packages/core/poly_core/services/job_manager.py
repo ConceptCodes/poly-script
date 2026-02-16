@@ -41,7 +41,7 @@ class JobManagerService:
         mime_type: str,
         file_size: int,
         options: dict[str, Any],
-    ) -> TranscriptionJob:
+    ) -> dict[str, Any]:
         """Create transcription job from file upload.
 
         Args:
@@ -54,7 +54,7 @@ class JobManagerService:
             options: Transcription options (language, engine, timestamps, diarization)
 
         Returns:
-            Created TranscriptionJob
+            Dictionary with job data (id, status)
 
         Raises:
             ValueError: If upload limit exceeded
@@ -99,7 +99,10 @@ class JobManagerService:
         )
         self.queue.enqueue(work_item)
 
-        return job
+        return {
+            "id": job.id,
+            "status": job.status.value if hasattr(job.status, "value") else str(job.status),
+        }
 
     def create_job_from_url(  # noqa: PLR0913
         self,
@@ -108,7 +111,7 @@ class JobManagerService:
         url: str,
         filename: str,
         options: dict[str, Any],
-    ) -> TranscriptionJob:
+    ) -> dict[str, Any]:
         """Create transcription job from URL.
 
         Args:
@@ -119,7 +122,7 @@ class JobManagerService:
             options: Transcription options (language, engine, timestamps, diarization)
 
         Returns:
-            Created TranscriptionJob
+            Dictionary with job data (id, status)
 
         Raises:
             ValueError: If upload limit exceeded or URL download fails
@@ -174,7 +177,10 @@ class JobManagerService:
         )
         self.queue.enqueue(work_item)
 
-        return job
+        return {
+            "id": job.id,
+            "status": job.status.value if hasattr(job.status, "value") else str(job.status),
+        }
 
     def _check_language_available(self, team_id: uuid.UUID, language: str | None) -> bool:
         """Check if language is available in team's plan.

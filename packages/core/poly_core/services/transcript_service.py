@@ -25,7 +25,7 @@ class TranscriptService:
         self,
         job_id: str,
         result: TranscriptionResult,
-    ) -> Transcript:
+    ) -> dict[str, Any]:
         """Save a new transcript from STT result."""
         segments_json = [
             {
@@ -45,27 +45,61 @@ class TranscriptService:
             engine_version=result.engine,
         )
 
-        return self.repo.create(transcript)
+        created = self.repo.create(transcript)
+        return {
+            "id": created.id,
+            "job_id": created.job_id,
+            "text": created.text,
+            "language": created.language,
+            "segments": created.segments,
+            "engine_version": created.engine_version,
+            "created_at": created.created_at,
+            "updated_at": created.updated_at,
+        }
 
     def get_transcript(
         self,
         transcript_id: str,
-    ) -> Transcript | None:
+    ) -> dict[str, Any] | None:
         """Get transcript by ID."""
-        return self.repo.get(transcript_id)
+        transcript = self.repo.get(transcript_id)
+        if transcript is None:
+            return None
+        return {
+            "id": transcript.id,
+            "job_id": transcript.job_id,
+            "text": transcript.text,
+            "language": transcript.language,
+            "segments": transcript.segments,
+            "engine_version": transcript.engine_version,
+            "created_at": transcript.created_at,
+            "updated_at": transcript.updated_at,
+        }
 
     def get_transcript_by_job(
         self,
         job_id: str,
-    ) -> Transcript | None:
+    ) -> dict[str, Any] | None:
         """Get transcript by job ID."""
-        return self.repo.get_by_job_id(job_id)
+        transcript = self.repo.get_by_job_id(job_id)
+        if transcript is None:
+            return None
+        return {
+            "id": transcript.id,
+            "job_id": transcript.job_id,
+            "text": transcript.text,
+            "language": transcript.language,
+            "segments": transcript.segments,
+            "engine_version": transcript.engine_version,
+            "created_at": transcript.created_at,
+            "updated_at": transcript.updated_at,
+        }
 
     def get_transcript_with_team_check(
         self,
         transcript_id: str,
         team_id: str,
-    ) -> Transcript | None:
+    ) -> dict[str, Any] | None:
         """
         Get transcript with team isolation check.
 
@@ -74,7 +108,7 @@ class TranscriptService:
             team_id: The team UUID to verify access for
 
         Returns:
-            Transcript if found and team has access, None otherwise
+            Transcript dictionary if found and team has access, None otherwise
         """
         transcript = self.repo.get(transcript_id)
 
@@ -85,14 +119,23 @@ class TranscriptService:
         if transcript.job and transcript.job.team_id != uuid.UUID(team_id):
             return None
 
-        return transcript
+        return {
+            "id": transcript.id,
+            "job_id": transcript.job_id,
+            "text": transcript.text,
+            "language": transcript.language,
+            "segments": transcript.segments,
+            "engine_version": transcript.engine_version,
+            "created_at": transcript.created_at,
+            "updated_at": transcript.updated_at,
+        }
 
     def update_full_text(
         self,
         transcript_id: str,
         user_id: str,
         new_text: str,
-    ) -> Transcript:
+    ) -> dict[str, Any]:
         """
         Update the full text of a transcript and log the edit.
 
@@ -102,7 +145,7 @@ class TranscriptService:
             new_text: The new full transcript text
 
         Returns:
-            Updated Transcript
+            Updated Transcript as dictionary
 
         Raises:
             ValueError: If transcript not found
@@ -130,7 +173,16 @@ class TranscriptService:
         self.edit_repo.create(edit)
         self.session.flush()
 
-        return transcript
+        return {
+            "id": transcript.id,
+            "job_id": transcript.job_id,
+            "text": transcript.text,
+            "language": transcript.language,
+            "segments": transcript.segments,
+            "engine_version": transcript.engine_version,
+            "created_at": transcript.created_at,
+            "updated_at": transcript.updated_at,
+        }
 
     def update_segment(
         self,
@@ -138,7 +190,7 @@ class TranscriptService:
         segment_id: int,
         user_id: str,
         new_text: str,
-    ) -> Transcript:
+    ) -> dict[str, Any]:
         """
         Update a single segment of a transcript and log the edit.
 
@@ -149,7 +201,7 @@ class TranscriptService:
             new_text: The new segment text
 
         Returns:
-            Updated Transcript
+            Updated Transcript as dictionary
 
         Raises:
             ValueError: If transcript not found or segment_id invalid
@@ -183,7 +235,16 @@ class TranscriptService:
         self.edit_repo.create(edit)
         self.session.flush()
 
-        return transcript
+        return {
+            "id": transcript.id,
+            "job_id": transcript.job_id,
+            "text": transcript.text,
+            "language": transcript.language,
+            "segments": transcript.segments,
+            "engine_version": transcript.engine_version,
+            "created_at": transcript.created_at,
+            "updated_at": transcript.updated_at,
+        }
 
     def get_edit_history(
         self,
@@ -209,16 +270,17 @@ class TranscriptService:
         team_id: str,
         transcript_id: str,
         user_id: str,
-    ) -> Transcript:
+    ) -> dict[str, Any]:
         """
         Revert transcript to its original state (first version).
 
         Args:
+            team_id: The team UUID
             transcript_id: The transcript UUID
             user_id: The user making the revert
 
         Returns:
-            Reverted Transcript
+            Reverted Transcript as dictionary
 
         Raises:
             ValueError: If transcript not found or no edits exist
@@ -264,7 +326,16 @@ class TranscriptService:
         self.edit_repo.create(edit)
         self.session.flush()
 
-        return transcript
+        return {
+            "id": transcript.id,
+            "job_id": transcript.job_id,
+            "text": transcript.text,
+            "language": transcript.language,
+            "segments": transcript.segments,
+            "engine_version": transcript.engine_version,
+            "created_at": transcript.created_at,
+            "updated_at": transcript.updated_at,
+        }
 
     def list_transcripts(
         self,
@@ -273,7 +344,7 @@ class TranscriptService:
         search: str | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[list[Transcript], int]:
+    ) -> tuple[list[dict[str, Any]], int]:
         """
         List transcripts for a team with filtering and pagination.
 
@@ -285,7 +356,7 @@ class TranscriptService:
             page_size: Items per page
 
         Returns:
-            Tuple of (transcripts list, total count)
+            Tuple of (transcripts list as dicts, total count)
         """
         # Build query with joins
         stmt = (
@@ -318,4 +389,16 @@ class TranscriptService:
 
         transcripts = _extract_all(self.session.execute(stmt))
 
-        return list(transcripts), total
+        return [
+            {
+                "id": t.id,
+                "job_id": t.job_id,
+                "text": t.text,
+                "language": t.language,
+                "segments": t.segments,
+                "engine_version": t.engine_version,
+                "created_at": t.created_at,
+                "updated_at": t.updated_at,
+            }
+            for t in transcripts
+        ], total
