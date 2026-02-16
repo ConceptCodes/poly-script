@@ -48,14 +48,14 @@ export function AnalyticsPage() {
   ];
 
   const metrics = [
-    { label: "Users", value: usage?.users ?? "-", icon: Users, color: "text-blue-400" },
-    { label: "Teams", value: usage?.teams ?? "-", icon: Building2, color: "text-purple-400" },
-    { label: "Total Jobs", value: usage?.jobs ?? "-", icon: Briefcase, color: "text-amber-400" },
+    { label: "Users", value: usage?.users ?? "-", icon: Users, color: "text-[--info]" },
+    { label: "Teams", value: usage?.teams ?? "-", icon: Building2, color: "text-[--info]" },
+    { label: "Total Jobs", value: usage?.jobs ?? "-", icon: Briefcase, color: "text-[--warning]" },
     {
       label: "Successful Jobs",
       value: usage?.successful_jobs ?? "-",
       icon: CheckCircle,
-      color: "text-green-400",
+      color: "text-[--success]",
     },
   ];
 
@@ -64,19 +64,19 @@ export function AnalyticsPage() {
       label: "Total Errors",
       value: errors?.total_errors ?? "-",
       icon: AlertCircle,
-      color: "text-red-400",
+      color: "text-[--destructive]",
     },
     {
       label: "Failed Jobs",
       value: errors?.failed_jobs ?? "-",
       icon: XCircle,
-      color: "text-orange-400",
+      color: "text-[--warning]",
     },
     {
       label: "Canceled Jobs",
       value: errors?.canceled_jobs ?? "-",
       icon: Clock,
-      color: "text-slate-400",
+      color: "text-[--muted-foreground]",
     },
   ];
 

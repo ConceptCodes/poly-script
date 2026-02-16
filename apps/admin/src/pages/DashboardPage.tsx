@@ -63,19 +63,19 @@ const StatCard = ({ config }: { config: StatCardConfig }) => {
 
   const getTrendColor = () => {
     if (!trend) return "";
-    if (trend.direction === "up") return "text-[--mc-green]";
-    if (trend.direction === "down") return "text-[--mc-danger]";
-    return "text-[--mc-text-tertiary]";
+    if (trend.direction === "up") return "text-[--success]";
+    if (trend.direction === "down") return "text-[--destructive]";
+    return "text-[--muted-foreground]";
   };
 
   return (
-    <Card className="group border-[--mc-border] hover:border-[--mc-border-highlight] transition-all duration-300">
+    <Card className="group border-[--border] hover:border-[--ring] transition-all duration-300">
       <CardHeader className="flex flex-row items-start justify-between pb-3">
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-[--mc-text-tertiary] uppercase tracking-wider font-mono">
+          <span className="text-xs font-medium text-[--muted-foreground] uppercase tracking-wider font-mono">
             {label}
           </span>
-          <div className="font-mono text-3xl font-bold text-[--mc-text-primary] tracking-tight">
+          <div className="font-mono text-3xl font-bold text-[--foreground] tracking-tight">
             {value}
           </div>
         </div>
@@ -104,7 +104,7 @@ const StatCard = ({ config }: { config: StatCardConfig }) => {
                 {trend.value > 0 ? "+" : ""}
                 {trend.value}%
               </span>
-              <span className="text-[--mc-text-tertiary]">vs last 7d</span>
+              <span className="text-[--muted-foreground]">vs last 7d</span>
             </div>
           )}
         </div>
@@ -118,13 +118,13 @@ const StatusIndicator = ({ status }: { status: string }) => {
     status.toLowerCase().includes("healthy") ||
     status.toLowerCase() === "ok" ||
     status.toLowerCase() === "active";
-  const colorClass = isHealthy ? "bg-[--mc-green]" : "bg-[--mc-danger]";
+  const colorClass = isHealthy ? "bg-[--success]" : "bg-[--destructive]";
 
   return (
     <div className="flex items-center gap-2">
       <div className={`w-2 h-2 rounded-full ${colorClass} ${isHealthy ? "pulse-dot" : ""}`} />
       <span
-        className={`font-mono text-sm ${isHealthy ? "text-[--mc-green]" : "text-[--mc-danger]"}`}
+        className={`font-mono text-sm ${isHealthy ? "text-[--success]" : "text-[--destructive]"}`}
       >
         {status.toUpperCase()}
       </span>
@@ -135,20 +135,20 @@ const StatusIndicator = ({ status }: { status: string }) => {
 const QueueBar = ({ depth, max = 50 }: { depth: number; max?: number }) => {
   const percentage = Math.min(100, (depth / max) * 100);
   const getColor = () => {
-    if (percentage < 30) return "bg-[--mc-green]";
-    if (percentage < 70) return "bg-[--mc-amber]";
-    return "bg-[--mc-danger]";
+    if (percentage < 30) return "bg-[--success]";
+    if (percentage < 70) return "bg-[--warning]";
+    return "bg-[--destructive]";
   };
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 h-2 bg-[--mc-border] rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-[--border] rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ${getColor()}`}
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <span className="font-mono text-sm text-[--mc-text-secondary] w-16 text-right">{depth}</span>
+      <span className="font-mono text-sm text-[--muted-foreground] w-16 text-right">{depth}</span>
     </div>
   );
 };
@@ -160,9 +160,9 @@ const TerminalOutput = ({
   label: string;
   value: string | number | React.ReactNode;
 }) => (
-  <div className="flex items-start gap-4 py-2 border-b border-[--mc-border] last:border-0">
-    <span className="font-mono text-xs text-[--mc-text-tertiary] w-32 flex-shrink-0">{label}:</span>
-    <span className="font-mono text-sm text-[--mc-text-primary]">{value}</span>
+  <div className="flex items-start gap-4 py-2 border-b border-[--border] last:border-0">
+    <span className="font-mono text-xs text-[--muted-foreground] w-32 flex-shrink-0">{label}:</span>
+    <span className="font-mono text-sm text-[--foreground]">{value}</span>
   </div>
 );
 
@@ -180,15 +180,15 @@ const QuickAction = ({
   <button
     type="button"
     onClick={onClick}
-    className="group flex flex-col gap-3 p-4 rounded-lg border border-[--mc-border] bg-[--mc-bg-card] hover:border-[--mc-border-highlight] hover:bg-[--mc-bg-card-hover] transition-all duration-200 text-left"
+    className="group flex flex-col gap-3 p-4 rounded-lg border border-[--border] bg-[--card] hover:border-[--ring] hover:bg-[--accent] transition-all duration-200 text-left"
   >
     <div className="flex items-start justify-between">
-      <Icon className="h-5 w-5 text-[--mc-cyan]" />
-      <ArrowRight className="h-4 w-4 text-[--mc-text-tertiary] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
+      <Icon className="h-5 w-5 text-[--info]" />
+      <ArrowRight className="h-4 w-4 text-[--muted-foreground] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
     </div>
     <div>
-      <div className="font-mono text-sm font-medium text-[--mc-text-primary] mb-1">{label}</div>
-      <div className="text-xs text-[--mc-text-tertiary]">{description}</div>
+      <div className="font-mono text-sm font-medium text-[--foreground] mb-1">{label}</div>
+      <div className="text-xs text-[--muted-foreground]">{description}</div>
     </div>
   </button>
 );
@@ -220,7 +220,7 @@ export function DashboardPage() {
       label: "Users",
       value: counts?.users ?? "-",
       icon: Users,
-      color: "text-[--mc-cyan]",
+      color: "text-[--info]",
       trend: { value: 12.5, direction: "up" },
       sparklineData: generateSparklineData(counts?.users ?? 100, 15),
     },
@@ -228,7 +228,7 @@ export function DashboardPage() {
       label: "Teams",
       value: counts?.teams ?? "-",
       icon: Building2,
-      color: "text-[--mc-cyan]",
+      color: "text-[--info]",
       trend: { value: 8.3, direction: "up" },
       sparklineData: generateSparklineData(counts?.teams ?? 50, 10),
     },
@@ -236,7 +236,7 @@ export function DashboardPage() {
       label: "Jobs",
       value: counts?.jobs ?? "-",
       icon: Briefcase,
-      color: "text-[--mc-amber]",
+      color: "text-[--warning]",
       trend: { value: -2.1, direction: "down" },
       sparklineData: generateSparklineData(counts?.jobs ?? 200, 40),
     },
@@ -244,7 +244,7 @@ export function DashboardPage() {
       label: "Admins",
       value: counts?.administrators ?? "-",
       icon: Shield,
-      color: "text-[--mc-green]",
+      color: "text-[--success]",
       sparklineData: generateSparklineData(counts?.administrators ?? 5, 1),
     },
   ];
@@ -253,15 +253,15 @@ export function DashboardPage() {
     <div className="space-y-8">
       <div className="flex items-baseline justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight mb-2 font-mono text-[--mc-text-primary]">
+          <h1 className="text-4xl font-bold tracking-tight mb-2 font-mono text-[--foreground]">
             Dashboard
           </h1>
-          <p className="text-[--mc-text-secondary] font-mono text-sm">
+          <p className="text-[--muted-foreground] font-mono text-sm">
             System overview and health signals
           </p>
         </div>
-        <div className="flex items-center gap-2 text-[--mc-cyan]">
-          <div className="w-2 h-2 rounded-full bg-[--mc-cyan] pulse-dot" />
+        <div className="flex items-center gap-2 text-[--info]">
+          <div className="w-2 h-2 rounded-full bg-[--info] pulse-dot" />
           <span className="font-mono text-xs">LIVE</span>
         </div>
       </div>
@@ -273,9 +273,9 @@ export function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="border-[--mc-border] terminal-bg">
+        <Card className="border-[--border] terminal-bg">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-[--mc-cyan]">
+            <CardTitle className="flex items-center gap-2 text-[--info]">
               <Activity className="h-5 w-5" />
               System Health
             </CardTitle>
@@ -295,9 +295,9 @@ export function DashboardPage() {
                 )
               }
             />
-            <div className="py-2 border-b border-[--mc-border]">
+            <div className="py-2 border-b border-[--border]">
               <div className="flex items-center gap-3 mb-2">
-                <span className="font-mono text-xs text-[--mc-text-tertiary] w-32 flex-shrink-0">
+                <span className="font-mono text-xs text-[--muted-foreground] w-32 flex-shrink-0">
                   Queue Depth:
                 </span>
                 <QueueBar depth={health?.queue_depth ?? 0} max={50} />
@@ -307,9 +307,9 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-[--mc-border] terminal-bg">
+        <Card className="border-[--border] terminal-bg">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-[--mc-cyan]">
+            <CardTitle className="flex items-center gap-2 text-[--info]">
               <Zap className="h-5 w-5" />
               Quick Stats
             </CardTitle>
@@ -324,9 +324,9 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <Card className="border-[--mc-border]">
+      <Card className="border-[--border]">
         <CardHeader className="pb-4">
-          <CardTitle className="text-[--mc-text-primary] font-mono">Quick Actions</CardTitle>
+          <CardTitle className="text-[--foreground] font-mono">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
