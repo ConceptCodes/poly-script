@@ -2,6 +2,39 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 @import "@poly/ui/index.css";
+ 
+:root {
+  /* Marketing Site Design Tokens (Overwriting @poly/ui) */
+  --background: 222 47% 4%;
+  --foreground: 0 0% 100%;
+  
+  --primary: 199 89% 48%;
+  --primary-foreground: 0 0% 100%;
+  
+  --card: 222 47% 8%;
+  --card-foreground: 0 0% 100%;
+  
+  --popover: 222 47% 8%;
+  --popover-foreground: 0 0% 100%;
+  
+  --secondary: 222 47% 12%;
+  --secondary-foreground: 0 0% 100%;
+  
+  --muted: 222 47% 12%;
+  --muted-foreground: 215 20% 65%;
+  
+  --accent: 222 47% 12%;
+  --accent-foreground: 0 0% 100%;
+  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  
+  --border: 222 47% 15%;
+  --input: 222 47% 15%;
+  --ring: 199 89% 48%;
+  
+  --radius: 0.75rem;
+}
 
 * {
   box-sizing: border-box;
@@ -37,7 +70,7 @@ body::after {
 body::before {
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, hsla(199, 89%, 48%, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, hsla(var(--primary) /  0.4) 0%, transparent 70%);
   top: -200px;
   left: -200px;
   animation: float-orb-1 20s ease-in-out infinite;
@@ -46,7 +79,7 @@ body::before {
 body::after {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, hsla(15, 95%, 64%, 0.35) 0%, transparent 70%);
+  background: radial-gradient(circle, hsla(var(--brand-orange) /  0.35) 0%, transparent 70%);
   bottom: -150px;
   right: -150px;
   animation: float-orb-2 25s ease-in-out infinite reverse;
@@ -160,7 +193,7 @@ a {
 }
 
 .nav-links a:focus-visible {
-  outline: 2px solid hsla(199, 89%, 48%, 0.7);
+  outline: 2px solid hsla(var(--primary) /  0.7);
   outline-offset: 4px;
   border-radius: 8px;
 }
@@ -225,7 +258,7 @@ a {
 }
 
 .btn:focus-visible {
-  outline: 2px solid hsla(199, 89%, 48%, 0.7);
+  outline: 2px solid hsla(var(--primary) /  0.7);
   outline-offset: 4px;
 }
 
@@ -242,11 +275,11 @@ a {
 .link:hover {
   color: hsl(var(--foreground));
   text-decoration: underline;
-  text-decoration-color: hsla(199, 89%, 48%, 0.6);
+  text-decoration-color: hsla(var(--primary) /  0.6);
 }
 
 .link:focus-visible {
-  outline: 2px solid hsla(199, 89%, 48%, 0.7);
+  outline: 2px solid hsla(var(--primary) /  0.7);
   outline-offset: 4px;
   border-radius: 8px;
 }
@@ -264,8 +297,8 @@ a {
 
 .input-field:focus {
   outline: none;
-  border-color: hsla(199, 89%, 48%, 0.5);
-  box-shadow: 0 0 0 3px hsla(199, 89%, 48%, 0.1);
+  border-color: hsla(var(--primary) /  0.5);
+  box-shadow: 0 0 0 3px hsla(var(--primary) /  0.1);
 }
 
 .btn.primary {
@@ -279,7 +312,7 @@ a {
   background: var(--gradient-brand-hover);
   box-shadow:
     var(--glow-orange),
-    0 12px 40px hsla(15, 95%, 64%, 0.4);
+    0 12px 40px hsla(var(--brand-orange) /  0.4);
 }
 
 .btn.ghost {
@@ -290,8 +323,8 @@ a {
 
 .btn.ghost:hover {
   background: hsla(var(--secondary) / 0.5);
-  border-color: hsla(199, 89%, 48%, 0.6);
-  box-shadow: 0 8px 20px hsla(199, 89%, 48%, 0.1);
+  border-color: hsla(var(--primary) /  0.6);
+  box-shadow: 0 8px 20px hsla(var(--primary) /  0.1);
 }
 
 .lang select {
@@ -323,22 +356,22 @@ a {
 
 .lang a[aria-current="page"] {
   color: hsl(var(--foreground));
-  border-color: hsla(199, 89%, 48%, 0.5);
+  border-color: hsla(var(--primary) /  0.5);
   background: hsla(var(--secondary) / 0.4);
 }
 
 .lang a:hover {
   color: hsl(var(--foreground));
-  border-color: hsla(199, 89%, 48%, 0.4);
+  border-color: hsla(var(--primary) /  0.4);
 }
 
 .lang a:focus-visible {
-  outline: 2px solid hsla(199, 89%, 48%, 0.7);
+  outline: 2px solid hsla(var(--primary) /  0.7);
   outline-offset: 3px;
 }
 
 .lang select:focus-visible {
-  outline: 2px solid hsla(199, 89%, 48%, 0.7);
+  outline: 2px solid hsla(var(--primary) /  0.7);
   outline-offset: 4px;
 }
 
@@ -361,7 +394,7 @@ a {
   border: 1px solid hsla(var(--border) / 0.5);
   backdrop-filter: blur(20px);
   box-shadow:
-    0 0 80px hsla(199, 89%, 48%, 0.1),
+    0 0 80px hsla(var(--primary) /  0.1),
     0 40px 80px hsla(var(--background) / 0.6);
   animation: fadeIn 1s ease-out 0.2s backwards;
   position: relative;
@@ -378,8 +411,8 @@ a {
   background: linear-gradient(
     90deg,
     transparent,
-    hsla(199, 89%, 48%, 0.6),
-    hsla(15, 95%, 64%, 0.6),
+    hsla(var(--primary) /  0.6),
+    hsla(var(--brand-orange) /  0.6),
     transparent
   );
 }
@@ -390,9 +423,9 @@ a {
   font-weight: 700;
   font-family: var(--font-display);
   letter-spacing: 0.2em;
-  color: #38bdf8;
+  color: hsl(var(--primary));
   margin-bottom: 24px;
-  text-shadow: 0 0 20px hsla(199, 89%, 48%, 0.5);
+  text-shadow: 0 0 20px hsla(var(--primary) / 0.5);
 }
 
 .hero-title {
@@ -441,7 +474,7 @@ a {
 }
 
 .card:focus-visible {
-  outline: 2px solid hsla(199, 89%, 48%, 0.7);
+  outline: 2px solid hsla(var(--primary) /  0.7);
   outline-offset: 4px;
 }
 
@@ -455,8 +488,8 @@ a {
   background: linear-gradient(
     90deg,
     transparent,
-    hsla(199, 89%, 48%, 0.5),
-    hsla(15, 95%, 64%, 0.5),
+    hsla(var(--primary) /  0.5),
+    hsla(var(--brand-orange) /  0.5),
     transparent
   );
   opacity: 0;
@@ -469,7 +502,7 @@ a {
   inset: 0;
   border-radius: 20px;
   padding: 1px;
-  background: linear-gradient(135deg, hsla(199, 89%, 0.2), transparent, hsla(15, 95%, 64%, 0.2));
+  background: linear-gradient(135deg, hsla(199, 89%, 0.2), transparent, hsla(var(--brand-orange) /  0.2));
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -488,8 +521,8 @@ a {
   border-color: hsla(199, 89%, 0.4);
   box-shadow:
     0 20px 60px hsla(var(--background) / 0.4),
-    0 0 40px hsla(199, 89%, 48%, 0.1),
-    0 0 80px hsla(15, 95%, 64%, 0.05);
+    0 0 40px hsla(var(--primary) /  0.1),
+    0 0 80px hsla(var(--brand-orange) /  0.05);
 }
 
 .card:hover::before {
@@ -533,9 +566,9 @@ a {
   font-weight: 600;
   font-family: var(--font-display);
   border: 1px solid hsla(var(--border) / 0.5);
-  color: #38bdf8;
+  color: hsl(var(--primary));
   letter-spacing: 0.05em;
-  text-shadow: 0 0 10px hsla(199, 89%, 48%, 0.3);
+  text-shadow: 0 0 10px hsla(var(--primary) / 0.3);
 }
 
 .muted {
@@ -571,6 +604,7 @@ a {
   display: flex;
   flex-direction: column;
   padding: 32px;
+  overflow: visible;
 }
 
 .pricing .card.recommended {
@@ -621,7 +655,7 @@ a {
   content: "✓";
   position: absolute;
   left: 0;
-  color: #38bdf8;
+  color: hsl(var(--primary));
   font-weight: 700;
 }
 
@@ -644,7 +678,7 @@ a {
   font-family: var(--font-display);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  box-shadow: 0 4px 12px hsla(15, 95%, 64%, 0.4);
+  box-shadow: 0 4px 12px hsla(var(--brand-orange) /  0.4);
 }
 
 .site-footer {

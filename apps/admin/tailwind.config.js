@@ -4,8 +4,8 @@ import sharedConfig from "../../packages/ui/tailwind.config.js";
 export default {
   ...sharedConfig,
   content: [
-    "./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}",
-    "./src/components/**/*.{astro,js,jsx,md,mdx,svelte,ts,tsx,vue}",
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
     "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
   ],
 };

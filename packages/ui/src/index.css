@@ -1,69 +1,68 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    /* Shadcn UI Base Tokens */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* ============================================
+       POLYSCRIPT UNIFIED DESIGN SYSTEM
+       ============================================ */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Core Surface Tokens */
+    --background: oklch(0.9818 0.0054 95.0986);
+    --foreground: oklch(0.3438 0.0269 95.7226);
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --card: oklch(0.9818 0.0054 95.0986);
+    --card-foreground: oklch(0.1908 0.002 106.5859);
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.2671 0.0196 98.939);
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Brand & Action Tokens */
+    --primary: oklch(0.6171 0.1375 39.0427);
+    --primary-foreground: oklch(1 0 0);
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --secondary: oklch(0.9245 0.0138 92.9892);
+    --secondary-foreground: oklch(0.4334 0.0177 98.6048);
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: oklch(0.9245 0.0138 92.9892);
+    --accent-foreground: oklch(0.2671 0.0196 98.939);
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Text Hierarchy Tokens */
+    --muted: oklch(0.9341 0.0153 90.239);
+    --muted-foreground: oklch(0.6059 0.0075 97.4233);
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Semantic State Tokens */
+    --destructive: oklch(0.1908 0.002 106.5859);
+    --destructive-foreground: oklch(1 0 0);
+
+    --success: oklch(0.6272 0.1308 144.6343);
+    --success-foreground: oklch(1 0 0);
+
+    --warning: oklch(0.6804 0.1367 56.6661);
+    --warning-foreground: oklch(1 0 0);
+
+    --info: oklch(0.5886 0.1213 237.1922);
+    --info-foreground: oklch(1 0 0);
+
+    /* Border & Input Tokens */
+    --border: oklch(0.8847 0.0069 97.3627);
+    --input: oklch(0.7621 0.0156 98.3528);
+    --ring: oklch(0.6171 0.1375 39.0427);
 
     --radius: 0.5rem;
 
-    /* Admin/Web mc-* Tokens */
-    --mc-bg-deep: #0A0B0F;
-    --mc-bg-card: #13141A;
-    --mc-bg-card-hover: #1A1B24;
-    --mc-cyan: #00D9FF;
-    --mc-cyan-dim: rgba(0, 217, 255, 0.1);
-    --mc-green: #00FF88;
-    --mc-green-dim: rgba(0, 255, 136, 0.1);
-    --mc-amber: #FFB800;
-    --mc-amber-dim: rgba(255, 184, 0, 0.1);
-    --mc-danger: #FF4757;
-    --mc-danger-dim: rgba(255, 71, 87, 0.1);
-    --mc-text-primary: #F8FAFC;
-    --mc-text-secondary: #94A3B8;
-    --mc-text-tertiary: #64748B;
-    --mc-border: #1E293B;
-    --mc-border-highlight: rgba(0, 217, 255, 0.3);
-
-    /* Brand Tokens */
+    /* Brand & Marketing Tokens */
     --brand-primary: 222.2 47.4% 11.2%;
     --brand-gradient: linear-gradient(135deg, hsl(199 89% 48%), hsl(15 95% 64%));
 
-    /* Marketing Font Tokens */
-    --font-display: 'Cabinet Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    /* Typography */
+    --font-display: "Cabinet Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-    /* Marketing Gradient Tokens */
+    /* Gradients */
     --gradient-blue: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
     --gradient-orange: linear-gradient(135deg, #f97316 0%, #f43f5e 100%);
     --gradient-brand: linear-gradient(135deg, #0ea5e9 0%, #f97316 100%);
@@ -74,53 +73,147 @@
       radial-gradient(at 100% 100%, hsla(15, 95%, 64%, 0.15) 0px, transparent 50%),
       radial-gradient(at 0% 100%, hsla(15, 95%, 64%, 0.1) 0px, transparent 50%);
 
-    /* Marketing Glow Tokens */
+    /* Effects */
     --glow-blue: 0 0 60px hsla(199, 89%, 48%, 0.3);
     --glow-orange: 0 0 60px hsla(15, 95%, 64%, 0.2);
     --glow-brand: 0 0 80px hsla(199, 89%, 48%, 0.4);
 
-    /* Marketing Ease Tokens */
+    /* Animation */
     --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
     --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --chart-1: oklch(0.5583 0.1276 42.9956);
+    --chart-2: oklch(0.6898 0.1581 290.4107);
+    --chart-3: oklch(0.8816 0.0276 93.128);
+    --chart-4: oklch(0.8822 0.0403 298.1792);
+    --chart-5: oklch(0.5608 0.1348 42.0584);
+    --sidebar: oklch(0.9663 0.008 98.8792);
+    --sidebar-foreground: oklch(0.359 0.0051 106.6524);
+    --sidebar-primary: oklch(0.6171 0.1375 39.0427);
+    --sidebar-primary-foreground: oklch(0.9881 0 0);
+    --sidebar-accent: oklch(0.9245 0.0138 92.9892);
+    --sidebar-accent-foreground: oklch(0.325 0 0);
+    --sidebar-border: oklch(0.9401 0 0);
+    --sidebar-ring: oklch(0.7731 0 0);
+    --font-sans:
+      ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    --font-mono:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+      monospace;
+    --shadow-color: oklch(0 0 0);
+    --shadow-opacity: 0.1;
+    --shadow-blur: 3px;
+    --shadow-spread: 0px;
+    --shadow-offset-x: 0;
+    --shadow-offset-y: 1px;
+    --letter-spacing: 0em;
+    --spacing: 0.25rem;
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    --tracking-normal: 0em;
   }
- 
+
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    /* Core Surface Tokens - Dark */
+    --background: oklch(0.145 0.01 260);
+    --foreground: oklch(0.92 0.01 260);
+
+    --card: oklch(0.19 0.01 260);
+    --card-foreground: oklch(0.92 0.01 260);
+
+    --popover: oklch(0.19 0.01 260);
+    --popover-foreground: oklch(0.92 0.01 260);
+
+    /* Brand & Action Tokens - Dark */
+    --primary: oklch(0.65 0.15 45);
+    --primary-foreground: oklch(0.1 0.01 260);
+
+    --secondary: oklch(0.26 0.015 260);
+    --secondary-foreground: oklch(0.92 0.01 260);
+
+    --accent: oklch(0.26 0.015 260);
+    --accent-foreground: oklch(0.92 0.01 260);
+
+    /* Text Hierarchy Tokens - Dark */
+    --muted: oklch(0.25 0.01 260);
+    --muted-foreground: oklch(0.65 0.015 260);
+
+    /* Semantic State Tokens - Dark */
+    --destructive: oklch(0.55 0.2 25);
+    --destructive-foreground: oklch(0.98 0 0);
+
+    --success: oklch(0.6 0.15 145);
+    --success-foreground: oklch(0.1 0.01 260);
+
+    --warning: oklch(0.7 0.12 55);
+    --warning-foreground: oklch(0.1 0.01 260);
+
+    --info: oklch(0.6 0.13 235);
+    --info-foreground: oklch(0.98 0 0);
+
+    /* Border & Input Tokens - Dark */
+    --border: oklch(0.28 0.015 260);
+    --input: oklch(0.22 0.015 260);
+    --ring: oklch(0.65 0.15 45);
+
+    /* Charts */
+    --chart-1: oklch(0.65 0.15 45);
+    --chart-2: oklch(0.6 0.13 235);
+    --chart-3: oklch(0.7 0.18 145);
+    --chart-4: oklch(0.75 0.14 70);
+    --chart-5: oklch(0.55 0.2 25);
+
+    /* Sidebar */
+    --sidebar: oklch(0.16 0.01 260);
+    --sidebar-foreground: oklch(0.92 0.01 260);
+    --sidebar-primary: oklch(0.65 0.15 45);
+    --sidebar-primary-foreground: oklch(0.98 0 0);
+    --sidebar-accent: oklch(0.22 0.015 260);
+    --sidebar-accent-foreground: oklch(0.92 0.01 260);
+    --sidebar-border: oklch(0.28 0.015 260);
+    --sidebar-ring: oklch(0.65 0.15 45);
+
+    /* Shadows */
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.1);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.1);
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.2), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.2), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.2), 0 2px 4px -1px hsl(0 0% 0% / 0.2);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.2), 0 4px 6px -1px hsl(0 0% 0% / 0.2);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.2), 0 8px 10px -1px hsl(0 0% 0% / 0.2);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.4);
   }
-}
- 
-@layer base {
-  * {
-    border-color: hsl(var(--border));
+  .theme {
+    --font-sans:
+      ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+      monospace;
+    --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    --radius: 0.5rem;
+    --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+    --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+    --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+    --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+    --tracking-widest: calc(var(--tracking-normal) + 0.1em);
   }
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    letter-spacing: var(--tracking-normal);
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
