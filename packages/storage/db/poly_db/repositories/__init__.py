@@ -1,6 +1,11 @@
 from poly_db.repositories.admin import AdminUserRepository, AuditLogRepository
-from poly_db.repositories.auth import OAuthAccountRepository, PasswordResetRepository, RefreshTokenRepository
+from poly_db.repositories.auth import (
+    OAuthAccountRepository,
+    PasswordResetRepository,
+    RefreshTokenRepository,
+)
 from poly_db.repositories.base import BaseRepository
+from poly_db.repositories.base_async import BaseRepositoryAsync
 from poly_db.repositories.billing import (
     CreditPurchaseRepository,
     InvoiceRepository,
@@ -21,6 +26,7 @@ __all__ = [
     "AudioAssetRepository",
     "AuditLogRepository",
     "BaseRepository",
+    "BaseRepositoryAsync",
     "CreditPurchaseRepository",
     "InvoiceRepository",
     "OAuthAccountRepository",

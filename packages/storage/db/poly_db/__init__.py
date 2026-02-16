@@ -1,4 +1,9 @@
 from .database import get_db_session, get_engine, get_session_factory, get_settings
+from .database_async import (
+    get_async_db_session,
+    get_async_engine,
+    get_async_session_factory,
+)
 from .models import (
     AdminUser,
     AudioAsset,
@@ -52,6 +57,9 @@ __all__ = [
     "User",
     "UserRepository",
     "UserSettings",
+    "get_async_db_session",
+    "get_async_engine",
+    "get_async_session_factory",
     "get_db_session",
     "get_engine",
     "get_session_factory",
