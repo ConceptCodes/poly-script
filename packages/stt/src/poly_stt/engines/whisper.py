@@ -20,12 +20,25 @@ class WhisperLocalEngine(STTEngine):
     def __init__(self, model_size: str = "medium"):
         self._model_size = model_size
         self._device = self._detect_device()
-        self._model = WhisperModel(
-            model_size,
-            device=self._device,
-            compute_type="float16" if self._use_fp16() else "int8",
-        )
-        logger.info("Loaded model '%s' on device: %s", model_size, self._device)
+        try:
+            self._model = WhisperModel(
+                model_size,
+                device=self._device,
+                compute_type="float16" if self._use_fp16() else "int8",
+            )
+            logger.info("Loaded model '%s' on device: %s", model_size, self._device)
+        except ValueError as e:
+            if "mps" in str(e).lower():
+                logger.warning("MPS device not supported, falling back to CPU")
+                self._device = "cpu"
+                self._model = WhisperModel(
+                    model_size,
+                    device=self._device,
+                    compute_type="int8",
+                )
+                logger.info("Loaded model '%s' on device: %s (fallback)", model_size, self._device)
+            else:
+                raise
 
     @property
     def name(self) -> str:
