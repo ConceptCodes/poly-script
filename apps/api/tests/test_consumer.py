@@ -4,19 +4,20 @@ Unit tests for Consumer, Processor, and Progress Publisher.
 Tests core worker functionality including job processing pipeline,
 progress publishing, and consumer thread behavior.
 """
+
 import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-# Add worker src to path
-worker_src = Path(__file__).parent.parent.parent / "worker" / "src"
-if str(worker_src) not in sys.path:
-    sys.path.insert(0, str(worker_src))
+# Add apps directory to path so 'worker' package can be found
+apps_dir = Path(__file__).parent.parent.parent
+if str(apps_dir) not in sys.path:
+    sys.path.insert(0, str(apps_dir))
 
 import pytest
-from consumer import TranscriptionConsumer
-from processor import JobProcessor
-from progress import ProgressPublisher
+from worker.src.consumer import TranscriptionConsumer
+from worker.src.processor import JobProcessor
+from worker.src.progress import ProgressPublisher
 from sqlalchemy.orm import Session
 
 from poly_db.models.transcripts import Transcript

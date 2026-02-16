@@ -21,23 +21,25 @@ import sys
 
 
 def _setup_python_path():
-    # Support running this script from repo root without installing packages
     script_dir = pathlib.Path(__file__).resolve()
-    # root is parent of apps
     root = script_dir.parent.parent.parent.parent
 
-    # Path to core package (where AdminAuthService lives)
     core_pkg = root / "packages" / "core"
     if core_pkg.exists():
         sys.path.insert(0, str(core_pkg))
 
-    # Path to db (db layer with get_db_session)
     db_path = root / "packages" / "storage" / "db"
     if db_path.exists():
         sys.path.insert(0, str(db_path))
 
+    return root
 
-_setup_python_path()
+
+_root = _setup_python_path()
+
+from dotenv import load_dotenv
+
+load_dotenv(_root / ".env")
 
 from poly_core.services.admin_auth import AdminAuthService  # noqa: E402
 from poly_db.database import get_db_session  # noqa: E402
@@ -52,6 +54,7 @@ def _parse_args():
     ap.add_argument("--full-name", dest="full_name", help="Admin full name")
     # Allow overriding via environment variables if not passed on CLI
     return ap.parse_args()
+
 
 def _load_inputs():
     # CLI first
@@ -69,12 +72,11 @@ def _load_inputs():
         full_name = os.environ.get("ADMIN_FULL_NAME")
 
     if not email or not password or not full_name:
-        logger.error(
-            "email, password and full_name are required (via CLI or ADMIN_* env vars)."
-        )
+        logger.error("email, password and full_name are required (via CLI or ADMIN_* env vars).")
         sys.exit(2)
 
     return email, password, full_name
+
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -97,7 +99,9 @@ def main():
     with get_db_session() as db_session:
         svc = AdminAuthService(db_session, admin_jwt_secret, jwt_expiry_minutes)
         try:
-            created = svc.create_admin_user(email=email, password=password, full_name=full_name, role="SUPER_ADMIN")
+            created = svc.create_admin_user(
+                email=email, password=password, full_name=full_name, role="SUPER_ADMIN"
+            )
             logger.info(
                 "Admin created: %s (id=%s, role=%s)",
                 created.email,
@@ -111,6 +115,7 @@ def main():
         except Exception as e:
             logger.exception("Unexpected error creating admin: %s", e)
             sys.exit(9)
+
 
 if __name__ == "__main__":
     main()

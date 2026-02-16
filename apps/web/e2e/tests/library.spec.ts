@@ -2,16 +2,62 @@ import { expect, test } from "@playwright/test";
 
 test.describe("Library Page E2E", () => {
   test.beforeEach(async ({ page }) => {
-    // Mock authentication
-    await page.goto("/");
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        console.log(`Console error: ${msg.text()}`);
+      }
+    });
+
+    page.on("pageerror", (err) => {
+      console.log(`Page error: ${err.message}`);
+    });
+
+    await page.route("**/v1/**", async (route) => {
+      await route.fulfill({ status: 200, body: JSON.stringify({}) });
+    });
+
+    await page.goto("/login");
     await page.evaluate(() => {
       localStorage.setItem("access_token", "mock-token");
       localStorage.setItem("user_id", "mock-user-id");
+      if ((window as Window & { __initAuth?: () => void }).__initAuth) {
+        (window as Window & { __initAuth?: () => void }).__initAuth!();
+      }
     });
+    await page.waitForTimeout(500);
   });
 
   test("library page loads with transcript list", async ({ page }) => {
-    // Mock API responses
+    // Mock the /auth/me endpoint which might be called during auth validation
+    await page.route("**/v1/auth/me", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "mock-user-id",
+            email: "test@example.com",
+            name: "Test User",
+            verified: true,
+            createdAt: new Date().toISOString(),
+            host_language: "en",
+            theme: "system",
+            notifications: {
+              email: true,
+              job_completion: true,
+              in_app: true,
+            },
+          },
+          team: {
+            id: "mock-team-id",
+            name: "Test Team",
+            defaultLanguage: "en",
+            createdAt: new Date().toISOString(),
+          },
+        }),
+      });
+    });
+
     await page.route("**/v1/transcripts**", async (route) => {
       await route.fulfill({
         status: 200,
@@ -44,10 +90,29 @@ test.describe("Library Page E2E", () => {
       });
     });
 
-    await page.goto("/library");
+    // Set tokens and trigger auth init before navigation
+    await page.evaluate(() => {
+      localStorage.setItem("access_token", "mock-token");
+      localStorage.setItem("user_id", "mock-user-id");
+    });
 
-    // Check page title
-    await expect(page.getByRole("heading", { name: "Transcript Library" })).toBeVisible();
+    await page.goto("/library");
+    await page.waitForTimeout(1000);
+
+    // Check URL - if redirected to login, the test needs different approach
+    const url = page.url();
+    if (url.includes("/login")) {
+      throw new Error("Auth not initialized - still on login page");
+    }
+
+    // Debug: Get page content
+    const bodyText = await page.locator("body").textContent();
+    console.log("Body text preview:", bodyText?.substring(0, 200));
+
+    // Wait for React to fully render
+    await page.waitForTimeout(2000);
+
+    await expect(page.getByText("Transcript Library")).toBeVisible({ timeout: 10000 });
 
     // Check transcripts are displayed
     await expect(page.getByText("audio1.mp3")).toBeVisible();
@@ -164,9 +229,9 @@ test.describe("Library Page E2E", () => {
 
     await page.goto("/library");
 
-    // Select German filter
-    await page.getByRole("combobox").click();
-    await page.getByText("German").click();
+    await page.getByRole("combobox").filter({ hasText: /all languages/i }).click();
+    await page.waitForTimeout(1000);
+    await page.getByRole("option", { name: "German" }).click();
 
     // Verify German transcript is visible, English is not
     await expect(page.getByText("german.mp3")).toBeVisible();
@@ -271,12 +336,10 @@ test.describe("Library Page E2E", () => {
 
     await page.goto("/library");
 
-    // Select first transcript
-    await page.locator('input[type="checkbox"]').first().click();
+    await page.getByRole("checkbox", { name: /select transcript/i }).first().click();
     await expect(page.getByText("1 selected")).toBeVisible();
 
-    // Select second transcript
-    await page.locator('input[type="checkbox"]').nth(1).click();
+    await page.getByRole("checkbox", { name: /select transcript/i }).nth(1).click();
     await expect(page.getByText("2 selected")).toBeVisible();
 
     // Click export selected button

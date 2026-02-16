@@ -16,12 +16,12 @@ describe("AnalyticsPage", () => {
     expect(screen.getByText("Analytics")).toBeInTheDocument();
   });
 
-  it("renders time range selector", () => {
+  it("renders time range selector with default 30 days", () => {
     render(<AnalyticsPage />);
     // The select dropdown is present with default value "30 days"
     // The options (7 days, 90 days, All time) are in the DOM but not visible
     // until the dropdown is opened
-    expect(screen.getByText("Analytics")).toBeInTheDocument();
+    expect(screen.getByText("30 days")).toBeInTheDocument();
   });
 
   it("renders metric cards", () => {

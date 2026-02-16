@@ -2,43 +2,119 @@ import { expect, test } from "@playwright/test";
 
 test.describe("Upload Flow E2E", () => {
   test.beforeEach(async ({ page }) => {
-    // Mock authentication
-    await page.goto("/");
+    // Set up global error logging
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        console.log(`Console error: ${msg.text()}`);
+      }
+    });
+
+    page.on("pageerror", (err) => {
+      console.log(`Page error: ${err.message}`);
+    });
+
+    // Navigate to login first to establish origin, then set auth state
+    await page.goto("/login");
+    await page.waitForTimeout(100);
+
+    // Set auth state in localStorage after page load
     await page.evaluate(() => {
       localStorage.setItem("access_token", "mock-token");
       localStorage.setItem("user_id", "mock-user-id");
     });
 
-    // Mock billing/usage API
-    await page.route("**/v1/billing/usage", async (route) => {
+    // Mock auth/me endpoint for proper auth hydration
+    await page.route("**/v1/auth/me**", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          monthly_upload_count: 5,
-          monthly_limit: 10,
-          extra_credits: 0,
-          plan: "STANDARD",
+          user: {
+            id: "mock-user-id",
+            email: "test@example.com",
+            name: "Test User",
+            verified: true,
+            createdAt: new Date().toISOString(),
+            host_language: "en",
+            theme: "system",
+            notifications: {
+              email: true,
+              job_completion: true,
+              in_app: true,
+            },
+          },
+          team: {
+            id: "team-1",
+            name: "Test Team",
+            defaultLanguage: "en",
+            createdAt: new Date().toISOString(),
+          },
         }),
       });
     });
 
-    // Mock team settings API
-    await page.route("**/v1/teams/current", async (route) => {
+    // Mock billing/usage API (no /v1 prefix - matches useUsage hook)
+    await page.route("**/billing/usage**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          plan: "STANDARD",
+          monthly_upload_count: 5,
+          monthly_limit: 25,
+          extra_credits: 0,
+        }),
+      });
+    });
+
+    // Mock billing/pricing API (no /v1 prefix - matches usePricing hook)
+    await page.route("**/billing/pricing**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          credit_price: 100,
+          plans: [
+            {
+              plan: "FREE",
+              limits: { uploads_per_month: 5, languages: 2, members: 1 },
+            },
+            {
+              plan: "STANDARD",
+              limits: { uploads_per_month: 25, languages: 5, members: 5 },
+            },
+            {
+              plan: "PRO",
+              limits: { uploads_per_month: -1, languages: 5, members: -1 },
+            },
+          ],
+        }),
+      });
+    });
+
+    // Mock team settings API (has /v1 prefix - matches useTeamSettings hook)
+    await page.route("**/v1/settings/team**", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           id: "team-1",
           name: "Test Team",
-          defaultLanguage: "en",
-          createdAt: new Date().toISOString(),
+          default_language: "en",
+          plan: "STANDARD",
+          credits_balance: 0,
+          members_count: 1,
+          created_at: new Date().toISOString(),
         }),
       });
     });
 
+    // Wait for auth to initialize
+    await page.waitForTimeout(500);
+
     // Navigate to upload page
     await page.goto("/upload");
+    await page.waitForTimeout(500);
   });
 
   test("upload page loads with correct elements", async ({ page }) => {
@@ -57,15 +133,8 @@ test.describe("Upload Flow E2E", () => {
     // Click file upload tab
     await page.getByRole("tab", { name: "Upload File" }).click();
 
-    // Create a test file
-    const _testFile = {
-      name: "test-audio.mp3",
-      mimeType: "audio/mpeg",
-      buffer: Buffer.from("test audio content"),
-    };
-
-    // Mock the API response
-    await page.route("**/v1/jobs", async (route) => {
+    // Mock the API response for job creation
+    await page.route("**/v1/jobs**", async (route) => {
       await route.fulfill({
         status: 201,
         contentType: "application/json",
@@ -73,9 +142,9 @@ test.describe("Upload Flow E2E", () => {
       });
     });
 
-    // Upload file (this would require actual file input handling)
-    // For now, just verify the flow structure
-    await expect(page.getByText("Drag and drop audio file")).toBeVisible();
+    // Verify dropzone is visible with correct text
+    await expect(page.getByText("Drop audio file here or click to browse")).toBeVisible();
+    await expect(page.getByText("Supports MP3, WAV, M4A, OGG, WEBM")).toBeVisible();
   });
 
   test("URL submission flow", async ({ page }) => {
@@ -85,8 +154,8 @@ test.describe("Upload Flow E2E", () => {
     // Check URL input
     await expect(page.getByPlaceholder(/youtube/i)).toBeVisible();
 
-    // Mock the API response
-    await page.route("**/v1/jobs/url", async (route) => {
+    // Mock the API response for URL job creation
+    await page.route("**/v1/jobs/url**", async (route) => {
       await route.fulfill({
         status: 201,
         contentType: "application/json",
@@ -114,26 +183,52 @@ test.describe("Upload Flow E2E", () => {
 
   test("upgrade CTA appears when plan limit reached", async ({ page }) => {
     // Override the default billing mock to return limit reached
-    await page.route("**/v1/billing/usage", async (route) => {
+    await page.route("**/billing/usage**", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          monthly_upload_count: 10,
-          monthly_limit: 10,
+          plan: "FREE",
+          monthly_upload_count: 5,
+          monthly_limit: 5,
           extra_credits: 0,
-          plan: "STANDARD",
+        }),
+      });
+    });
+
+    // Override pricing mock for FREE plan limits
+    await page.route("**/billing/pricing**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          credit_price: 100,
+          plans: [
+            {
+              plan: "FREE",
+              limits: { uploads_per_month: 5, languages: 2, members: 1 },
+            },
+            {
+              plan: "STANDARD",
+              limits: { uploads_per_month: 25, languages: 5, members: 5 },
+            },
+            {
+              plan: "PRO",
+              limits: { uploads_per_month: -1, languages: 5, members: -1 },
+            },
+          ],
         }),
       });
     });
 
     // Reload page to trigger mocked data
     await page.reload();
+    await page.waitForTimeout(1000);
 
-    // Check limit card appears
-    await expect(page.getByText(/monthly limit reached/i)).toBeVisible();
+    // Check limit card appears (exact title from PlanLimitCard)
+    await expect(page.getByText("Upload Limit Reached")).toBeVisible();
 
-    // Check upgrade button
-    await expect(page.getByRole("button", { name: /upgrade/i })).toBeVisible();
+    // Check upgrade button (use first() in case there are multiple upgrade buttons on page)
+    await expect(page.getByRole("button", { name: /upgrade/i }).first()).toBeVisible();
   });
 });
