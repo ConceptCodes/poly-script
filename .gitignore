@@ -65,6 +65,7 @@ logs/
 
 # Sisyphus (AI tool)
 .sisyphus/
+docs/
 
 # Ignore
 .ignore

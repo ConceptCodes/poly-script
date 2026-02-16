@@ -20,7 +20,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
-    "@lhci/cli": "^0.12.0",
-    "lychee-cli": "^0.14.0"
+    "@lhci/cli": "^0.12.0"
   }
 }
