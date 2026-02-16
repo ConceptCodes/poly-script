@@ -59,8 +59,8 @@ class TestSensitiveFieldExposure:
         Verifies that hashed_password, password_reset_token, and verification_token
         are never returned in the user response.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_current_user") as mock_get_current_user:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_current_user") as mock_get_current_user:
                 mock_user = Mock()
                 mock_user.id = uuid.uuid4()
                 mock_user.email = "test@example.com"
@@ -101,8 +101,8 @@ class TestSensitiveFieldExposure:
         Verifies that the signup response only returns safe user information
         without exposing any password hashes or sensitive tokens.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_auth_service") as mock_auth_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_auth_service") as mock_auth_service_dep:
                 mock_service = Mock()
                 mock_auth_service_dep.return_value = mock_service
 
@@ -142,9 +142,9 @@ class TestSensitiveFieldExposure:
         Verifies that stripe_customer_id, stripe_subscription_id, and other
         payment-related sensitive fields are not exposed in team responses.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_current_user") as mock_get_current_user:
-                with patch("apps.api.src.dependencies.get_team_service") as mock_team_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_current_user") as mock_get_current_user:
+                with patch("src.dependencies.get_team_service") as mock_team_service_dep:
                     mock_user = Mock()
                     mock_user.id = uuid.uuid4()
                     mock_user.team_id = uuid.uuid4()
@@ -193,10 +193,10 @@ class TestSensitiveFieldExposure:
         Verifies that credits_balance is returned but full payment method
         details or customer IDs are not exposed.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_current_user") as mock_get_current_user:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_current_user") as mock_get_current_user:
                 with patch(
-                    "apps.api.src.routes.dashboard.get_dashboard_service"
+                    "src.routes.dashboard.get_dashboard_service"
                 ) as mock_dashboard_service_dep:
                     mock_user = Mock()
                     mock_user.id = uuid.uuid4()
@@ -286,8 +286,8 @@ class TestPasswordValidation:
         """
         Test that signup rejects passwords shorter than 8 characters.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_auth_service") as mock_auth_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_auth_service") as mock_auth_service_dep:
                 mock_service = Mock()
                 mock_auth_service_dep.return_value = mock_service
 
@@ -306,8 +306,8 @@ class TestPasswordValidation:
         """
         Test that password reset rejects passwords shorter than 8 characters.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_auth_service") as mock_auth_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_auth_service") as mock_auth_service_dep:
                 mock_service = Mock()
                 mock_auth_service_dep.return_value = mock_service
 
@@ -332,15 +332,15 @@ class TestURLValidation:
         Verifies that HttpUrl validation is enforced and malformed URLs
         return 422 validation errors.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_current_user") as mock_get_current_user:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_current_user") as mock_get_current_user:
                 mock_user = Mock()
                 mock_user.id = uuid.uuid4()
                 mock_user.team_id = uuid.uuid4()
                 mock_user.plan = "FREE"
                 mock_get_current_user.return_value = mock_user
 
-                with patch("apps.api.src.dependencies.get_job_service") as mock_job_service_dep:
+                with patch("src.dependencies.get_job_service") as mock_job_service_dep:
                     mock_service = Mock()
                     mock_job_service_dep.return_value = mock_service
 
@@ -359,15 +359,15 @@ class TestURLValidation:
         """
         Test that job creation rejects URLs without protocol.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_current_user") as mock_get_current_user:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_current_user") as mock_get_current_user:
                 mock_user = Mock()
                 mock_user.id = uuid.uuid4()
                 mock_user.team_id = uuid.uuid4()
                 mock_user.plan = "FREE"
                 mock_get_current_user.return_value = mock_user
 
-                with patch("apps.api.src.dependencies.get_job_service") as mock_job_service_dep:
+                with patch("src.dependencies.get_job_service") as mock_job_service_dep:
                     mock_service = Mock()
                     mock_job_service_dep.return_value = mock_service
 
@@ -392,7 +392,7 @@ class TestMaxLengthConstraints:
 
         Verifies that full_name with more than 128 characters is rejected.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
             response = client.post(
                 "/v1/auth/signup",
                 json={
@@ -408,14 +408,14 @@ class TestMaxLengthConstraints:
         """
         Test that team creation rejects name exceeding max_length.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_current_user") as mock_get_current_user:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_current_user") as mock_get_current_user:
                 mock_user = Mock()
                 mock_user.id = uuid.uuid4()
                 mock_user.team_id = uuid.uuid4()
                 mock_get_current_user.return_value = mock_user
 
-                with patch("apps.api.src.dependencies.get_team_service") as mock_team_service_dep:
+                with patch("src.dependencies.get_team_service") as mock_team_service_dep:
                     mock_service = Mock()
                     mock_team_service_dep.return_value = mock_service
 
@@ -436,8 +436,8 @@ class TestMaxLengthConstraints:
 
         Verifies that tokens longer than 512 characters are rejected.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_auth_service") as mock_auth_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_auth_service") as mock_auth_service_dep:
                 mock_service = Mock()
                 mock_auth_service_dep.return_value = mock_service
 
@@ -455,8 +455,8 @@ class TestMaxLengthConstraints:
         """
         Test that email verification token has max_length constraint.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_auth_service") as mock_auth_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_auth_service") as mock_auth_service_dep:
                 mock_service = Mock()
                 mock_auth_service_dep.return_value = mock_service
 
@@ -485,14 +485,14 @@ class TestSQLInjectionPrevention:
         Verifies that SQL injection attempts in the team name field
         are rejected or sanitized.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_current_user") as mock_get_current_user:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_current_user") as mock_get_current_user:
                 mock_user = Mock()
                 mock_user.id = uuid.uuid4()
                 mock_user.team_id = uuid.uuid4()
                 mock_get_current_user.return_value = mock_user
 
-                with patch("apps.api.src.dependencies.get_team_service") as mock_team_service_dep:
+                with patch("src.dependencies.get_team_service") as mock_team_service_dep:
                     mock_service = Mock()
                     mock_service.create_team.side_effect = ValueError("Invalid input")
                     mock_team_service_dep.return_value = mock_service
@@ -534,14 +534,14 @@ class TestSQLInjectionPrevention:
 
         Verifies that SQL injection attempts in query parameters are rejected.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_current_user") as mock_get_current_user:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_current_user") as mock_get_current_user:
                 mock_user = Mock()
                 mock_user.id = uuid.uuid4()
                 mock_user.team_id = uuid.uuid4()
                 mock_get_current_user.return_value = mock_user
 
-                with patch("apps.api.src.dependencies.get_job_service") as mock_job_service_dep:
+                with patch("src.dependencies.get_job_service") as mock_job_service_dep:
                     mock_service = Mock()
                     mock_service.list_jobs.return_value = []
                     mock_job_service_dep.return_value = mock_service
@@ -649,9 +649,9 @@ class TestAuthorizationBoundaries:
 
         Verifies that the multi-tenant isolation is enforced.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_current_user") as mock_get_current_user:
-                with patch("apps.api.src.dependencies.get_team_service") as mock_team_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_current_user") as mock_get_current_user:
+                with patch("src.dependencies.get_team_service") as mock_team_service_dep:
                     mock_user = Mock()
                     mock_user.id = uuid.uuid4()
                     mock_user.team_id = uuid.uuid4()
@@ -682,7 +682,7 @@ class TestEmailValidation:
         """
         Test that signup rejects invalid email formats.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
             response = client.post(
                 "/v1/auth/signup",
                 json={
@@ -698,7 +698,7 @@ class TestEmailValidation:
         """
         Test that signup rejects email without @ symbol.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
             response = client.post(
                 "/v1/auth/signup",
                 json={
@@ -714,7 +714,7 @@ class TestEmailValidation:
         """
         Test that signup rejects email without domain.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
             response = client.post(
                 "/v1/auth/signup",
                 json={
@@ -782,14 +782,14 @@ class TestDoSPrevention:
 
         While max_length should handle this, verify the validation works.
         """
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.dependencies.get_current_user") as mock_get_current_user:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.dependencies.get_current_user") as mock_get_current_user:
                 mock_user = Mock()
                 mock_user.id = uuid.uuid4()
                 mock_user.team_id = uuid.uuid4()
                 mock_get_current_user.return_value = mock_user
 
-                with patch("apps.api.src.dependencies.get_team_service") as mock_team_service_dep:
+                with patch("src.dependencies.get_team_service") as mock_team_service_dep:
                     mock_service = Mock()
                     mock_team_service_dep.return_value = mock_service
 

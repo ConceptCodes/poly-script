@@ -99,13 +99,16 @@ describe("Web apiFetch", () => {
       mockFetch.mockResolvedValue({
         ok: false,
         status: 400,
-        json: async () => ({ detail: "Bad request", code: "INVALID_INPUT" }),
+        json: async () => ({ error: { message: "Bad request", code: "INVALID_INPUT" } }),
       });
 
       await expect(apiFetch("/test")).rejects.toEqual({
-        detail: "Bad request",
+        message: "Bad request",
         code: "INVALID_INPUT",
         status: 400,
+        details: null,
+        request_id: null,
+        documentation_url: null,
       });
     });
 
@@ -114,13 +117,16 @@ describe("Web apiFetch", () => {
       mockFetch.mockResolvedValue({
         ok: false,
         status: 500,
-        json: async () => ({ detail: "Server error" }),
+        json: async () => ({ error: { message: "Server error" } }),
       });
 
       await expect(apiFetch("/test")).rejects.toEqual({
-        detail: "Server error",
+        message: "Server error",
         code: null,
         status: 500,
+        details: null,
+        request_id: null,
+        documentation_url: null,
       });
     });
 
@@ -135,9 +141,12 @@ describe("Web apiFetch", () => {
       });
 
       await expect(apiFetch("/test")).rejects.toEqual({
-        detail: "An unknown error occurred",
+        message: "An unknown error occurred",
         code: null,
         status: 500,
+        details: null,
+        request_id: null,
+        documentation_url: null,
       });
     });
   });

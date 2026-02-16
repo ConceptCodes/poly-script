@@ -43,7 +43,7 @@ class TestTeamService:
                 result = team_service.create_team(mock_user.id, "My Team", "en")
 
                 assert result is not None
-                assert result.id == "team-id"
+                assert result["id"] == "team-id"
                 mock_db.add.assert_called()
                 mock_db.commit.assert_called()
 
@@ -61,15 +61,26 @@ class TestTeamService:
     def test_get_team_success(self, team_service):
         mock_team = Mock()
         mock_team.id = "team-id"
+        mock_team.name = "Test Team"
+        mock_team.host_language = "en"
+        mock_team.plan = Mock(value="FREE")
+        mock_team.monthly_upload_count = 0
+        mock_team.extra_credits = 0
+        mock_team.created_at = None
+        mock_team.updated_at = None
 
         mock_team_repo = Mock()
         mock_team_repo.get.return_value = mock_team
 
-        with patch.object(team_service, "team_repo", mock_team_repo):
-            result = team_service.get_team("team-id", "user-id")
+        mock_team_member_repo = Mock()
+        mock_team_member_repo.get_by_user_and_team.return_value = Mock()
 
-            assert result is not None
-            assert result.id == "team-id"
+        with patch.object(team_service, "team_repo", mock_team_repo):
+            with patch.object(team_service, "team_member_repo", mock_team_member_repo):
+                result = team_service.get_team("team-id", "user-id")
+
+                assert result is not None
+                assert result["id"] == "team-id"
 
     def test_get_team_not_found(self, team_service):
         mock_team_repo = Mock()
@@ -99,6 +110,12 @@ class TestTeamService:
         mock_team = Mock()
         mock_team.id = "team-id"
         mock_team.name = "Old Name"
+        mock_team.host_language = "en"
+        mock_team.plan = Mock(value="FREE")
+        mock_team.monthly_upload_count = 0
+        mock_team.extra_credits = 0
+        mock_team.created_at = None
+        mock_team.updated_at = None
 
         mock_team_repo = Mock()
         mock_team_repo.get.return_value = mock_team
@@ -116,8 +133,6 @@ class TestTeamService:
         mock_team_member_repo.get.side_effect = get_side_effect
         mock_team_member_repo.list_by_team_id.return_value = []
         mock_team_member_repo.get_by_user_and_team.return_value = Mock()
-        mock_team_member_repo.get_by_user_and_team.return_value = Mock()
-        mock_team_member_repo.get_by_user_and_team.return_value = Mock()
 
         mock_db.commit = Mock()
 
@@ -125,7 +140,7 @@ class TestTeamService:
             with patch.object(team_service, "team_member_repo", mock_team_member_repo):
                 result = team_service.update_team("team-id", "user-id", "New Name", None)
 
-                assert result.name == "New Name"
+                assert result["name"] == "New Name"
                 mock_db.commit.assert_called_once()
 
     def test_delete_team_success(self, mock_db, team_service):

@@ -8,7 +8,7 @@ def test_redis_rate_limiter_allows_within_limit():
     mock_pipeline.execute.return_value = [0, 0]  # zrem, zcard
     mock_redis.pipeline.return_value = mock_pipeline
 
-    from apps.api.src.middleware.rate_limit import RedisRateLimiter
+    from src.middleware.rate_limit import RedisRateLimiter
 
     limiter = RedisRateLimiter(redis_client=mock_redis)
     allowed, remaining, _ = limiter.allow("team:test", max_requests=10)
@@ -25,7 +25,7 @@ def test_redis_rate_limiter_blocks_after_limit():
     mock_pipeline.execute.return_value = [0, 10]  # zrem, zcard at limit
     mock_redis.pipeline.return_value = mock_pipeline
 
-    from apps.api.src.middleware.rate_limit import RedisRateLimiter
+    from src.middleware.rate_limit import RedisRateLimiter
 
     limiter = RedisRateLimiter(redis_client=mock_redis)
     allowed, remaining, _ = limiter.allow("team:test", max_requests=10)
@@ -36,7 +36,7 @@ def test_redis_rate_limiter_blocks_after_limit():
 
 def test_plan_rate_limits_config():
     """Test that plan rate limits are configured correctly."""
-    from apps.api.src.middleware.rate_limit import PLAN_RATE_LIMITS
+    from src.middleware.rate_limit import PLAN_RATE_LIMITS
 
     assert PLAN_RATE_LIMITS["FREE"] == 30
     assert PLAN_RATE_LIMITS["STANDARD"] == 60
@@ -45,7 +45,7 @@ def test_plan_rate_limits_config():
 
 def test_rate_limit_headers_added_to_response():
     """Test that rate limit headers are added to successful responses."""
-    from apps.api.src.middleware.rate_limit import RateLimitMiddleware, RedisRateLimiter
+    from src.middleware.rate_limit import RateLimitMiddleware, RedisRateLimiter
     from starlette.applications import Starlette
     from starlette.responses import PlainTextResponse
     from starlette.testclient import TestClient
@@ -75,7 +75,7 @@ def test_rate_limit_headers_added_to_response():
 
 def test_rate_limit_429_response():
     """Test that 429 response includes proper headers and Retry-After."""
-    from apps.api.src.middleware.rate_limit import RateLimitMiddleware, RedisRateLimiter
+    from src.middleware.rate_limit import RateLimitMiddleware, RedisRateLimiter
     from starlette.applications import Starlette
     from starlette.responses import PlainTextResponse
     from starlette.testclient import TestClient

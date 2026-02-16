@@ -29,7 +29,7 @@ def test_api_schemas_has_target_language():
 
 
 def test_db_has_translation_artifacts_model():
-    model_path = Path("packages/storage/db/db/models/translation_artifacts.py")
+    model_path = Path("packages/storage/db/poly_db/models/translation_artifacts.py")
     assert model_path.exists()
     content = model_path.read_text()
     assert "class TranslationArtifact" in content
@@ -43,7 +43,7 @@ def test_migration_exists():
 
 
 def test_db_has_translation_repository():
-    repo_path = Path("packages/storage/db/db/repositories/translation_artifacts.py")
+    repo_path = Path("packages/storage/db/poly_db/repositories/translation_artifacts.py")
     assert repo_path.exists()
     content = repo_path.read_text()
     assert "class TranslationArtifactRepository" in content

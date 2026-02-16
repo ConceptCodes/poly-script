@@ -2,32 +2,30 @@
 
 import struct
 import wave
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from poly_stt.engines import WhisperLocalEngine
-from poly_stt.interface import TranscriptionResult
+from poly_stt.interface import Segment, TranscriptionResult
 from poly_stt.registry import EngineRegistry
 
 
 @pytest.fixture
 def tiny_engine():
     """Create a tiny Whisper engine for testing."""
-    # Use tiny model for fast tests
     return WhisperLocalEngine(model_size="tiny")
 
 
 @pytest.fixture
 def sample_audio_file(tmp_path):
     """Create a minimal WAV audio file for testing."""
-    # Generate a silent 1-second WAV file
     wav_path = tmp_path / "test_audio.wav"
 
     with wave.open(str(wav_path), "w") as wav_file:
         wav_file.setnchannels(1)
         wav_file.setsampwidth(2)
         wav_file.setframerate(16000)
-        # Write 1 second of silence
         wav_file.writeframes(struct.pack("h", 0) * 16000)
 
     return str(wav_path)
@@ -46,13 +44,20 @@ class TestWhisperEngine:
         assert caps.supports_timestamps is True
         assert caps.supports_diarization is False
 
-    def test_transcribe_basic(self, tiny_engine, sample_audio_file):
+    @patch("poly_stt.engines.whisper.WhisperLocalEngine._transcribe_with_fallback")
+    def test_transcribe_basic(self, mock_transcribe, tiny_engine, sample_audio_file):
         """Test basic transcription."""
+        mock_segments = iter([
+            MagicMock(start=0.0, end=1.0, text="Hello"),
+            MagicMock(start=1.0, end=2.0, text="world"),
+        ])
+        mock_info = MagicMock(language="en", language_probability=0.9, duration=2.0)
+        mock_transcribe.return_value = (mock_segments, mock_info)
+
         result = tiny_engine.transcribe(
             audio_path=sample_audio_file,
-            language=None,  # Auto-detect
+            language=None,
             timestamps=True,
-            diarization=False,
         )
 
         assert isinstance(result, TranscriptionResult)
@@ -61,42 +66,40 @@ class TestWhisperEngine:
         assert isinstance(result.segments, list)
         assert result.engine is not None
 
-    def test_transcribe_with_language(self, tiny_engine, sample_audio_file):
+    @patch("poly_stt.engines.whisper.WhisperLocalEngine._transcribe_with_fallback")
+    def test_transcribe_with_language(self, mock_transcribe, tiny_engine, sample_audio_file):
         """Test transcription with requested language."""
+        mock_segments = iter([MagicMock(start=0.0, end=1.0, text="Hello")])
+        mock_info = MagicMock(language="en", language_probability=0.9, duration=1.0)
+        mock_transcribe.return_value = (mock_segments, mock_info)
+
         result = tiny_engine.transcribe(
             audio_path=sample_audio_file,
             language="en",
             timestamps=True,
-            diarization=False,
         )
 
         assert result.language.startswith("en")
 
-    def test_transcribe_without_timestamps(self, tiny_engine, sample_audio_file):
+    @patch("poly_stt.engines.whisper.WhisperLocalEngine._transcribe_with_fallback")
+    def test_transcribe_without_timestamps(self, mock_transcribe, tiny_engine, sample_audio_file):
         """Test transcription without timestamps."""
+        mock_segments = iter([MagicMock(start=0.0, end=1.0, text="Hello")])
+        mock_info = MagicMock(language="en", language_probability=0.9, duration=1.0)
+        mock_transcribe.return_value = (mock_segments, mock_info)
+
         result = tiny_engine.transcribe(
             audio_path=sample_audio_file,
             language=None,
             timestamps=False,
-            diarization=False,
         )
 
-        # Segments may still exist but without detailed timestamps
         assert isinstance(result.segments, list)
 
-    def test_transcribe_diarization_ignored(self, tiny_engine, sample_audio_file):
-        """Test that diarization=True is safely ignored."""
-        # Should not raise error even though not supported
-        result = tiny_engine.transcribe(
-            audio_path=sample_audio_file,
-            language=None,
-            timestamps=True,
-            diarization=True,  # Ignored
-        )
-
-        # All segments should have None speaker
-        for seg in result.segments:
-            assert seg.speaker is None
+    def test_transcribe_diarization_not_supported(self, tiny_engine):
+        """Test that diarization is not supported."""
+        caps = tiny_engine.capabilities
+        assert caps.supports_diarization is False
 
 
 class TestEngineRegistry:

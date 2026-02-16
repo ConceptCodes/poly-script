@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -86,7 +86,7 @@ class TestAuthService:
         parts = token.split(".")
         assert len(parts) == 3
 
-    @patch("core.services.auth.NotificationService")
+    @patch("poly_core.services.auth.NotificationService")
     def test_send_verification_email(self, mock_notification_class, mock_db, auth_service):
         mock_user = Mock()
         mock_user.id = "user-id"
@@ -106,7 +106,7 @@ class TestAuthService:
             mock_db.add.assert_called_once()
             mock_db.commit.assert_called_once()
 
-    @patch("core.services.auth.NotificationService")
+    @patch("poly_core.services.auth.NotificationService")
     def test_send_verification_email_user_not_found(
         self, mock_notification_class, mock_db, auth_service
     ):
@@ -117,7 +117,7 @@ class TestAuthService:
             with pytest.raises(AuthError):
                 auth_service.send_verification_email("notfound@example.com", "en")
 
-    @patch("core.services.auth.NotificationService")
+    @patch("poly_core.services.auth.NotificationService")
     def test_verify_email_success(self, mock_notification_class, mock_db, auth_service):
         mock_user = Mock()
         mock_user.verification_token = "valid-token"
@@ -158,7 +158,7 @@ class TestAuthService:
             with pytest.raises(EmailVerificationError):
                 auth_service.verify_email("valid-token")
 
-    @patch("core.services.auth.NotificationService")
+    @patch("poly_core.services.auth.NotificationService")
     def test_request_password_reset(self, mock_notification_class, mock_db, auth_service):
         mock_user = Mock()
         mock_user.id = "user-id"
@@ -186,7 +186,7 @@ class TestAuthService:
     def test_reset_password_success(self, mock_db, auth_service):
         mock_password_reset = Mock()
         mock_password_reset.user_id = "user-id"
-        mock_password_reset.expires_at = datetime.utcnow() + timedelta(hours=1)
+        mock_password_reset.expires_at = datetime.now(UTC) + timedelta(hours=1)
         mock_password_reset.used_at = None
 
         mock_user = Mock()
@@ -221,7 +221,7 @@ class TestAuthService:
     def test_reset_password_token_expired(self, mock_db, auth_service):
         mock_password_reset = Mock()
         mock_password_reset.user_id = "user-id"
-        mock_password_reset.expires_at = datetime.utcnow() - timedelta(hours=1)
+        mock_password_reset.expires_at = datetime.now(UTC) - timedelta(hours=1)
         mock_password_reset.used_at = None
 
         mock_password_reset_repo = Mock()
@@ -234,8 +234,8 @@ class TestAuthService:
     def test_reset_password_already_used(self, mock_db, auth_service):
         mock_password_reset = Mock()
         mock_password_reset.user_id = "user-id"
-        mock_password_reset.expires_at = datetime.utcnow() + timedelta(hours=1)
-        mock_password_reset.used_at = datetime.utcnow()
+        mock_password_reset.expires_at = datetime.now(UTC) + timedelta(hours=1)
+        mock_password_reset.used_at = datetime.now(UTC)
 
         mock_password_reset_repo = Mock()
         mock_password_reset_repo.get_by_token.return_value = mock_password_reset
@@ -244,7 +244,7 @@ class TestAuthService:
             with pytest.raises(PasswordResetError):
                 auth_service.reset_password("used-token", "new_password")
 
-    @patch("core.services.auth.NotificationService")
+    @patch("poly_core.services.auth.NotificationService")
     def test_signup_success(self, mock_notification_class, mock_db, auth_service):
         mock_user = Mock()
         mock_user.id = "user-id"

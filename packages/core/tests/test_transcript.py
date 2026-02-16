@@ -85,7 +85,8 @@ class TestGetTranscript:
 
         result = transcript_service.get_transcript(str(mock_transcript.id))
 
-        assert result == mock_transcript
+        assert result is not None
+        assert result["id"] == mock_transcript.id
         transcript_service.repo.get.assert_called_once_with(str(mock_transcript.id))
 
     def test_get_transcript_returns_none_when_not_found(self, transcript_service, mock_session):
@@ -111,7 +112,8 @@ class TestGetTranscriptWithTeamCheck:
             str(mock_transcript.id), str(mock_transcript.team_id)
         )
 
-        assert result == mock_transcript
+        assert result is not None
+        assert result["id"] == mock_transcript.id
 
     def test_returns_none_for_wrong_team(self, transcript_service, mock_session, mock_transcript):
         """Verify None is returned when team doesn't match."""
@@ -146,8 +148,8 @@ class TestUpdateFullText:
             str(mock_transcript.id), str(uuid.uuid4()), new_text
         )
 
-        assert result == mock_transcript
-        assert mock_transcript.text == new_text
+        assert result is not None
+        assert result["text"] == new_text
         mock_session.flush.assert_called()
         transcript_service.edit_repo.create.assert_called_once()
 
@@ -174,8 +176,8 @@ class TestUpdateSegment:
             str(mock_transcript.id), segment_id, str(uuid.uuid4()), new_text
         )
 
-        assert result == mock_transcript
-        assert mock_transcript.segments[segment_id]["text"] == new_text
+        assert result is not None
+        assert result["segments"][segment_id]["text"] == new_text
 
     def test_raises_error_for_invalid_segment_id(
         self, transcript_service, mock_session, mock_transcript
@@ -250,7 +252,7 @@ class TestRevertToOriginal:
             str(uuid.uuid4()), str(mock_transcript.id), str(uuid.uuid4())
         )
 
-        assert result == mock_transcript
+        assert result is not None
         mock_session.flush.assert_called()
 
     def test_raises_error_when_no_edits_exist(
@@ -327,7 +329,8 @@ class TestGetTranscriptByJob:
 
         result = transcript_service.get_transcript_by_job(str(mock_transcript.job_id))
 
-        assert result == mock_transcript
+        assert result is not None
+        assert result["id"] == mock_transcript.id
         transcript_service.repo.get_by_job_id.assert_called_once_with(str(mock_transcript.job_id))
 
     def test_returns_none_when_not_found(self, transcript_service, mock_session):

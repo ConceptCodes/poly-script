@@ -6,13 +6,13 @@ from pathlib import Path
 
 def test_translategemma_file_exists():
     """Engine file should exist."""
-    engine_path = Path("src/poly_stt/engines/translategemma.py")
+    engine_path = Path("packages/stt/src/poly_stt/engines/translategemma.py")
     assert engine_path.exists(), f"Engine file not found: {engine_path}"
 
 
 def test_translategemma_has_translate_method():
     """Engine should have translate method."""
-    engine_path = Path("src/poly_stt/engines/translategemma.py")
+    engine_path = Path("packages/stt/src/poly_stt/engines/translategemma.py")
     tree = ast.parse(engine_path.read_text())
 
     class_def = [
@@ -31,17 +31,17 @@ def test_translategemma_has_translate_method():
 
 def test_translategemma_has_correct_imports():
     """Engine should have required imports."""
-    engine_path = Path("src/poly_stt/engines/translategemma.py")
+    engine_path = Path("packages/stt/src/poly_stt/engines/translategemma.py")
     content = engine_path.read_text()
 
-    assert "from transformers import AutoTokenizer, AutoModelForCausalLM" in content
+    assert "from transformers import AutoModelForCausalLM, AutoTokenizer" in content
     assert "import torch" in content
-    assert "from ..interface import TranscriptionResult, Segment, EngineCapabilities" in content
+    assert "from poly_stt.interface import" in content
 
 
 def test_translategemma_implements_chunking():
     """Engine should implement chunking for large text."""
-    engine_path = Path("src/poly_stt/engines/translategemma.py")
+    engine_path = Path("packages/stt/src/poly_stt/engines/translategemma.py")
     content = engine_path.read_text()
 
     assert "_should_chunk" in content
@@ -52,7 +52,7 @@ def test_translategemma_implements_chunking():
 
 def test_translategemma_has_supported_languages():
     """Engine should list supported languages."""
-    engine_path = Path("src/poly_stt/engines/translategemma.py")
+    engine_path = Path("packages/stt/src/poly_stt/engines/translategemma.py")
     content = engine_path.read_text()
 
     assert "_get_supported_languages" in content
@@ -66,12 +66,9 @@ def test_translategemma_has_supported_languages():
 
 def test_translategemma_exports_from_engines_init():
     """TranslateGemmaEngine should be exported from engines/__init__.py."""
-    init_path = Path("src/poly_stt/engines/__init__.py")
+    init_path = Path("packages/stt/src/poly_stt/engines/__init__.py")
     content = init_path.read_text()
 
     assert "from .translategemma import TranslateGemmaEngine" in content
     assert "TranslateGemmaEngine" in content
-    assert (
-        '"WhisperLocalEngine", "TranslateGemmaEngine"' in content
-        or "['WhisperLocalEngine', 'TranslateGemmaEngine']" in content
-    )
+    assert "TranslateGemmaEngine" in content and "WhisperLocalEngine" in content

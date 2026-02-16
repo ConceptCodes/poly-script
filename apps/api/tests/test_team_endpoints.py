@@ -21,8 +21,8 @@ def mock_db():
 
 class TestTeamEndpoints:
     def test_get_team_success(self, client, mock_db):
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.routes.teams.get_team_service") as mock_team_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
                 mock_service = Mock()
                 mock_team_service_dep.return_value = mock_service
 
@@ -42,8 +42,8 @@ class TestTeamEndpoints:
                 assert data["name"] == "My Team"
 
     def test_get_team_not_found(self, client, mock_db):
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.routes.teams.get_team_service") as mock_team_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
                 mock_service = Mock()
                 mock_team_service_dep.return_value = mock_service
 
@@ -57,8 +57,8 @@ class TestTeamEndpoints:
                 assert response.status_code == 404
 
     def test_create_team_success(self, client, mock_db):
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.routes.teams.get_team_service") as mock_team_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
                 mock_service = Mock()
                 mock_team_service_dep.return_value = mock_service
 
@@ -79,8 +79,8 @@ class TestTeamEndpoints:
                 assert data["name"] == "New Team"
 
     def test_update_team_success(self, client, mock_db):
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.routes.teams.get_team_service") as mock_team_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
                 mock_service = Mock()
                 mock_team_service_dep.return_value = mock_service
 
@@ -100,8 +100,8 @@ class TestTeamEndpoints:
                 assert data["name"] == "Updated Team"
 
     def test_delete_team_success(self, client, mock_db):
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.routes.teams.get_team_service") as mock_team_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
                 mock_service = Mock()
                 mock_team_service_dep.return_value = mock_service
 
@@ -115,8 +115,8 @@ class TestTeamEndpoints:
                 assert response.status_code == 204
 
     def test_get_members_success(self, client, mock_db):
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.routes.teams.get_team_service") as mock_team_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
                 mock_service = Mock()
                 mock_team_service_dep.return_value = mock_service
 
@@ -140,8 +140,8 @@ class TestTeamEndpoints:
                 assert len(data) == 2
 
     def test_send_invitation_success(self, client, mock_db):
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.routes.teams.get_invitation_service") as mock_inv_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.routes.teams.get_invitation_service") as mock_inv_service_dep:
                 mock_service = Mock()
                 mock_inv_service_dep.return_value = mock_service
 
@@ -161,8 +161,8 @@ class TestTeamEndpoints:
                 assert data["id"] == str(mock_invitation.id)
 
     def test_accept_invitation_success(self, client, mock_db):
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.routes.teams.get_invitation_service") as mock_inv_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.routes.teams.get_invitation_service") as mock_inv_service_dep:
                 mock_service = Mock()
                 mock_inv_service_dep.return_value = mock_service
 
@@ -178,8 +178,8 @@ class TestTeamEndpoints:
                 assert response.status_code == 204
 
     def test_update_member_role_success(self, client, mock_db):
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.routes.teams.get_team_service") as mock_team_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
                 mock_service = Mock()
                 mock_team_service_dep.return_value = mock_service
 
@@ -199,8 +199,8 @@ class TestTeamEndpoints:
                 assert data["role"] == "ADMIN"
 
     def test_remove_member_success(self, client, mock_db):
-        with patch("apps.api.src.dependencies.get_db_session", return_value=mock_db):
-            with patch("apps.api.src.routes.teams.get_team_service") as mock_team_service_dep:
+        with patch("src.dependencies.get_db_session", return_value=mock_db):
+            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
                 mock_service = Mock()
                 mock_team_service_dep.return_value = mock_service
 
