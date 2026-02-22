@@ -15,7 +15,7 @@ export function useAudioSync({ transcriptId, segments, onActiveSegmentChange }: 
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const scrollToRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollToRef = useRef<number | null>(null);
 
   // Get audio URL
   const { data: audioData } = useQuery({

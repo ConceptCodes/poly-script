@@ -1,10 +1,10 @@
 {
   "name": "poly-script",
   "private": true,
+  "type": "module",
+  "packageManager": "bun@1.0.0",
   "workspaces": [
-    "apps/web",
-    "apps/admin",
-    "apps/marketing",
-    "packages/ui"
+    "apps/*",
+    "packages/*"
   ]
 }

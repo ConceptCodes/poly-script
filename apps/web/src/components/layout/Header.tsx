@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@poly/ui/dropdown-menu";
-import { Menu, Waveform, X } from "lucide-react";
+import { AudioWaveform, Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { apiFetch } from "../../lib/api";
@@ -249,7 +249,7 @@ function MobileMenu({
                 }
               `}
             >
-              <Waveform className="h-4 w-4" />
+              <AudioWaveform className="h-4 w-4" />
               Upload
             </Link>
             <Link

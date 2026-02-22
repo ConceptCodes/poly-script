@@ -29,7 +29,7 @@ export function useTranscriptEditor({
   const [redoStack, setRedoStack] = useState<EditorState[]>([]);
 
   const isSavingRef = useRef(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<number | null>(null);
 
   const saveMutation = useMutation({
     mutationFn: (text: string) => api.updateTranscript(transcriptId, text),
