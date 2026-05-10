@@ -68,6 +68,10 @@ class SetupSessionRequest(BaseModel):
     cancel_url: str
 
 
+class SetupIntentResponse(BaseModel):
+    client_secret: str
+
+
 class PaymentMethodResponse(BaseModel):
     id: str
     brand: str

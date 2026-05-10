@@ -17,6 +17,7 @@ from poly_core.schemas.billing import (
     PortalSessionResponse,
     PricingResponse,
     PurchaseCreditsRequest,
+    SetupIntentResponse,
     SetupSessionRequest,
     SubscriptionResponse,
     UpgradeSubscriptionRequest,
@@ -211,6 +212,18 @@ async def add_payment_method(
     try:
         session = billing_service.create_setup_session(team_id, body.success_url, body.cancel_url)
         return {"checkout_url": session.url}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/payment-methods/setup-intent", response_model=SetupIntentResponse)
+async def create_payment_method_setup_intent(
+    team_id: uuid.UUID = Depends(get_current_team_id),
+    billing_service: BillingService = Depends(get_billing_service),
+):
+    try:
+        intent = billing_service.create_setup_intent(team_id)
+        return {"client_secret": intent.client_secret}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

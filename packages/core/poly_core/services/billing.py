@@ -479,6 +479,24 @@ class BillingService:
         )
         return session
 
+    def create_setup_intent(self, team_id: uuid.UUID):
+        """Creates a SetupIntent for embedded Stripe Elements."""
+        team = self.team_repo.get(team_id)
+        if not team:
+            raise ValueError("Team not found")
+
+        if not team.stripe_customer_id:
+            customer = stripe.Customer.create(metadata={"team_id": str(team_id)})
+            self.team_repo.update(team_id, stripe_customer_id=customer.id)
+            team.stripe_customer_id = customer.id
+
+        return stripe.SetupIntent.create(
+            customer=team.stripe_customer_id,
+            payment_method_types=["card"],
+            usage="off_session",
+            metadata={"team_id": str(team_id)},
+        )
+
     def delete_payment_method(self, team_id: uuid.UUID, payment_method_id: str):
         """Detaches a payment method from the customer."""
         # Verify ownership

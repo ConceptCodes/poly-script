@@ -88,7 +88,7 @@ export function PaymentMethodsCard() {
     <Card>
       <CardHeader>
         <CardTitle>Payment Methods</CardTitle>
-        <CardDescription>Manage your credit cards.</CardDescription>
+        <CardDescription>Manage your credit cards directly in the app.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
@@ -133,7 +133,7 @@ export function PaymentMethodsCard() {
         <div className="w-full space-y-3">
           <AddPaymentMethodForm />
           <p className="text-xs text-muted-foreground">
-            You'll be redirected to Stripe to securely add a card.
+            Card details are collected with Stripe Elements and never touch our servers.
           </p>
         </div>
       </CardFooter>
