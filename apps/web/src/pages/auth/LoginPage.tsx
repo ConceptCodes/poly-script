@@ -69,7 +69,10 @@ export function LoginPage() {
           detail?: string;
         };
         if (apiError.code === "ACCOUNT_SUSPENDED") {
-          setError(t("auth.login.errors.suspended"));
+          navigate("/403", {
+            state: { message: t("auth.login.errors.suspended") },
+            replace: true,
+          });
         } else if (apiError.code === "EMAIL_NOT_VERIFIED") {
           setError(t("auth.login.errors.unverified"));
         } else if (apiError.status === 401) {

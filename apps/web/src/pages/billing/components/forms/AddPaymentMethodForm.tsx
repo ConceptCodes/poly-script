@@ -53,7 +53,7 @@ export function AddPaymentMethodForm() {
         )}
       </form.Field>
       <Button type="submit" disabled={addPaymentMethod.isPending} className="w-full">
-        {addPaymentMethod.isPending ? "Redirecting..." : "Add Payment Method"}
+        {addPaymentMethod.isPending ? "Redirecting..." : "Add Card"}
       </Button>
     </form>
   );

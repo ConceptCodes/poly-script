@@ -9,12 +9,12 @@ import {
   useUpgradeSubscription,
   useUsage,
 } from "../../hooks/useBilling";
+import { CreditsHistoryCard } from "./components/cards/CreditsHistoryCard";
 import { CurrentPlanCard } from "./components/cards/CurrentPlanCard";
 import { InvoicesCard } from "./components/cards/InvoicesCard";
 import { PaymentMethodsCard } from "./components/cards/PaymentMethodsCard";
 import { PlanComparisonCard } from "./components/cards/PlanComparisonCard";
 import { UsageCard } from "./components/cards/UsageCard";
-import { UsageHistoryCard } from "./components/cards/UsageHistoryCard";
 import { PurchaseCreditsForm } from "./components/forms/PurchaseCreditsForm";
 import { CancelSubscriptionModal } from "./components/modals/CancelSubscriptionModal";
 import { UpgradeModal } from "./components/modals/UpgradeModal";
@@ -198,7 +198,7 @@ export function BillingPage() {
           {/* Payment Methods only relevant if customer exists. Free plans might not have one yet. */}
           {data?.plan !== "FREE" && <PaymentMethodsCard />}
           <InvoicesCard />
-          <UsageHistoryCard />
+          <CreditsHistoryCard />
         </div>
       </div>
 

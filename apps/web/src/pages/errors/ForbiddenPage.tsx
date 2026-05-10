@@ -1,10 +1,13 @@
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@poly/ui";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export function ForbiddenPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as { message?: string } | null;
+  const message = state?.message || t("errors.forbidden.message");
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center py-8">
@@ -14,7 +17,7 @@ export function ForbiddenPage() {
           <CardDescription>{t("errors.forbidden.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <p className="text-muted-foreground mb-4">{t("errors.forbidden.message")}</p>
+          <p className="text-muted-foreground mb-4">{message}</p>
           <div className="flex justify-center">
             <Button onClick={() => navigate("/dashboard")}>{t("common.goToDashboard")}</Button>
           </div>

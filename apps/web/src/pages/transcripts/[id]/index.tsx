@@ -2,12 +2,21 @@ import { Button } from "@poly/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@poly/ui/tabs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Download, FileText, History, List, Loader2, RotateCcw } from "lucide-react";
-import { useState } from "react";
+import {
+  ArrowLeft,
+  Download,
+  FileText,
+  History,
+  Languages,
+  List,
+  Loader2,
+  RotateCcw,
+} from "lucide-react";
+import { useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../../lib/api";
 import { formatTime } from "../../../lib/formatters";
-import { AudioPlayerCard } from "./components/cards/AudioPlayerCard";
+import { AudioPlayerCard, type AudioPlayerHandle } from "./components/cards/AudioPlayerCard";
 import { TranscriptHeaderCard } from "./components/cards/TranscriptHeaderCard";
 import { FullTextEditor } from "./components/forms/FullTextEditor";
 import { EditHistoryModal } from "./components/modals/EditHistoryModal";
@@ -28,6 +37,8 @@ export function TranscriptEditorPage() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [currentAudioTime, setCurrentAudioTime] = useState(0);
+  const audioPlayerRef = useRef<AudioPlayerHandle>(null);
 
   const {
     data: transcript,
@@ -102,6 +113,11 @@ export function TranscriptEditorPage() {
   };
 
   const translation = jobResult?.translation;
+  const activeSegmentId =
+    transcript?.segments.find(
+      (segment) =>
+        currentAudioTime * 1000 >= segment.start_ms && currentAudioTime * 1000 < segment.end_ms,
+    )?.id ?? null;
 
   if (isLoading) {
     return (
@@ -200,7 +216,12 @@ export function TranscriptEditorPage() {
             createdAt={transcript.created_at}
             updatedAt={transcript.updated_at}
           />
-          <AudioPlayerCard jobId={transcript.job_id} transcriptId={transcript.id} />
+          <AudioPlayerCard
+            ref={audioPlayerRef}
+            jobId={transcript.job_id}
+            transcriptId={transcript.id}
+            onTimeChange={setCurrentAudioTime}
+          />
         </div>
 
         {/* Right Column - Editor */}
@@ -217,7 +238,7 @@ export function TranscriptEditorPage() {
               </TabsTrigger>
               {translation && (
                 <TabsTrigger value="translation" className="flex items-center gap-2">
-                  <Download className="w-4 h-4" />
+                  <Languages className="w-4 h-4" />
                   Translation
                 </TabsTrigger>
               )}
@@ -247,6 +268,8 @@ export function TranscriptEditorPage() {
                   <SegmentList
                     transcriptId={transcriptId}
                     segments={transcript.segments}
+                    onSeek={(ms) => audioPlayerRef.current?.seekTo(ms / 1000)}
+                    activeSegmentId={activeSegmentId}
                     onUpdate={() => {
                       queryClient.invalidateQueries({
                         queryKey: ["transcript", transcriptId],

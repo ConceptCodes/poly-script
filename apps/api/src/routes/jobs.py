@@ -420,6 +420,69 @@ async def cancel_job(
         return CancelJobResponse(message="Job cancellation requested")
 
 
+@router.get("/{job_id}/audio")
+async def get_job_audio(
+    job_id: uuid.UUID,
+    team_id: uuid.UUID = Depends(get_current_team_id),
+):
+    """Stream or redirect to the audio file associated with a job.
+
+    - S3 backend: returns 302 redirect to a 1-hour presigned URL.
+    - Local backend: serves the file via FileResponse.
+    """
+    from pathlib import Path
+
+    from fastapi.responses import FileResponse, RedirectResponse
+
+    with get_db_session() as session:
+        job_repo = TranscriptionJobRepository(session)
+        audio_repo = AudioAssetRepository(session)
+
+        job = job_repo.get_by_id(job_id)
+        if not job:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+        if job.team_id != team_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have access to this job",
+            )
+
+        audio = audio_repo.get_by_job_id(job_id)
+        if not audio or not audio.storage_uri:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Audio file not found for this job",
+            )
+
+        settings = get_settings()
+        storage = get_storage_backend(
+            backend_type=settings.STORAGE_BACKEND,
+            storage_path=settings.STORAGE_PATH,
+            min_free_bytes=settings.STORAGE_MIN_FREE_BYTES,
+            bucket=settings.AWS_S3_BUCKET,
+            region=settings.AWS_REGION,
+            access_key=settings.AWS_ACCESS_KEY_ID,
+            secret_key=settings.AWS_SECRET_ACCESS_KEY,
+        )
+
+        if settings.STORAGE_BACKEND == "s3":
+            presigned_url = storage.get_url(audio.storage_uri, expires_in=3600)
+            return RedirectResponse(url=presigned_url, status_code=302)
+        else:
+            # Local storage: get_url returns the filesystem path
+            file_path = storage.get_url(audio.storage_uri)
+            if not Path(file_path).exists():
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Audio file not found on disk",
+                )
+            return FileResponse(
+                path=file_path,
+                media_type=audio.mime_type or "audio/mpeg",
+                filename=audio.filename or "audio",
+            )
+
+
 def _build_job_manager(session: Session) -> JobManagerService:
     settings = get_settings()
     storage_backend = get_storage_backend(

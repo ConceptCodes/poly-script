@@ -1,6 +1,6 @@
 import { Button, Textarea } from "@poly/ui";
 import { Checkbox } from "@poly/ui/checkbox";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Clock, Edit2, Save, X } from "lucide-react";
 import { useState } from "react";
 import { api } from "../../../../lib/api";
@@ -17,12 +17,19 @@ interface SegmentListProps {
   transcriptId: string;
   segments: Segment[];
   onUpdate: () => void;
+  onSeek?: (startMs: number) => void;
+  activeSegmentId?: number | null;
 }
 
-export function SegmentList({ transcriptId, segments, onUpdate }: SegmentListProps) {
+export function SegmentList({
+  transcriptId,
+  segments,
+  onUpdate,
+  onSeek,
+  activeSegmentId,
+}: SegmentListProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
-  const _queryClient = useQueryClient();
 
   const updateMutation = useMutation({
     mutationFn: ({ segmentId, text }: { segmentId: number; text: string }) =>
@@ -70,14 +77,25 @@ export function SegmentList({ transcriptId, segments, onUpdate }: SegmentListPro
         <div
           key={segment.id}
           data-segment-id={segment.id}
-          className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+          className={`p-4 border rounded-lg transition-colors ${
+            activeSegmentId === segment.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"
+          }`}
         >
           <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
             <Checkbox data-segment-checkbox />
             <Clock className="w-4 h-4" />
-            <span className="font-mono">
+            <button
+              type="button"
+              onClick={() => onSeek?.(segment.start_ms)}
+              className={`font-mono text-xs ${
+                onSeek
+                  ? "text-primary hover:underline cursor-pointer"
+                  : "text-muted-foreground cursor-default"
+              }`}
+              title={onSeek ? "Click to seek to this segment" : undefined}
+            >
               {formatTimestamp(segment.start_ms)} - {formatTimestamp(segment.end_ms)}
-            </span>
+            </button>
             {segment.speaker && (
               <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
                 {segment.speaker}
