@@ -102,7 +102,11 @@ class AsyncOAuthService:
         return authorization_url
 
     def exchange_google_code(
-        self, code: str, state: str | None = None, code_verifier: str | None = None
+        self,
+        code: str,
+        state: str | None = None,
+        code_verifier: str | None = None,
+        redirect_url: str | None = None,
     ) -> GoogleUserInfo | None:
         """Exchange Google OAuth authorization code for user info.
 
@@ -115,6 +119,7 @@ class AsyncOAuthService:
             GoogleUserInfo dict with user details, or None if exchange fails
         """
         try:
+            redirect_uri = redirect_url or self.oauth_redirect_url
             flow = Flow.from_client_config(
                 client_config={
                     "web": {
@@ -122,12 +127,12 @@ class AsyncOAuthService:
                         "client_secret": self.google_client_secret,
                         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                         "token_uri": "https://oauth2.googleapis.com/token",
-                        "redirect_uris": [self.oauth_redirect_url],
+                        "redirect_uris": [redirect_uri],
                     }
                 },
                 scopes=["openid", "email", "profile"],
             )
-            flow.redirect_uri = self.oauth_redirect_url
+            flow.redirect_uri = redirect_uri
 
             # PKCE support: pass code_verifier if provided
             token_kwargs = {"code": code}
@@ -250,7 +255,11 @@ class AsyncOAuthService:
         return None
 
     async def handle_google_oauth_callback(
-        self, code: str, state: str | None = None, code_verifier: str | None = None
+        self,
+        code: str,
+        state: str | None = None,
+        code_verifier: str | None = None,
+        redirect_url: str | None = None,
     ) -> dict:
         """Handle complete Google OAuth callback flow.
 
@@ -271,7 +280,12 @@ class AsyncOAuthService:
         Raises:
             ValueError: If OAuth code exchange or user creation fails
         """
-        google_info = self.exchange_google_code(code=code, state=state, code_verifier=code_verifier)
+        google_info = self.exchange_google_code(
+            code=code,
+            state=state,
+            code_verifier=code_verifier,
+            redirect_url=redirect_url,
+        )
         if not google_info:
             raise ValueError("Failed to exchange OAuth code")
 

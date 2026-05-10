@@ -16,16 +16,11 @@ import {
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { OnboardingStepProps } from "./types";
 
 type Member = { id: string; email: string; role: string };
 
-export function InviteMembersStep({
-  data,
-  updateData,
-}: {
-  data: { members: string[] };
-  updateData: (key: "members", value: string[]) => void;
-}) {
+export function InviteMembersStep({ data, updateData }: OnboardingStepProps) {
   const { t } = useTranslation();
   const createMember = (email = ""): Member => ({
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -74,9 +69,8 @@ export function InviteMembersStep({
                   <Select
                     value={member.role}
                     onValueChange={(value) => updateMember(index, "role", value)}
-                    className="w-[120px]"
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-[120px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

@@ -7,8 +7,7 @@ import { Switch } from "@poly/ui/switch";
 import { useForm } from "@tanstack/react-form";
 import { ChevronDown, ChevronUp, Clock, Globe, Settings, Users } from "lucide-react";
 import { useState } from "react";
-import type { z } from "zod";
-import { LANGUAGE_OPTIONS, type UploadFormValues, type uploadOptionsSchema } from "../schemas";
+import { LANGUAGE_OPTIONS, type UploadFormValues } from "../schemas";
 
 const TARGET_LANGUAGES = [
   { code: "es", name: "Spanish", flag: "🇪🇸" },
@@ -40,15 +39,15 @@ export function AdvancedOptions({
   onSubmit,
 }: AdvancedOptionsProps) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const form = useForm<z.infer<typeof uploadOptionsSchema>>({
+  const form = useForm({
     defaultValues: {
       language: "",
       engine: "",
       timestamps: true,
       diarization: false,
-      target_language: undefined,
+      target_language: "",
     },
-    onSubmit,
+    onSubmit: ({ value }) => onSubmit(value),
   });
 
   const sourceLanguage = form.state.values.language;
@@ -64,7 +63,7 @@ export function AdvancedOptions({
     if (selectedTargetLanguage && !shouldShowTargetLanguageOptions) {
       return "Target language translation requires an upgraded plan.";
     }
-    if (isLanguageRestricted(selectedTargetLanguage)) {
+    if (selectedTargetLanguage && isLanguageRestricted(selectedTargetLanguage)) {
       return `Your plan allows ${languageLimit} target language(s). Upgrade for more.`;
     }
     return null;

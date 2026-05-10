@@ -70,9 +70,14 @@ class OAuthService:
         return authorization_url
 
     def exchange_google_code(
-        self, code: str, _state: str | None = None, code_verifier: str | None = None
+        self,
+        code: str,
+        _state: str | None = None,
+        code_verifier: str | None = None,
+        redirect_url: str | None = None,
     ) -> GoogleUserInfo | None:
         try:
+            redirect_uri = redirect_url or self.oauth_redirect_url
             flow = Flow.from_client_config(
                 client_config={
                     "web": {
@@ -80,12 +85,12 @@ class OAuthService:
                         "client_secret": self.google_client_secret,
                         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                         "token_uri": "https://oauth2.googleapis.com/token",
-                        "redirect_uris": [self.oauth_redirect_url],
+                        "redirect_uris": [redirect_uri],
                     }
                 },
                 scopes=["openid", "email", "profile"],
             )
-            flow.redirect_uri = self.oauth_redirect_url
+            flow.redirect_uri = redirect_uri
 
             # PKCE support: pass code_verifier if provided
             token_kwargs = {"code": code}
@@ -192,7 +197,11 @@ class OAuthService:
         )
 
     def handle_google_oauth_callback(
-        self, code: str, state: str | None = None, code_verifier: str | None = None
+        self,
+        code: str,
+        state: str | None = None,
+        code_verifier: str | None = None,
+        redirect_url: str | None = None,
     ) -> dict:
         """Handle complete Google OAuth callback flow:
         - Exchange code for user info
@@ -203,7 +212,12 @@ class OAuthService:
         Returns:
             dict: User data including user_id, email, default_team_id
         """
-        google_info = self.exchange_google_code(code=code, state=state, code_verifier=code_verifier)
+        google_info = self.exchange_google_code(
+            code=code,
+            state=state,
+            code_verifier=code_verifier,
+            redirect_url=redirect_url,
+        )
         if not google_info:
             raise ValueError("Failed to exchange OAuth code")
 

@@ -20,6 +20,8 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from poly_core.logging_context import clear_job_context, set_job_context
+from poly_core.services.billing import BillingService
+from poly_db.database import get_db_session
 from poly_db.models.transcription_jobs import JobStatus, TranscriptionJob
 from poly_db.models.transcripts import Transcript
 from poly_db.models.translation_artifacts import TranslationArtifact, TranslationStatus
@@ -61,6 +63,11 @@ class JobProcessor:
         self.storage_backend = storage_backend
         self.progress_publisher = progress_publisher
         self.settings = settings or get_settings()
+
+        self.billing_service = BillingService(
+            session=session,
+            stripe_api_key=self.settings.STRIPE_SECRET_KEY,
+        )
 
         self.job_repo = TranscriptionJobRepository(session)
         self.audio_repo = AudioAssetRepository(session)
@@ -165,6 +172,18 @@ class JobProcessor:
                 stage="saving",
             )
             self._set_progress(job_id, "saving")
+
+            # Increment billing usage counter — must happen before marking succeeded
+            try:
+                self.billing_service.increment_usage(
+                    team_id=job.team_id,
+                    job_id=job.id,
+                )
+            except Exception as billing_err:
+                # Log but don't fail the job — billing drift is recoverable via sync
+                logger.warning(
+                    f"Failed to increment usage for job {job_id}: {billing_err}"
+                )
 
             # Mark SUCCEEDED
             self._mark_succeeded(job, duration_ms)

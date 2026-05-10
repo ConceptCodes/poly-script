@@ -128,7 +128,7 @@ test.describe("Transcript Editor E2E", () => {
 
     // Click the edit button (last button in the segment, which is the edit button)
     const segment = page.locator('[data-segment-id="0"]');
-    await segment.locator('button').last().click();
+    await segment.locator("button").last().click();
 
     // Wait for textarea to appear
     await page.waitForSelector('[data-segment-id="0"] textarea', { timeout: 5000 });
@@ -180,7 +180,9 @@ test.describe("Transcript Editor E2E", () => {
     // NOTE: Split functionality not available in current UI
     // Verify segment is visible instead
     await expect(page.locator('[data-segment-id="0"]')).toBeVisible();
-    await expect(page.locator('[data-segment-id="0"]')).toContainText("Long segment that should be split");
+    await expect(page.locator('[data-segment-id="0"]')).toContainText(
+      "Long segment that should be split",
+    );
   });
 
   test("can merge segments", async ({ page }) => {

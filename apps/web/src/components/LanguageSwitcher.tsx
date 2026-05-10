@@ -9,7 +9,12 @@ const languages = [
   { code: "jp", name: "日本語" },
 ];
 
-export function LanguageSwitcher() {
+interface LanguageSwitcherProps {
+  className?: string;
+  showIcon?: boolean;
+}
+
+export function LanguageSwitcher({ className, showIcon = true }: LanguageSwitcherProps) {
   const { i18n } = useTranslation();
 
   return (
@@ -17,6 +22,8 @@ export function LanguageSwitcher() {
       languages={languages}
       currentLanguageCode={i18n.language}
       onLanguageChange={(code) => i18n.changeLanguage(code)}
+      className={className}
+      showIcon={showIcon}
     />
   );
 }

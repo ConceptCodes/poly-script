@@ -1,11 +1,17 @@
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from poly_core.services.auth_async import AsyncAuthService
 from poly_core.services.oauth_async import AsyncOAuthService
 from poly_core.services.team_async import AsyncTeamService
+from poly_db.database import get_db
+from poly_db.models.teams import Team
+from poly_db.repositories import TeamMemberRepository
 from src.config import get_settings
 from src.dependencies import get_async_auth_service, get_async_db, get_current_user
 from src.schemas.auth import (
@@ -18,7 +24,6 @@ from src.schemas.auth import (
     SignupRequest,
     SignupResponse,
     TokenResponse,
-    UserResponse,
     VerifyEmailCodeRequest,
     VerifyEmailRequest,
 )
@@ -112,9 +117,40 @@ async def refresh_token(
     )
 
 
-@router.get("/me", response_model=UserResponse)
-def get_me(current_user: UserResponse = Depends(get_current_user)):
-    return current_user
+class TeamInfo(BaseModel):
+    id: str
+    name: str
+    default_language: str
+    created_at: str
+    plan: str
+
+
+class MeResponse(BaseModel):
+    user: dict[str, Any]
+    team: TeamInfo | None
+
+
+@router.get("/me", response_model=MeResponse)
+def get_me(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    member_repo = TeamMemberRepository(db)
+    memberships = member_repo.list_by_user_id(current_user["id"])
+
+    team_info = None
+    if memberships:
+        team = db.query(Team).filter(Team.id == memberships[0].team_id).first()
+        if team:
+            team_info = TeamInfo(
+                id=str(team.id),
+                name=team.name,
+                default_language=team.host_language or "en",
+                created_at=team.created_at.isoformat() if team.created_at else "",
+                plan=team.plan.value,
+            )
+
+    return MeResponse(user=current_user, team=team_info)
 
 
 @router.post("/verify-email", status_code=status.HTTP_204_NO_CONTENT)
@@ -195,12 +231,16 @@ async def oauth_callback(
     code: str,
     state: str | None = None,
     code_verifier: str | None = None,
+    redirect_url: str | None = None,
     oauth_service: AsyncOAuthService = Depends(get_oauth_service),
     auth_service: AsyncAuthService = Depends(get_async_auth_service),
 ):
     # Handle complete OAuth flow: exchange code → find/create user → generate JWTs
     user_data = await oauth_service.handle_google_oauth_callback(
-        code=code, state=state, code_verifier=code_verifier
+        code=code,
+        state=state,
+        code_verifier=code_verifier,
+        redirect_url=redirect_url,
     )
 
     # Generate JWTs for the user

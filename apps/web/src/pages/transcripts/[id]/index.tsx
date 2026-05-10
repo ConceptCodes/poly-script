@@ -39,6 +39,12 @@ export function TranscriptEditorPage() {
     enabled: hasTranscriptId,
   });
 
+  const { data: jobResult } = useQuery({
+    queryKey: ["job-result", transcript?.job_id ?? transcriptId],
+    queryFn: () => api.getJobResult(transcript?.job_id ?? transcriptId),
+    enabled: Boolean(transcript?.job_id),
+  });
+
   const updateTextMutation = useMutation({
     mutationFn: (text: string) => {
       if (!hasTranscriptId) {
@@ -94,6 +100,8 @@ export function TranscriptEditorPage() {
       console.error("Export failed:", err);
     }
   };
+
+  const translation = jobResult?.translation;
 
   if (isLoading) {
     return (
@@ -207,6 +215,12 @@ export function TranscriptEditorPage() {
                 <List className="w-4 h-4" />
                 Segments
               </TabsTrigger>
+              {translation && (
+                <TabsTrigger value="translation" className="flex items-center gap-2">
+                  <Download className="w-4 h-4" />
+                  Translation
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="full-text">
@@ -242,6 +256,39 @@ export function TranscriptEditorPage() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {translation && (
+              <TabsContent value="translation">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      Translation {translation.target_language.toUpperCase()}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="rounded-lg border border-border bg-muted/20 p-4">
+                      <p className="whitespace-pre-wrap text-sm leading-6">{translation.text}</p>
+                    </div>
+                    {translation.segments?.length ? (
+                      <div className="space-y-3">
+                        {translation.segments.map((segment, index) => (
+                          <div
+                            key={`${segment.start_ms}-${segment.end_ms}-${index}`}
+                            className="rounded-lg border border-border p-3"
+                          >
+                            <div className="mb-1 text-xs text-muted-foreground">
+                              {formatTime(segment.start_ms / 1000)} -{" "}
+                              {formatTime(segment.end_ms / 1000)}
+                            </div>
+                            <p className="text-sm">{segment.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </div>

@@ -1,7 +1,6 @@
 from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
-
-from poly_core.tasks.cleanup_tasks import cleanup_soft_deleted_users
+from poly_core.tasks.cleanup_tasks import _cleanup_soft_deleted_users_internal
 
 
 def test_cleanup_soft_deleted_users_deletes_old_users():
@@ -16,8 +15,8 @@ def test_cleanup_soft_deleted_users_deletes_old_users():
 
     mock_db = Mock()
 
-    with patch("core.tasks.cleanup_tasks.UserRepository", return_value=mock_repo):
-        result = cleanup_soft_deleted_users(mock_db, grace_days=30)
+    with patch("poly_core.tasks.cleanup_tasks.UserRepository", return_value=mock_repo):
+        result = _cleanup_soft_deleted_users_internal(mock_db, grace_days=30)
 
     assert result["deleted_users"] == 1
     mock_repo.delete.assert_called_with("old")

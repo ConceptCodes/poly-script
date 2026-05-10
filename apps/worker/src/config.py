@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str | None = None
     AWS_SECRET_ACCESS_KEY: str | None = None
 
+    # Stripe (for billing usage tracking)
+    STRIPE_SECRET_KEY: str = ""
+
     # STT
     WHISPER_MODEL_SIZE: str = "medium"
     WHISPER_DEVICE: str = "auto"  # auto, cuda, cpu, mps

@@ -495,4 +495,3 @@ async def export_transcript(
         )
 
 transcripts_router = router
-transcripts_router = router

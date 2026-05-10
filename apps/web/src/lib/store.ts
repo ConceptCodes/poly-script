@@ -86,7 +86,7 @@ interface AppState {
   ) => void;
   resetOnboarding: () => void;
   setLanguage: (language: string) => void;
-  initializeFromAuth: (user: User, team: Team) => void;
+  initializeFromAuth: (user: User, team: Team | null) => void;
 }
 
 export const useAppStore = create<AppState>((set, _get) => {
@@ -209,7 +209,7 @@ export const useAppStore = create<AppState>((set, _get) => {
         },
       })),
     setLanguage: (language: string) => set({ language }),
-    initializeFromAuth: (user: User, team: Team) =>
+    initializeFromAuth: (user: User, team: Team | null) =>
       set({
         auth: {
           isAuthenticated: true,

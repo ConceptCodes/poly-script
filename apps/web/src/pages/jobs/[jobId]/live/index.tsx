@@ -101,7 +101,20 @@ export function LiveTranscriptViewerPage() {
     );
   }
 
-  if (!jobId || (!jobDetail && !error)) {
+  if (!jobId) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <AlertCircle className="w-6 h-6" />
+          <div>
+            <h3 className="font-semibold text-lg mb-1">Job Not Found</h3>
+            <p className="text-sm">The requested job could not be found.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (!jobDetail) {
     return (
       <div className="container mx-auto py-8 px-4">
         <div className="flex items-center gap-3 text-muted-foreground">
@@ -183,7 +196,9 @@ export function LiveTranscriptViewerPage() {
               <h3 className="font-semibold text-lg text-foreground dark:text-foreground">
                 Job Canceled
               </h3>
-              <p className="text-sm text-muted-foreground dark:text-muted-foreground/70">This job was canceled.</p>
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground/70">
+                This job was canceled.
+              </p>
             </div>
           </div>
         )}

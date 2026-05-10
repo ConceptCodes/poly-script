@@ -1,14 +1,15 @@
-import { QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import { useEffect } from "react";
-
 import { Toaster } from "@poly/ui/toaster";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { apiFetch } from "./lib/api";
 import { queryClient } from "./lib/queryClient";
+import { useAppStore } from "./lib/store";
 import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
+import { OAuthCallbackPage } from "./pages/auth/OAuthCallbackPage";
 import { SignupPage } from "./pages/auth/SignupPage";
 import { VerifyEmailCodePage } from "./pages/auth/VerifyEmailCodePage";
 import { VerifyEmailPage } from "./pages/auth/VerifyEmailPage";
@@ -28,27 +29,47 @@ import { LibraryPage } from "./pages/library/index";
 import { OnboardingPage } from "./pages/onboarding/OnboardingPage";
 import { TeamSettingsPage } from "./pages/settings/TeamSettingsPage";
 import { UserSettingsPage } from "./pages/settings/UserSettingsPage";
-import UploadPage from "./pages/upload/index";
 import { TranscriptEditorPage } from "./pages/transcripts/[id]/index";
-import { useAppStore } from "./lib/store";
+import UploadPage from "./pages/upload/index";
 
 function AuthBootstrap() {
-  const setAuth = useAppStore((state) => state.setAuth);
-  const setAuthenticated = useAppStore((state) => state.setAuthenticated);
+  const { initializeFromAuth, setAuth } = useAppStore();
 
   useEffect(() => {
-    const initAuth = () => {
+    const initAuth = async () => {
       const token = localStorage.getItem("access_token");
-      const userId = localStorage.getItem("user_id");
-      if (token && userId) {
-        setAuth({
-          isAuthenticated: true,
+      if (!token) {
+        setAuth({ isLoading: false });
+        return;
+      }
+
+      try {
+        const data = await apiFetch<{
           user: {
-            id: userId,
-            email: "test@example.com",
-            name: "Test User",
-            verified: true,
-            createdAt: new Date().toISOString(),
+            id: string;
+            email: string;
+            full_name: string;
+            is_verified: boolean;
+            is_active: boolean;
+            is_suspended: boolean;
+            created_at: string;
+          };
+          team: {
+            id: string;
+            name: string;
+            default_language: string;
+            created_at: string;
+            plan: string;
+          } | null;
+        }>("/auth/me");
+
+        initializeFromAuth(
+          {
+            id: String(data.user.id),
+            email: data.user.email,
+            name: data.user.full_name,
+            verified: data.user.is_verified,
+            createdAt: data.user.created_at,
             host_language: "en",
             theme: "system",
             notifications: {
@@ -57,28 +78,28 @@ function AuthBootstrap() {
               in_app: true,
             },
           },
-          team: {
-            id: "mock-team-id",
-            name: "Test Team",
-            defaultLanguage: "en",
-            createdAt: new Date().toISOString(),
-          },
-          isLoading: false,
-          error: null,
-        });
-        setAuthenticated(true);
-      } else {
-        // Mark auth as initialized even if not authenticated
+          data.team
+            ? {
+                id: data.team.id,
+                name: data.team.name,
+                defaultLanguage: data.team.default_language,
+                createdAt: data.team.created_at,
+              }
+            : null,
+        );
+      } catch (err: unknown) {
+        const apiError = err as { status?: number };
+        if (apiError.status === 401) {
+          // Token expired or invalid — clear stored tokens
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+        }
         setAuth({ isLoading: false });
       }
     };
 
     initAuth();
-
-    if (typeof window !== "undefined") {
-      (window as Window & { __initAuth?: () => void }).__initAuth = initAuth;
-    }
-  }, [setAuth, setAuthenticated]);
+  }, [initializeFromAuth, setAuth]);
 
   return null;
 }
@@ -99,6 +120,7 @@ function App() {
               <Route path="/verify-email-code" element={<VerifyEmailCodePage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/auth/oauth/callback" element={<OAuthCallbackPage />} />
 
               <Route path="/onboarding" element={<OnboardingPage />} />
 
@@ -207,7 +229,9 @@ function App() {
         </div>
       </Router>
       <Toaster />
-      <ReactQueryDevtools initialIsOpen={false} />
+      {import.meta.env.DEV && (
+        <>{/* ReactQueryDevtools removed from prod — add back manually for local dev if needed */}</>
+      )}
     </QueryClientProvider>
   );
 }

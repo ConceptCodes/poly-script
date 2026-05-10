@@ -565,4 +565,3 @@ async def create_job_from_url(
 
 
 jobs_router = router
-jobs_router = router

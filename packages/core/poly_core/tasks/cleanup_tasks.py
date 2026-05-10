@@ -13,7 +13,6 @@ from poly_db.repositories import (
     RefreshTokenRepository,
     TeamInvitationRepository,
     TranscriptEditRepository,
-    TranscriptionJobRepository,
     UserRepository,
 )
 from poly_db.repositories.auth import PasswordResetRepository
@@ -72,7 +71,6 @@ def _cleanup_orphaned_content_internal(db: Session, retention_days: int = 90) ->
 def _cleanup_audio_files_internal(db: Session, retention_days: int = 30) -> dict[str, int]:
     """Delete audio files for hard-deleted jobs - internal function requiring db"""
     audio_repo = AudioAssetRepository(db)
-    job_repo = TranscriptionJobRepository(db)
 
     cutoff = datetime.now(UTC) - timedelta(days=retention_days)
 
@@ -168,9 +166,14 @@ def run_all_cleanup_tasks() -> dict[str, dict]:
         return results
 
 
+def cleanup_soft_deleted_users(db: Session, grace_days: int = 30) -> dict[str, int]:
+    """Public wrapper for internal cleanup function"""
+    return _cleanup_soft_deleted_users_internal(db, grace_days)
+
+
 if __name__ == "__main__":
-    print("Running cleanup tasks...")
+    print("Running cleanup tasks...")  # noqa: T201
     results = run_all_cleanup_tasks()
     for task, result in results.items():
-        print(f"{task}: {result}")
-    print("Cleanup complete.")
+        print(f"{task}: {result}")  # noqa: T201
+    print("Cleanup complete.")  # noqa: T201

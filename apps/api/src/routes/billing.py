@@ -252,4 +252,3 @@ async def get_pricing(billing_service: BillingService = Depends(get_billing_serv
     return billing_service.get_pricing()
 
 billing_router = router
-billing_router = router

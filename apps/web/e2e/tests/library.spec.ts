@@ -229,7 +229,10 @@ test.describe("Library Page E2E", () => {
 
     await page.goto("/library");
 
-    await page.getByRole("combobox").filter({ hasText: /all languages/i }).click();
+    await page
+      .getByRole("combobox")
+      .filter({ hasText: /all languages/i })
+      .click();
     await page.waitForTimeout(1000);
     await page.getByRole("option", { name: "German" }).click();
 
@@ -336,10 +339,16 @@ test.describe("Library Page E2E", () => {
 
     await page.goto("/library");
 
-    await page.getByRole("checkbox", { name: /select transcript/i }).first().click();
+    await page
+      .getByRole("checkbox", { name: /select transcript/i })
+      .first()
+      .click();
     await expect(page.getByText("1 selected")).toBeVisible();
 
-    await page.getByRole("checkbox", { name: /select transcript/i }).nth(1).click();
+    await page
+      .getByRole("checkbox", { name: /select transcript/i })
+      .nth(1)
+      .click();
     await expect(page.getByText("2 selected")).toBeVisible();
 
     // Click export selected button

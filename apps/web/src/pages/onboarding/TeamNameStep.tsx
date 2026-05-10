@@ -1,19 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label } from "@poly/ui";
-import { useForm } from "@tanstack/react-form";
 import { useTranslation } from "react-i18next";
+import type { OnboardingStepProps } from "./types";
 
-// Adapt to flexible props to support OnboardingPage wiring
-export function TeamNameStep(_props: {
-  data?: { teamName?: string };
-  updateData?: (key: string, value: string) => void;
-  onNext?: () => void;
-}) {
+export function TeamNameStep({ data, updateData }: OnboardingStepProps) {
   const { t } = useTranslation();
-  const form = useForm({
-    defaultValues: {
-      teamName: "",
-    },
-  });
+  const isValid = data.teamName.length >= 2 || data.teamName.length === 0;
 
   return (
     <div className="space-y-6">
@@ -23,27 +14,18 @@ export function TeamNameStep(_props: {
           <CardDescription>{t("onboarding.teamName.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form.Field
-            name="teamName"
-            validators={{
-              onChange: ({ value }) => value.length >= 2 || t("onboarding.teamName.minLength"),
-            }}
-          >
-            {(field) => (
-              <div>
-                <Label htmlFor={field.name}>{t("onboarding.teamName.label")}</Label>
-                <Input
-                  id={field.name}
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder={t("onboarding.teamName.placeholder")}
-                />
-                {field.state.meta.errors && (
-                  <p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-                )}
-              </div>
+          <div>
+            <Label htmlFor="team-name">{t("onboarding.teamName.label")}</Label>
+            <Input
+              id="team-name"
+              value={data.teamName}
+              onChange={(e) => updateData("teamName", e.target.value)}
+              placeholder={t("onboarding.teamName.placeholder")}
+            />
+            {!isValid && (
+              <p className="text-sm text-destructive">{t("onboarding.teamName.minLength")}</p>
             )}
-          </form.Field>
+          </div>
         </CardContent>
       </Card>
     </div>

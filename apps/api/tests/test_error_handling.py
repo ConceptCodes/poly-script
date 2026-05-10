@@ -1,4 +1,9 @@
 """
+import sys
+from pathlib import Path
+
+# Add apps/api to path before other imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 Tests for standardized error handling and API error format.
 
 These tests verify:
@@ -11,7 +16,10 @@ These tests verify:
 import pytest
 from fastapi.testclient import TestClient
 
-from main import app
+from . import setup_paths as _setup_paths
+from ..main import app
+
+del _setup_paths
 from poly_core.constants import I18N_KEY_HTTP_STATUS, I18nKeys
 
 

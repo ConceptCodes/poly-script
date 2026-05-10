@@ -113,4 +113,3 @@ async def stripe_webhook(
     return {"status": "success"}
 
 webhooks_router = router
-webhooks_router = router

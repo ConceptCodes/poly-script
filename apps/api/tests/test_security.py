@@ -1,4 +1,9 @@
 """
+import sys
+from pathlib import Path
+
+# Add apps/api to path before other imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 Security-focused integration tests for the PolyScript API.
 
 This module tests critical security measures including:
@@ -19,7 +24,10 @@ from unittest.mock import Mock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from main import app
+from . import setup_paths as _setup_paths
+from ..main import app
+
+del _setup_paths
 
 # =============================================================================
 # Fixtures

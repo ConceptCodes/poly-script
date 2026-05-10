@@ -175,7 +175,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-secondary/30 rounded-full;
+  @apply bg-muted/30 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb {

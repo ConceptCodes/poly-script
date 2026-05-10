@@ -70,7 +70,7 @@ def team():
     return Team(
         id=uuid.uuid4(),
         name="Test Team",
-        default_language="en",
+        host_language="en",
     )
 
 

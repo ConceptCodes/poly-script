@@ -19,7 +19,8 @@ export function CompletedJobsPage() {
     error,
   } = useQuery({
     queryKey: ["completed-jobs", statusFilter],
-    queryFn: () => api.getCompletedJobs({ status: statusFilter === "all" ? undefined : statusFilter }),
+    queryFn: () =>
+      api.getCompletedJobs({ status: statusFilter === "all" ? undefined : statusFilter }),
   });
 
   const jobs = jobsData?.jobs || [];

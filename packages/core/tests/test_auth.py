@@ -323,6 +323,15 @@ class TestOAuthPKCE:
         assert "code_challenge" not in auth_url
         assert "code_challenge_method" not in auth_url
 
+    def test_get_google_auth_url_with_custom_redirect_url(self, mock_oauth_service):
+        redirect_url = "http://localhost/alt-callback"
+
+        auth_url = mock_oauth_service.get_google_auth_url(redirect_url=redirect_url)
+
+        assert auth_url is not None
+        assert isinstance(auth_url, str)
+        assert "http%3A%2F%2Flocalhost%2Falt-callback" in auth_url
+
     def test_exchange_google_code_with_verifier(self, mock_oauth_service):
         mock_oauth_service.get_google_auth_url = Mock(return_value="http://auth_url")
 

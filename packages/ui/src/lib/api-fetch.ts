@@ -47,11 +47,12 @@ export function createApiFetch(config: ApiFetchConfig) {
     supportsFormData = false,
   } = config;
 
-  return async function apiFetch<T = unknown>(
+  async function _doFetch<T = unknown>(
     endpoint: string,
     options: Omit<ApiFetchOptions, "tokenKey" | "errorTransformer" | "supportsFormData"> = {},
-  ): Promise<T> {
-    const token = localStorage.getItem(tokenKey);
+    overrideToken?: string,
+  ): Promise<{ response: Response; options: typeof options }> {
+    const token = overrideToken ?? localStorage.getItem(tokenKey);
     const headers: Record<string, string> = {
       ...((options.headers as Record<string, string>) || {}),
     };
@@ -78,6 +79,49 @@ export function createApiFetch(config: ApiFetchConfig) {
       headers,
       body,
     });
+
+    return { response, options };
+  }
+
+  return async function apiFetch<T = unknown>(
+    endpoint: string,
+    options: Omit<ApiFetchOptions, "tokenKey" | "errorTransformer" | "supportsFormData"> = {},
+  ): Promise<T> {
+    let { response } = await _doFetch(endpoint, options);
+
+    // Auto-refresh on 401 (only for non-auth endpoints to avoid loops)
+    if (response.status === 401 && !endpoint.includes("/auth/")) {
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (refreshToken) {
+        try {
+          const refreshResponse = await fetch(API_URL + "/auth/refresh", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          });
+
+          if (refreshResponse.ok) {
+            const tokens = (await refreshResponse.json()) as {
+              access_token: string;
+              refresh_token: string;
+            };
+            localStorage.setItem(tokenKey, tokens.access_token);
+            localStorage.setItem("refresh_token", tokens.refresh_token);
+
+            // Retry original request with new token
+            const retried = await _doFetch(endpoint, options, tokens.access_token);
+            response = retried.response;
+          } else {
+            // Refresh failed — clear tokens
+            localStorage.removeItem(tokenKey);
+            localStorage.removeItem("refresh_token");
+          }
+        } catch {
+          localStorage.removeItem(tokenKey);
+          localStorage.removeItem("refresh_token");
+        }
+      }
+    }
 
     if (!response.ok) {
       let error: unknown;

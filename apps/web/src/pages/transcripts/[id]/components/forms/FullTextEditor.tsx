@@ -64,8 +64,8 @@ export function FullTextEditor({ initialText, onSave, isSaving }: FullTextEditor
         )}
       </form.Field>
 
-      {form.state.errors.text && (
-        <p className="text-sm text-destructive">{form.state.errors.text}</p>
+      {form.state.errors.length > 0 && form.state.errors[0] && (
+        <p className="text-sm text-destructive">{form.state.errors[0] as string}</p>
       )}
 
       <div className="flex justify-end gap-2">

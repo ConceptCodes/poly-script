@@ -85,7 +85,9 @@ export function VerifyEmailPage() {
           {status === "pending" && (
             <div className="text-center space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-              <p className="text-sm text-muted-foreground">{t("auth.verifyEmail.pending.subtitle")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("auth.verifyEmail.pending.subtitle")}
+              </p>
               <div className="pt-2">
                 <Link
                   to="/auth/signup"

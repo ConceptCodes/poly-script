@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@poly/ui";
 import { CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { OnboardingStepProps } from "./types";
 
-export function CompleteStep(_props: { onNext?: () => void }) {
+export function CompleteStep(_props: OnboardingStepProps) {
   const { t } = useTranslation();
 
   return (

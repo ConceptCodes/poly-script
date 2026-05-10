@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { apiFetch } from "../../lib/api";
+import { startGoogleOAuthFlow } from "../../lib/oauth";
 import { type Team, type User, useAppStore } from "../../lib/store";
 import { createLoginSchema } from "./schemas";
 
@@ -23,6 +24,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const { initializeFromAuth } = useAppStore();
   const [error, setError] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const loginSchema = createLoginSchema(t);
 
@@ -79,8 +81,13 @@ export function LoginPage() {
     },
   });
 
-  const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL || "http://localhost:8000/v1"}/auth/oauth/google`;
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    try {
+      await startGoogleOAuthFlow();
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -189,7 +196,13 @@ export function LoginPage() {
             </div>
           </div>
 
-          <Button variant="outline" type="button" className="w-full" onClick={handleGoogleLogin}>
+          <Button
+            variant="outline"
+            type="button"
+            className="w-full"
+            onClick={handleGoogleLogin}
+            disabled={googleLoading}
+          >
             <svg
               className="mr-2 h-4 w-4"
               aria-hidden="true"
@@ -205,7 +218,7 @@ export function LoginPage() {
                 d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
               ></path>
             </svg>
-            Google
+            {googleLoading ? t("common.loading") : "Google"}
           </Button>
 
           <div className="mt-4 text-center text-sm">

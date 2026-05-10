@@ -1,0 +1,3 @@
+Canonical specification: ../app-spec.txt
+
+Keep this mirror in sync with the root spec when endpoint, model, config, or flow changes are introduced.

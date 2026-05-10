@@ -12,7 +12,7 @@ const localStorageMock = {
   length: 0,
   key: vi.fn((_index: number) => ""),
 };
-global.localStorage = localStorageMock as Storage;
+globalThis.localStorage = localStorageMock as Storage;
 
 // Cleanup after each test
 afterEach(() => {

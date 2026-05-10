@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { apiFetch } from "../lib/api";
 import { API_URL } from "@poly/ui";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { apiFetch } from "../lib/api";
 
 // Mock fetch globally
 const mockFetch = vi.fn();

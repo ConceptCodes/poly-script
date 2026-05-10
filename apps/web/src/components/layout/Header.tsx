@@ -11,8 +11,9 @@ import {
 } from "@poly/ui/dropdown-menu";
 import { AudioWaveform, Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { apiFetch } from "../../lib/api";
+import { useAppStore } from "../../lib/store";
 import { LanguageSwitcher } from "../LanguageSwitcher";
 
 interface SimpleUsage {
@@ -99,9 +100,11 @@ function NavLink({
 
 function UsageIndicator({ usage }: { usage: SimpleUsage }) {
   const isUnlimited = usage.monthly_limit === "inf";
-  const usagePercent = isUnlimited ? 100 : (usage.monthly_upload_count / usage.monthly_limit) * 100;
+  const usagePercent = isUnlimited
+    ? 100
+    : (usage.monthly_upload_count / (usage.monthly_limit as number)) * 100;
 
-   const planColors = {
+  const planColors = {
     PRO: "bg-gradient-to-r from-primary to-accent",
     STANDARD: "bg-gradient-to-r from-info to-info/90",
     FREE: "bg-gradient-to-r from-muted to-muted/90",
@@ -143,7 +146,24 @@ function UsageIndicator({ usage }: { usage: SimpleUsage }) {
 }
 
 function UserAvatar() {
-  const initials = "JD";
+  const { user, logout } = useAppStore();
+  const navigate = useNavigate();
+
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "??";
+
+  const handleSignOut = () => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    logout();
+    navigate("/login");
+  };
 
   return (
     <DropdownMenu>
@@ -159,14 +179,23 @@ function UserAvatar() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">john.doe@example.com</p>
+            {user?.name && (
+              <p className="text-sm font-medium leading-none">{user.name}</p>
+            )}
+            <p className="text-xs leading-none text-muted-foreground">{user?.email ?? ""}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Profile</DropdownMenuItem>
-        <DropdownMenuItem>Settings</DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/settings/user">Profile</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/settings/team">Settings</Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-destructive">Sign out</DropdownMenuItem>
+        <DropdownMenuItem className="text-destructive" onClick={handleSignOut}>
+          Sign out
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

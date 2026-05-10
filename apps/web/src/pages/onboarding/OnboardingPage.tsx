@@ -10,16 +10,7 @@ import { InviteMembersStep } from "./InviteMembersStep";
 import { LanguageStep } from "./LanguageStep";
 import { PlanSelectionStep } from "./PlanSelectionStep";
 import { TeamNameStep } from "./TeamNameStep";
-
-type DataType = {
-  language: string;
-  teamName: string;
-  plan: string;
-  members: string[];
-};
-type UpdateData = <K extends keyof DataType>(key: K, value: DataType[K]) => void;
-type StepProps = { data: DataType; updateData: UpdateData; onNext: () => void };
-type StepComponent = ComponentType<StepProps>;
+import type { OnboardingData, OnboardingStepProps } from "./types";
 
 export function OnboardingPage() {
   const { t } = useTranslation();
@@ -37,7 +28,7 @@ export function OnboardingPage() {
   ];
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [data, setData] = useState<DataType>({
+  const [data, setData] = useState<OnboardingData>({
     language: "",
     teamName: "",
     plan: "",
@@ -76,11 +67,11 @@ export function OnboardingPage() {
     }
   };
 
-  const updateData: UpdateData = (key, value) => {
+  const updateData: OnboardingStepProps["updateData"] = (key, value) => {
     setData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const stepComponents: StepComponent[] = [
+  const stepComponents: ComponentType<OnboardingStepProps>[] = [
     LanguageStep,
     TeamNameStep,
     PlanSelectionStep,

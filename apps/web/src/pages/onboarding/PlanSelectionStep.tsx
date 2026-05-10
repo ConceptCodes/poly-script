@@ -1,15 +1,7 @@
 import { Badge, Card, CardContent, Label } from "@poly/ui";
 import { Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
-
-type PlanSelectionStepProps = {
-  data: {
-    plan?: string;
-    [key: string]: unknown;
-  };
-  updateData: (key: string, value: string) => void;
-  onNext: () => void;
-};
+import type { OnboardingStepProps } from "./types";
 
 const plans = [
   {
@@ -32,7 +24,7 @@ const plans = [
   },
 ];
 
-export function PlanSelectionStep({ data, updateData, onNext: _onNext }: PlanSelectionStepProps) {
+export function PlanSelectionStep({ data, updateData, onNext: _onNext }: OnboardingStepProps) {
   const { t } = useTranslation();
 
   return (

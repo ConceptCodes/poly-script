@@ -9,6 +9,7 @@ interface CompletedJobCardProps {
   filename: string;
   status: string;
   language: string | null;
+  createdAt: string;
   finishedAt: string | null;
   onView: (jobId: string) => void;
 }
@@ -19,8 +20,11 @@ export function CompletedJobCard({
   status,
   language,
   finishedAt,
+  createdAt,
   onView,
 }: CompletedJobCardProps) {
+  const formatTimestamp = (timestamp: string) =>
+    formatDistanceToNow(new Date(timestamp), { addSuffix: true });
   const getStatusColor = (status: string) => {
     switch (status) {
       case "SUCCEEDED":
@@ -77,10 +81,18 @@ export function CompletedJobCard({
                   <span>{language.toUpperCase()}</span>
                 </span>
               )}
+              {createdAt && (
+                <span className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  <span className="font-medium">Submitted:</span>
+                  <span>{formatTimestamp(createdAt)}</span>
+                </span>
+              )}
               {finishedAt && (
                 <span className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
-                  {formatDistanceToNow(new Date(finishedAt), { addSuffix: true })}
+                  <span className="font-medium">Finished:</span>
+                  <span>{formatTimestamp(finishedAt)}</span>
                 </span>
               )}
             </div>

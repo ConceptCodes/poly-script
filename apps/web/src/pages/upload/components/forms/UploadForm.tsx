@@ -3,8 +3,7 @@ import { Label } from "@poly/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@poly/ui/select";
 import { Switch } from "@poly/ui/switch";
 import { useForm } from "@tanstack/react-form";
-import type { z } from "zod";
-import { LANGUAGE_OPTIONS, type UploadPageProps, type uploadOptionsSchema } from "../../schemas";
+import { LANGUAGE_OPTIONS, type UploadPageProps } from "../../schemas";
 
 const TARGET_LANGUAGES = [
   { code: "es", name: "Spanish" },
@@ -30,15 +29,15 @@ export function UploadForm({
   isSubmitting,
   onSubmit,
 }: UploadFormProps) {
-  const form = useForm<z.infer<typeof uploadOptionsSchema>>({
+  const form = useForm({
     defaultValues: {
       language: "",
       engine: "",
       timestamps: true,
       diarization: false,
-      target_language: undefined,
+      target_language: "",
     },
-    onSubmit,
+    onSubmit: ({ value }) => onSubmit(value),
   });
 
   const sourceLanguage = form.state.values.language;
@@ -54,7 +53,7 @@ export function UploadForm({
     if (selectedTargetLanguage && !shouldShowTargetLanguageOptions) {
       return "Target language translation is only available with an upgraded plan.";
     }
-    if (isLanguageRestricted && selectedTargetLanguage) {
+    if (selectedTargetLanguage && isLanguageRestricted(selectedTargetLanguage)) {
       return `Your plan allows only ${languageLimit} target language(s). Upgrade to access more.`;
     }
     return null;
@@ -79,7 +78,7 @@ export function UploadForm({
             <SelectItem value={"auto"}>Auto-detect</SelectItem>
             {LANGUAGE_OPTIONS.map((lang) => (
               <SelectItem key={lang.code} value={lang.code} disabled={isSubmitting}>
-                {lang.label}
+                {lang.name}
               </SelectItem>
             ))}
           </SelectContent>

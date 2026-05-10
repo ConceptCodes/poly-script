@@ -1,6 +1,6 @@
 export {
   formatDate,
-  formatTime,
   formatDateTime,
   formatNumber,
+  formatTime,
 } from "@poly/ui";

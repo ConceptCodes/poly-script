@@ -1,0 +1,19 @@
+# Ignore node modules and build artifacts
+node_modules/
+dist/
+build/
+.vite/
+.cache/
+
+# Testing outputs
+playwright-report/
+test-results/
+coverage/
+.coverage
+htmlcov/
+.nyc_output/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store

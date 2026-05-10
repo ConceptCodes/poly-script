@@ -1,12 +1,39 @@
-import { createApiFetch, API_URL } from '@poly/ui';
+import { API_URL, createApiFetch } from "@poly/ui";
 
 // Create web-specific apiFetch with:
 // - access_token (not admin_access_token)
 // - error object with status and code
 // - FormData support enabled
+// - auto-redirect to /session-expired on unrecoverable 401
 export const apiFetch = createApiFetch({
-  tokenKey: 'access_token',
+  tokenKey: "access_token",
   supportsFormData: true,
+  errorTransformer: (error: unknown, status: number) => {
+    const errorRecord = (error as Record<string, unknown>) || {};
+    const nestedError = errorRecord.error as Record<string, unknown> | undefined;
+
+    if (status === 401 && typeof window !== "undefined") {
+      // Only redirect if we're not already on an auth page
+      const isAuthPage =
+        window.location.pathname.startsWith("/login") ||
+        window.location.pathname.startsWith("/signup") ||
+        window.location.pathname.startsWith("/session-expired") ||
+        window.location.pathname.startsWith("/auth/");
+      if (!isAuthPage) {
+        window.location.href = "/session-expired";
+      }
+    }
+
+    const source = nestedError ?? errorRecord;
+    return {
+      status,
+      code: source.code ?? null,
+      message: source.message ?? source.detail ?? "An error occurred",
+      details: source.details ?? null,
+      request_id: source.request_id ?? null,
+      documentation_url: source.documentation_url ?? null,
+    };
+  },
 });
 
 // The api object with all endpoint methods remains the same
@@ -129,6 +156,18 @@ export const api = {
         speaker: string | null;
       }>;
       engine: string;
+      translation?: {
+        target_language: string;
+        text: string;
+        segments: Array<{
+          start_ms: number;
+          end_ms: number;
+          text: string;
+          speaker?: string | null;
+        }> | null;
+        engine: string | null;
+        engine_version: string | null;
+      } | null;
     }>(`/jobs/${jobId}/result`);
   },
 

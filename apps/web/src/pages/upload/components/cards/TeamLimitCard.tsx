@@ -17,15 +17,15 @@ interface TeamLimitCardProps {
 }
 
 export function TeamLimitCard({ memberCount, memberLimit, plan, onUpgrade }: TeamLimitCardProps) {
-  const limitText = memberLimit === Infinity ? "∞" : memberLimit;
-  const isLimitReached = memberLimit !== "inf" && memberCount >= memberLimit;
+  const limitText = memberLimit === "inf" ? "∞" : memberLimit;
+  const isLimitReached = typeof memberLimit === "number" && memberCount >= memberLimit;
 
   if (!isLimitReached) {
     return null;
   }
 
   const percentage =
-    memberLimit !== "inf" && memberLimit > 0 ? (memberCount / memberLimit) * 100 : 100;
+    typeof memberLimit === "number" && memberLimit > 0 ? (memberCount / memberLimit) * 100 : 100;
 
   return (
     <Card className="precision-card border-destructive/60 bg-gradient-to-br from-destructive/10 to-destructive/5 animate-fade-in-up overflow-hidden">

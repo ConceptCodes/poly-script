@@ -67,7 +67,11 @@ export function SegmentList({ transcriptId, segments, onUpdate }: SegmentListPro
   return (
     <div className="space-y-4">
       {segments.map((segment) => (
-        <div key={segment.id} data-segment-id={segment.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+        <div
+          key={segment.id}
+          data-segment-id={segment.id}
+          className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+        >
           <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
             <Checkbox data-segment-checkbox />
             <Clock className="w-4 h-4" />

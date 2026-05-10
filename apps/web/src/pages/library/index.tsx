@@ -1,8 +1,8 @@
 import { Button } from "@poly/ui/button";
 import { Card, CardContent } from "@poly/ui/card";
 import { Checkbox } from "@poly/ui/checkbox";
-import { Input } from "@poly/ui/input";
 import { useToast } from "@poly/ui/hooks/use-toast";
+import { Input } from "@poly/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { Filter, Grid, List as ListIcon, Loader2, Search } from "lucide-react";
 import { useState } from "react";
@@ -184,18 +184,18 @@ export function LibraryPage() {
                 : "space-y-4"
             }
           >
-              {data?.transcripts.map((transcript) => (
-                <TranscriptCard
-                  key={transcript.id}
-                  transcript={transcript}
-                  viewMode={viewMode}
-                  isSelected={selectedIds.has(transcript.id)}
-                  onSelect={() => toggleSelect(transcript.id)}
-                  onView={() => navigate(`/transcripts/${transcript.id}`)}
-                  onExport={(format) => handleExport(transcript.id, format)}
-                  onDelete={() => setDeleteId(transcript.id)}
-                />
-              ))}
+            {data?.transcripts.map((transcript) => (
+              <TranscriptCard
+                key={transcript.id}
+                transcript={transcript}
+                viewMode={viewMode}
+                isSelected={selectedIds.has(transcript.id)}
+                onSelect={() => toggleSelect(transcript.id)}
+                onView={() => navigate(`/transcripts/${transcript.id}`)}
+                onExport={(format) => handleExport(transcript.id, format)}
+                onDelete={() => setDeleteId(transcript.id)}
+              />
+            ))}
           </div>
 
           {/* Pagination */}

@@ -7,7 +7,7 @@ from poly_redis.queue import TranscriptionQueue, TranscriptionWorkItem
 
 
 @pytest.fixture
-def redis_client(_monkeypatch):
+def redis_client(monkeypatch):
     """Mock Redis client for testing."""
     mock_redis = Mock()
     mock_redis.rpush = Mock(return_value=1)
