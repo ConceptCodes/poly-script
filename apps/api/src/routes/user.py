@@ -1,3 +1,4 @@
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -15,10 +16,19 @@ from src.schemas.settings import (
 )
 
 router = APIRouter(prefix="/v1/user", tags=["User"])
+users_router = APIRouter(prefix="/v1/users", tags=["User"])
 
 
 def get_settings_service(db: Session = Depends(get_db_session)) -> SettingsService:
     return SettingsService(db)
+
+
+def _require_self_account(user_id: uuid.UUID, current_user: dict) -> None:
+    if str(current_user["id"]) != str(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only manage your own account",
+        )
 
 
 @router.get("", response_model=UserSettingsResponse)
@@ -152,6 +162,66 @@ def delete_user_account(
     user = db.query(User).filter(User.id == current_user["id"]).first()
     if not user:
          raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    db.delete(user)
+    db.commit()
+
+
+@users_router.get("/{user_id}/settings", response_model=UserSettingsResponse)
+def get_user_settings_by_id(
+    user_id: uuid.UUID,
+    settings_service: SettingsService = Depends(get_settings_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Get a user's profile and settings via the canonical /v1/users route."""
+    _require_self_account(user_id, current_user)
+    try:
+        settings = settings_service.get_user_settings(user_id)
+        return UserSettingsResponse(**settings)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        )
+
+
+@users_router.patch("/{user_id}/settings", response_model=UserSettingsResponse)
+def update_user_settings_by_id(
+    user_id: uuid.UUID,
+    request: UpdateUserPreferencesRequest,
+    settings_service: SettingsService = Depends(get_settings_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Update user preferences via the canonical /v1/users route."""
+    _require_self_account(user_id, current_user)
+    try:
+        settings_service.update_user_preferences(
+            user_id=user_id,
+            host_language=request.host_language,
+            theme=request.theme,
+        )
+        settings = settings_service.get_user_settings(user_id)
+        return UserSettingsResponse(**settings)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
+
+
+@users_router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user_account_by_id(
+    user_id: uuid.UUID,
+    db: Session = Depends(get_db_session),
+    current_user: dict = Depends(get_current_user),
+):
+    """Delete the authenticated user's account via the canonical /v1/users route."""
+    _require_self_account(user_id, current_user)
+    from poly_db.models.users import User
+
+    user = db.query(User).filter(User.id == current_user["id"]).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     db.delete(user)
     db.commit()

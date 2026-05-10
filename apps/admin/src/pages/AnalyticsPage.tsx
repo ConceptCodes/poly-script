@@ -20,6 +20,11 @@ type UsageData = {
   teams: number;
   jobs: number;
   successful_jobs: number;
+  timeframe?: {
+    start: string;
+    end: string;
+    granularity: string;
+  };
 };
 
 type ErrorData = {
@@ -28,17 +33,42 @@ type ErrorData = {
   canceled_jobs: number;
 };
 
+type JobVolumeData = {
+  total: number;
+  by_status: Record<string, number>;
+  timeframe: {
+    start: string;
+    end: string;
+  };
+};
+
 type TimeRange = "7d" | "30d" | "90d" | "all";
 
 export function AnalyticsPage() {
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [errors, setErrors] = useState<ErrorData | null>(null);
+  const [jobVolume, setJobVolume] = useState<JobVolumeData | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
 
   useEffect(() => {
-    apiFetch<UsageData>("/admin/analytics/usage").then(setUsage);
-    apiFetch<ErrorData>("/admin/analytics/errors").then(setErrors);
-  }, []);
+    const now = new Date();
+    const query = new URLSearchParams();
+
+    if (timeRange !== "all") {
+      const days = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 90;
+      const start = new Date(now);
+      start.setDate(start.getDate() - days);
+      query.set("start_date", start.toISOString());
+      query.set("end_date", now.toISOString());
+      query.set("granularity", days <= 7 ? "day" : days <= 30 ? "week" : "month");
+    }
+
+    const suffix = query.toString() ? `?${query.toString()}` : "";
+
+    apiFetch<UsageData>(`/admin/analytics/usage${suffix}`).then(setUsage);
+    apiFetch<ErrorData>(`/admin/analytics/errors${suffix}`).then(setErrors);
+    apiFetch<JobVolumeData>(`/admin/analytics/jobs${suffix}`).then(setJobVolume);
+  }, [timeRange]);
 
   const timeRanges: { value: TimeRange; label: string }[] = [
     { value: "7d", label: "7 days" },
@@ -79,6 +109,9 @@ export function AnalyticsPage() {
       color: "text-[--muted-foreground]",
     },
   ];
+
+  const statusTotals = Object.entries(jobVolume?.by_status || {});
+  const maxJobCount = Math.max(...statusTotals.map(([, count]) => count), 1);
 
   return (
     <div className="space-y-6">
@@ -144,6 +177,41 @@ export function AnalyticsPage() {
                 </div>
               );
             })}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Job Volume
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Total jobs</span>
+              <span className="font-medium">{jobVolume?.total ?? "-"}</span>
+            </div>
+            <div className="space-y-3">
+              {statusTotals.length ? (
+                statusTotals.map(([status, count]) => (
+                  <div key={status} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground capitalize">{status}</span>
+                      <span className="font-medium">{count}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[--info]"
+                        style={{ width: `${(count / maxJobCount) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No job volume data for this range.</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 

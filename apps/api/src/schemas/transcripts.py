@@ -194,3 +194,17 @@ class TranscriptError(BaseModel):
     error: str
     code: str
     details: dict[str, Any] | None = None
+
+
+class BulkDeleteTranscriptsRequest(BaseModel):
+    """Request model for deleting multiple transcripts."""
+
+    transcript_ids: list[uuid.UUID] = Field(..., min_length=1)
+
+
+class BulkDeleteTranscriptsResponse(BaseModel):
+    """Response model for deleting multiple transcripts."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    deleted_count: int

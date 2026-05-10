@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select
@@ -63,7 +64,7 @@ class TranscriptService:
     ) -> dict[str, Any] | None:
         """Get transcript by ID."""
         transcript = self.repo.get(transcript_id)
-        if transcript is None:
+        if transcript is None or isinstance(transcript.deleted_at, datetime):
             return None
         return {
             "id": transcript.id,
@@ -82,7 +83,7 @@ class TranscriptService:
     ) -> dict[str, Any] | None:
         """Get transcript by job ID."""
         transcript = self.repo.get_by_job_id(job_id)
-        if transcript is None:
+        if transcript is None or isinstance(transcript.deleted_at, datetime):
             return None
         return {
             "id": transcript.id,
@@ -112,7 +113,7 @@ class TranscriptService:
         """
         transcript = self.repo.get(transcript_id)
 
-        if not transcript:
+        if not transcript or isinstance(transcript.deleted_at, datetime):
             return None
 
         # Verify team access via job
@@ -129,6 +130,32 @@ class TranscriptService:
             "created_at": transcript.created_at,
             "updated_at": transcript.updated_at,
         }
+
+    def delete_transcript(
+        self,
+        transcript_id: str,
+        user_id: str,
+    ) -> None:
+        """Soft delete a transcript."""
+        transcript = self.repo.get(transcript_id)
+        if not transcript:
+            raise ValueError(f"Transcript {transcript_id} not found")
+
+        previous_text = transcript.text
+        previous_segments = transcript.segments
+        transcript.deleted_at = datetime.now(UTC)
+        self.session.flush()
+
+        edit = TranscriptEdit(
+            transcript_id=transcript_id,
+            user_id=uuid.UUID(user_id) if user_id else None,
+            previous_text=previous_text,
+            new_text=previous_text,
+            previous_segments=previous_segments,
+            new_segments=previous_segments,
+        )
+        self.edit_repo.create(edit)
+        self.session.flush()
 
     def update_full_text(
         self,
@@ -342,6 +369,8 @@ class TranscriptService:
         team_id: str,
         language: str | None = None,
         search: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict[str, Any]], int]:
@@ -362,7 +391,10 @@ class TranscriptService:
         stmt = (
             select(Transcript)
             .join(TranscriptionJob, Transcript.job_id == TranscriptionJob.id)
-            .where(TranscriptionJob.team_id == uuid.UUID(team_id))
+            .where(
+                TranscriptionJob.team_id == uuid.UUID(team_id),
+                Transcript.deleted_at.is_(None),
+            )
         )
 
         if language:
@@ -370,6 +402,12 @@ class TranscriptService:
 
         if search:
             stmt = stmt.where(Transcript.text.ilike(f"%{search}%"))
+
+        if start_date:
+            stmt = stmt.where(Transcript.created_at >= start_date)
+
+        if end_date:
+            stmt = stmt.where(Transcript.created_at <= end_date)
 
         # Get total count
         count_stmt = select(Transcript.id).select_from(stmt.subquery())

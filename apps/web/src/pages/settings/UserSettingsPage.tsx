@@ -43,10 +43,12 @@ interface UserSettingsResponse {
 export function UserSettingsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAppStore();
+  const { user, logout } = useAppStore();
+  const userId = user?.id ?? null;
   const [isLoading, setIsLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [theme, setTheme] = useState<"light" | "dark" | "system">(
     (user?.theme as "light" | "dark" | "system") || "system",
   );
@@ -65,10 +67,24 @@ export function UserSettingsPage() {
     },
   });
 
+  const applyThemePreference = (nextTheme: "light" | "dark" | "system") => {
+    if (typeof document === "undefined") return;
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const resolvedTheme =
+      nextTheme === "system" ? (prefersDark ? "dark" : "light") : nextTheme;
+    document.documentElement.classList.toggle("dark", resolvedTheme === "dark");
+    document.documentElement.dataset.theme = resolvedTheme;
+  };
+
+  useEffect(() => {
+    applyThemePreference(theme);
+  }, [theme]);
+
   useEffect(() => {
     const loadSettings = async () => {
+      if (!userId) return;
       try {
-        const data = (await apiFetch("/v1/user")) as UserSettingsResponse | null;
+        const data = (await apiFetch(`/v1/users/${userId}/settings`)) as UserSettingsResponse | null;
         if (data) {
           setTheme((data.theme as "light" | "dark" | "system") || "system");
           form.setFieldValue("name", data.full_name || "");
@@ -86,17 +102,22 @@ export function UserSettingsPage() {
       }
     };
     loadSettings();
-  }, [form.setFieldValue]);
+  }, [form.setFieldValue, userId]);
 
   const handleUpdateEmail = async () => {
+    if (!userId) return;
     setIsLoading(true);
+    setErrorMessage("");
     try {
       await apiFetch("/v1/user/email", {
         method: "POST",
         body: { new_email: form.state.values.email },
       });
-      setSuccessMessage(t("userSettings.emailUpdateSuccess"));
+      setSuccessMessage(
+        `${t("userSettings.emailUpdateSuccess")} Please verify the new email address to finish the change.`,
+      );
     } catch (error: unknown) {
+      setErrorMessage(error instanceof Error ? error.message : "An error occurred");
       console.error("Failed to update email:", error);
     } finally {
       setIsLoading(false);
@@ -104,6 +125,20 @@ export function UserSettingsPage() {
   };
 
   const handleUpdatePassword = async () => {
+    setErrorMessage("");
+    if (!form.state.values.currentPassword) {
+      setErrorMessage("Current password is required.");
+      return;
+    }
+    if (form.state.values.newPassword.length < 8) {
+      setErrorMessage("New password must be at least 8 characters.");
+      return;
+    }
+    if (form.state.values.newPassword !== form.state.values.confirmPassword) {
+      setErrorMessage("Passwords do not match.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       await apiFetch("/v1/user/password", {
@@ -115,6 +150,7 @@ export function UserSettingsPage() {
       });
       setSuccessMessage(t("userSettings.passwordUpdateSuccess"));
     } catch (error: unknown) {
+      setErrorMessage(error instanceof Error ? error.message : "An error occurred");
       console.error("Failed to update password:", error);
     } finally {
       setIsLoading(false);
@@ -122,14 +158,17 @@ export function UserSettingsPage() {
   };
 
   const handleUpdatePreferences = async () => {
+    if (!userId) return;
     setIsLoading(true);
+    setErrorMessage("");
     try {
-      await apiFetch("/v1/user/preferences", {
+      await apiFetch(`/v1/users/${userId}/settings`, {
         method: "PATCH",
         body: { host_language: form.state.values.language, theme },
       });
       setSuccessMessage(t("userSettings.preferencesUpdateSuccess"));
     } catch (error: unknown) {
+      setErrorMessage(error instanceof Error ? error.message : "An error occurred");
       console.error("Failed to update preferences:", error);
     } finally {
       setIsLoading(false);
@@ -137,7 +176,9 @@ export function UserSettingsPage() {
   };
 
   const handleUpdateNotifications = async () => {
+    if (!userId) return;
     setIsLoading(true);
+    setErrorMessage("");
     try {
       await apiFetch("/v1/user/notifications", {
         method: "PATCH",
@@ -151,6 +192,7 @@ export function UserSettingsPage() {
       });
       setSuccessMessage(t("userSettings.notificationsUpdateSuccess"));
     } catch (error: unknown) {
+      setErrorMessage(error instanceof Error ? error.message : "An error occurred");
       console.error("Failed to update notifications:", error);
     } finally {
       setIsLoading(false);
@@ -158,13 +200,18 @@ export function UserSettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
+    if (!userId) return;
     setIsLoading(true);
     try {
-      await apiFetch("/v1/user", {
+      await apiFetch(`/v1/users/${userId}`, {
         method: "DELETE",
       });
-      navigate("/");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      logout();
+      navigate("/login", { replace: true });
     } catch (error: unknown) {
+      setErrorMessage(error instanceof Error ? error.message : "An error occurred");
       console.error("Failed to delete account:", error);
     } finally {
       setIsLoading(false);
@@ -184,6 +231,12 @@ export function UserSettingsPage() {
     <div className="min-h-screen bg-background py-8">
       <div className="container max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">{t("userSettings.title")}</h1>
+
+        {errorMessage && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
 
         {successMessage && (
           <Alert variant="default" className="mb-6">
@@ -247,54 +300,83 @@ export function UserSettingsPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <form.Field name="currentPassword">
-              {(field) => (
-                <div>
-                  <Label htmlFor={field.name}>{t("userSettings.currentPassword.label")}</Label>
-                  <Input
-                    type="password"
-                    id={field.name}
-                    placeholder={t("userSettings.currentPassword.placeholder")}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    autoComplete="current-password"
-                  />
-                </div>
-              )}
+              {(field) => {
+                const errors = field.state.meta.errors;
+                return (
+                  <div>
+                    <Label htmlFor={field.name}>{t("userSettings.currentPassword.label")}</Label>
+                    <Input
+                      type="password"
+                      id={field.name}
+                      placeholder={t("userSettings.currentPassword.placeholder")}
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      autoComplete="current-password"
+                    />
+                    {errors.length > 0 && (
+                      <p className="text-sm text-destructive">{errors[0] as string}</p>
+                    )}
+                  </div>
+                );
+              }}
+              validators={{
+                onChange: ({ value }) =>
+                  value.trim().length > 0 ? undefined : "Current password is required.",
+              }}
             </form.Field>
 
             <form.Field name="newPassword">
-              {(field) => (
-                <div>
-                  <Label htmlFor={field.name}>{t("userSettings.newPassword.label")}</Label>
-                  <Input
-                    type="password"
-                    id={field.name}
-                    placeholder={t("userSettings.newPassword.placeholder")}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    autoComplete="new-password"
-                  />
-                </div>
-              )}
+              {(field) => {
+                const errors = field.state.meta.errors;
+                return (
+                  <div>
+                    <Label htmlFor={field.name}>{t("userSettings.newPassword.label")}</Label>
+                    <Input
+                      type="password"
+                      id={field.name}
+                      placeholder={t("userSettings.newPassword.placeholder")}
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                    {errors.length > 0 && (
+                      <p className="text-sm text-destructive">{errors[0] as string}</p>
+                    )}
+                  </div>
+                );
+              }}
+              validators={{
+                onChange: ({ value }) =>
+                  value.length >= 8 ? undefined : "New password must be at least 8 characters.",
+              }}
             </form.Field>
 
             <form.Field name="confirmPassword">
-              {(field) => (
-                <div>
-                  <Label htmlFor={field.name}>{t("userSettings.confirmPassword.label")}</Label>
-                  <Input
-                    type="password"
-                    id={field.name}
-                    placeholder={t("userSettings.confirmPassword.placeholder")}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    autoComplete="new-password"
-                  />
-                  {field.state.meta.errors.length > 0 && (
-                    <p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-                  )}
-                </div>
-              )}
+              {(field) => {
+                const errors = field.state.meta.errors;
+                return (
+                  <div>
+                    <Label htmlFor={field.name}>{t("userSettings.confirmPassword.label")}</Label>
+                    <Input
+                      type="password"
+                      id={field.name}
+                      placeholder={t("userSettings.confirmPassword.placeholder")}
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                    {errors.length > 0 && (
+                      <p className="text-sm text-destructive">{errors[0] as string}</p>
+                    )}
+                  </div>
+                );
+              }}
+              validators={{
+                onChange: ({ value }) =>
+                  value === form.state.values.newPassword
+                    ? undefined
+                    : "Passwords do not match.",
+              }}
             </form.Field>
 
             <Button onClick={handleUpdatePassword} disabled={isLoading}>
@@ -332,7 +414,11 @@ export function UserSettingsPage() {
               <Label htmlFor="theme">{t("userSettings.theme.label")}</Label>
               <Select
                 value={theme}
-                onValueChange={(v) => setTheme(v as "light" | "dark" | "system")}
+                onValueChange={(v) => {
+                  const nextTheme = v as "light" | "dark" | "system";
+                  setTheme(nextTheme);
+                  applyThemePreference(nextTheme);
+                }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -345,7 +431,7 @@ export function UserSettingsPage() {
               </Select>
             </div>
 
-            <Button onClick={handleUpdatePreferences} disabled={isLoading}>
+            <Button onClick={handleUpdatePreferences} disabled={isLoading || !userId}>
               {t("userSettings.preferences.updateButton")}
             </Button>
           </CardContent>
@@ -406,7 +492,7 @@ export function UserSettingsPage() {
               />
             </div>
 
-            <Button onClick={handleUpdateNotifications} disabled={isLoading}>
+            <Button onClick={handleUpdateNotifications} disabled={isLoading || !userId}>
               {t("userSettings.notifications.updateButton")}
             </Button>
           </CardContent>
@@ -420,7 +506,11 @@ export function UserSettingsPage() {
             <p className="text-sm text-muted-foreground mb-4">
               {t("userSettings.dangerZone.warning")}
             </p>
-            <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={!userId}
+            >
               {t("userSettings.dangerZone.deleteAccount")}
             </Button>
           </CardContent>

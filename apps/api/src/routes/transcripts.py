@@ -1,6 +1,7 @@
 """Transcript API routes."""
 
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import PlainTextResponse
@@ -13,6 +14,8 @@ from poly_db.database import get_db_session
 from poly_db.repositories import AudioAssetRepository, TranscriptRepository
 from src.dependencies import get_current_team_id, get_current_user_id
 from src.schemas.transcripts import (
+    BulkDeleteTranscriptsRequest,
+    BulkDeleteTranscriptsResponse,
     EditEntry,
     EditHistoryResponse,
     MergeSegmentsRequest,
@@ -44,7 +47,7 @@ def get_transcript_with_team_check(
     repo = TranscriptRepository(session)
     transcript = repo.get(transcript_id)
 
-    if not transcript:
+    if not transcript or isinstance(transcript.deleted_at, datetime):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Transcript not found",
@@ -66,18 +69,39 @@ async def list_transcripts(
     page_size: int = Query(20, ge=1, le=100),
     language: str | None = Query(None),
     search: str | None = Query(None),
+    start_date: str | None = Query(None),
+    end_date: str | None = Query(None),
     team_id: uuid.UUID = Depends(get_current_team_id),
 ) -> TranscriptListResponse:
     """List all transcripts for the current team."""
     with get_db_session() as session:
+        parsed_start = None
+        parsed_end = None
+        if start_date:
+            try:
+                parsed_start = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+            except ValueError:
+                parsed_start = None
+        if end_date:
+            try:
+                parsed_end = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+            except ValueError:
+                parsed_end = None
+
         service = TranscriptService(session)
-        transcripts, total = service.list_transcripts(
-            team_id=str(team_id),
-            language=language,
-            search=search,
-            page=page,
-            page_size=page_size,
-        )
+        list_args = {
+            "team_id": str(team_id),
+            "language": language,
+            "search": search,
+            "page": page,
+            "page_size": page_size,
+        }
+        if parsed_start is not None:
+            list_args["start_date"] = parsed_start
+        if parsed_end is not None:
+            list_args["end_date"] = parsed_end
+
+        transcripts, total = service.list_transcripts(**list_args)
 
         audio_repo = AudioAssetRepository(session)
 
@@ -148,6 +172,11 @@ async def update_transcript_full_text(
     """Update the full text of a transcript."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
+        if transcript is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Transcript not found",
+            )
 
         service = TranscriptService(session)
         updated = service.update_full_text(
@@ -189,6 +218,11 @@ async def get_transcript_segments(
     """Get segments of a specific transcript."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
+        if transcript is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Transcript not found",
+            )
 
         segments = []
         for idx, seg in enumerate(transcript.segments or []):
@@ -216,6 +250,11 @@ async def update_transcript_segment(
     """Update a single segment of a transcript."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
+        if transcript is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Transcript not found",
+            )
 
         service = TranscriptService(session)
         updated = service.update_segment(
@@ -251,6 +290,11 @@ async def get_transcript_history(
     with get_db_session() as session:
         # First verify access
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
+        if transcript is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Transcript not found",
+            )
 
         service = TranscriptService(session)
         edits = service.get_edit_history(str(team_id), str(transcript_id))
@@ -288,6 +332,11 @@ async def revert_transcript(
         )
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
+        if transcript is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Transcript not found",
+            )
 
         service = TranscriptService(session)
         try:
@@ -304,6 +353,60 @@ async def revert_transcript(
         )
 
 
+@router.delete("/{transcript_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_transcript(
+    transcript_id: uuid.UUID,
+    team_id: uuid.UUID = Depends(get_current_team_id),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Soft delete a transcript."""
+    with get_db_session() as session:
+        transcript = get_transcript_with_team_check(transcript_id, team_id, session)
+        if transcript is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Transcript not found",
+            )
+
+        service = TranscriptService(session)
+        try:
+            service.delete_transcript(str(transcript_id), user_id)
+            session.commit()
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
+
+
+@router.post("/bulk-delete", response_model=BulkDeleteTranscriptsResponse)
+async def bulk_delete_transcripts(
+    request: BulkDeleteTranscriptsRequest,
+    team_id: uuid.UUID = Depends(get_current_team_id),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Soft delete multiple transcripts."""
+    deleted = 0
+    with get_db_session() as session:
+        service = TranscriptService(session)
+        for transcript_id in request.transcript_ids:
+            try:
+                transcript = get_transcript_with_team_check(transcript_id, team_id, session)
+                if transcript is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Transcript not found",
+                    )
+                service.delete_transcript(str(transcript_id), user_id)
+                deleted += 1
+            except HTTPException:
+                continue
+
+        session.commit()
+
+    return BulkDeleteTranscriptsResponse(deleted_count=deleted)
+
+
 
 @router.post("/{transcript_id}/segments/{segment_id}/split", response_model=SplitSegmentResponse)
 async def split_segment(
@@ -316,6 +419,11 @@ async def split_segment(
     """Split a segment at a specified timestamp."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
+        if transcript is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Transcript not found",
+            )
 
         service = TranscriptService(session)
         try:
@@ -347,6 +455,11 @@ async def merge_segments(
     """Merge consecutive segments into one."""
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
+        if transcript is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Transcript not found",
+            )
 
         service = TranscriptService(session)
         try:
@@ -428,6 +541,11 @@ async def export_transcript(
     """
     with get_db_session() as session:
         transcript = get_transcript_with_team_check(transcript_id, team_id, session)
+        if transcript is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Transcript not found",
+            )
 
         # For async export with caching
         if async_export:

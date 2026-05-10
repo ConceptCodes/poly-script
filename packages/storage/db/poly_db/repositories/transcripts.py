@@ -16,7 +16,11 @@ class TranscriptRepository(BaseRepository[Transcript]):
         stmt = (
             select(Transcript)
             .join(TranscriptionJob, Transcript.job_id == TranscriptionJob.id)
-            .where(Transcript.job_id == job_id, TranscriptionJob.team_id == team_id)
+            .where(
+                Transcript.job_id == job_id,
+                TranscriptionJob.team_id == team_id,
+                Transcript.deleted_at.is_(None),
+            )
         )
         return self.session.execute(stmt).scalar_one_or_none()
 
@@ -24,7 +28,11 @@ class TranscriptRepository(BaseRepository[Transcript]):
         stmt = (
             select(Transcript)
             .join(TranscriptionJob, Transcript.job_id == TranscriptionJob.id)
-            .where(Transcript.language == language, TranscriptionJob.team_id == team_id)
+            .where(
+                Transcript.language == language,
+                TranscriptionJob.team_id == team_id,
+                Transcript.deleted_at.is_(None),
+            )
         )
         return self.session.execute(stmt).scalars().all()
 
@@ -32,7 +40,7 @@ class TranscriptRepository(BaseRepository[Transcript]):
         stmt = (
             select(Transcript)
             .join(TranscriptionJob, Transcript.job_id == TranscriptionJob.id)
-            .where(TranscriptionJob.team_id == team_id)
+            .where(TranscriptionJob.team_id == team_id, Transcript.deleted_at.is_(None))
             .order_by(Transcript.created_at.desc())
             .limit(limit)
         )

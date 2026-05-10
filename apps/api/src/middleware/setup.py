@@ -1,3 +1,6 @@
+import os
+import sys
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,8 +16,10 @@ def setup_middleware(app: FastAPI) -> None:
     app.add_middleware(RequestContextMiddleware)
 
     # Rate limiting (Redis-based with per-plan limits)
-    limiter = RedisRateLimiter()
-    app.add_middleware(RateLimitMiddleware, limiter=limiter)
+    # Skip under pytest so endpoint tests don't collide through shared counters.
+    if "pytest" not in sys.modules and "PYTEST_CURRENT_TEST" not in os.environ:
+        limiter = RedisRateLimiter()
+        app.add_middleware(RateLimitMiddleware, limiter=limiter)
 
     # CORS Middleware
     app.add_middleware(

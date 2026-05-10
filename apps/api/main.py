@@ -26,7 +26,7 @@ from src.routes.onboarding import onboarding_router
 from src.routes.settings import router as settings_router
 from src.routes.teams import teams_router
 from src.routes.transcripts import transcripts_router
-from src.routes.user import router as user_router
+from src.routes.user import router as user_router, users_router
 from src.routes.webhooks import webhooks_router
 from poly_core.logging_context import set_request_context
 
@@ -218,6 +218,7 @@ def create_app() -> FastAPI:
     app.include_router(dashboard_router)
     app.include_router(settings_router)
     app.include_router(user_router)
+    app.include_router(users_router)
     logger.info("Routes included.")
 
     @app.get("/v1/debug/i18n")

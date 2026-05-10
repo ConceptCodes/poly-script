@@ -1,7 +1,7 @@
+import { ConfirmDialog, useToast } from "@poly/ui";
 import { Button } from "@poly/ui/button";
 import { Card, CardContent } from "@poly/ui/card";
 import { Checkbox } from "@poly/ui/checkbox";
-import { useToast } from "@poly/ui/hooks/use-toast";
 import { Input } from "@poly/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { Filter, Grid, List as ListIcon, Loader2, Search } from "lucide-react";
@@ -21,14 +21,17 @@ export function LibraryPage() {
   const [search, setSearch] = useState("");
   const [language, setLanguage] = useState<string | undefined>();
   const [sort, setSort] = useState("created_at:desc");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkExport, setShowBulkExport] = useState(false);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["transcripts", page, search, language],
+    queryKey: ["transcripts", page, search, language, sort, startDate, endDate],
     queryFn: () =>
       api.getTranscripts({
         page,
@@ -36,8 +39,10 @@ export function LibraryPage() {
         search: search || undefined,
         language: language || undefined,
         sort: sort,
+        start_date: startDate || undefined,
+        end_date: endDate || undefined,
       }),
-  });
+    });
 
   const toggleSelect = (id: string) => {
     const newSelected = new Set(selectedIds);
@@ -78,10 +83,40 @@ export function LibraryPage() {
   };
 
   const handleDelete = async (id: string) => {
-    // Would need to implement delete API
-    console.log("Delete transcript:", id);
-    setDeleteId(null);
-    refetch();
+    try {
+      await api.deleteTranscript(id);
+      toast({
+        title: "Transcript deleted",
+        description: "The transcript was removed from your library.",
+      });
+      setDeleteId(null);
+      await refetch();
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: error instanceof Error ? error.message : "Unable to delete transcript",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await api.bulkDeleteTranscripts(Array.from(selectedIds));
+      toast({
+        title: "Transcripts deleted",
+        description: `Deleted ${selectedIds.size} transcript${selectedIds.size === 1 ? "" : "s"}.`,
+      });
+      setSelectedIds(new Set());
+      setShowBulkDelete(false);
+      await refetch();
+    } catch (error) {
+      toast({
+        title: "Bulk delete failed",
+        description: error instanceof Error ? error.message : "Unable to delete transcripts",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -97,6 +132,9 @@ export function LibraryPage() {
             <span className="text-sm text-muted-foreground">{selectedIds.size} selected</span>
             <Button variant="outline" size="sm" onClick={() => setShowBulkExport(true)}>
               Export Selected
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => setShowBulkDelete(true)}>
+              Delete Selected
             </Button>
           </div>
         )}
@@ -117,6 +155,21 @@ export function LibraryPage() {
         <LanguageFilter value={language} onChange={setLanguage} />
 
         <SortFilter value={sort} onChange={setSort} />
+
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(event) => setStartDate(event.target.value)}
+            aria-label="Start date"
+          />
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
+            aria-label="End date"
+          />
+        </div>
 
         <div className="flex items-center gap-1 border rounded-lg p-1" data-testid="view-toggle">
           <Button
@@ -232,6 +285,16 @@ export function LibraryPage() {
           onClose={() => setShowBulkExport(false)}
         />
       )}
+      <ConfirmDialog
+        open={showBulkDelete}
+        onOpenChange={setShowBulkDelete}
+        title="Delete Selected Transcripts"
+        description={`This will permanently delete ${selectedIds.size} selected transcript${selectedIds.size === 1 ? "" : "s"}.`}
+        content="This action cannot be undone."
+        confirmText="Delete Selected"
+        onConfirm={handleBulkDelete}
+        variant="destructive"
+      />
       {deleteId && (
         <DeleteConfirmModal
           onClose={() => setDeleteId(null)}

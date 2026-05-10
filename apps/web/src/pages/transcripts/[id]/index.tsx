@@ -1,4 +1,4 @@
-import { Button } from "@poly/ui/button";
+import { Button, useToast } from "@poly/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@poly/ui/tabs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -30,6 +30,7 @@ export function TranscriptEditorPage() {
   const hasTranscriptId = Boolean(id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState("full-text");
   const [showExportModal, setShowExportModal] = useState(false);
@@ -79,6 +80,17 @@ export function TranscriptEditorPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transcript", transcriptId] });
       setShowRevertModal(false);
+      toast({
+        title: "Transcript reverted",
+        description: "The transcript has been restored to the original version.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Revert failed",
+        description: error instanceof Error ? error.message : "Unable to revert transcript.",
+        variant: "destructive",
+      });
     },
   });
 

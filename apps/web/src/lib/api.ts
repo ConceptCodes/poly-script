@@ -204,6 +204,8 @@ export const api = {
     language?: string;
     search?: string;
     sort?: string;
+    start_date?: string;
+    end_date?: string;
   }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
@@ -211,6 +213,8 @@ export const api = {
     if (params?.language) queryParams.append("language", params.language);
     if (params?.search) queryParams.append("search", params.search);
     if (params?.sort) queryParams.append("sort", params.sort);
+    if (params?.start_date) queryParams.append("start_date", params.start_date);
+    if (params?.end_date) queryParams.append("end_date", params.end_date);
 
     return apiFetch<{
       transcripts: Array<{
@@ -226,6 +230,19 @@ export const api = {
       page: number;
       page_size: number;
     }>(`/transcripts?${queryParams.toString()}`);
+  },
+
+  async deleteTranscript(transcriptId: string) {
+    return apiFetch<void>(`/transcripts/${transcriptId}`, {
+      method: "DELETE",
+    });
+  },
+
+  async bulkDeleteTranscripts(transcriptIds: string[]) {
+    return apiFetch<{ deleted_count: number }>("/transcripts/bulk-delete", {
+      method: "POST",
+      body: { transcript_ids: transcriptIds },
+    });
   },
 
   async getTranscript(transcriptId: string) {

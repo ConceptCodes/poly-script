@@ -1,6 +1,7 @@
 import { Badge } from "@poly/ui/badge";
 import { Button } from "@poly/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@poly/ui/card";
+import { Input } from "@poly/ui/input";
 import {
   AlertCircle,
   ArrowLeft,
@@ -32,12 +33,28 @@ export function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [user, setUser] = useState<UserDetail | null>(null);
+  const [impersonationToken, setImpersonationToken] = useState("");
+  const [impersonationLoading, setImpersonationLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
       apiFetch<UserDetail>(`/admin/users/${id}`).then(setUser);
     }
   }, [id]);
+
+  const handleImpersonate = async () => {
+    if (!id) return;
+    setImpersonationLoading(true);
+    try {
+      const data = await apiFetch<{ impersonation_token: string }>(`/admin/impersonation`, {
+        method: "POST",
+        body: { user_id: id },
+      });
+      setImpersonationToken(data.impersonation_token);
+    } finally {
+      setImpersonationLoading(false);
+    }
+  };
 
   if (!user) {
     return <div className="p-8">Loading…</div>;
@@ -144,6 +161,20 @@ export function UserDetailPage() {
                   "No"
                 )}
               </Badge>
+            </div>
+            <div className="pt-4">
+              <Button onClick={handleImpersonate} disabled={impersonationLoading}>
+                {impersonationLoading ? "Creating token…" : "Impersonate User"}
+              </Button>
+              {impersonationToken && (
+                <div className="mt-4 space-y-2">
+                  <div className="text-sm text-muted-foreground">Impersonation token</div>
+                  <Input readOnly value={impersonationToken} />
+                  <p className="text-xs text-muted-foreground">
+                    Use this token to sign into the target user session.
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

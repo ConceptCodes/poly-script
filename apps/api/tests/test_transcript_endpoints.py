@@ -195,7 +195,7 @@ class TestGetTranscriptEndpoint:
             response = client.get(f"/v1/transcripts/{sample_transcript_id}")
 
             assert response.status_code == 404
-            assert "not found" in response.json()["detail"]
+            assert "not found" in response.json()["error"]["message"].lower()
 
     def test_get_transcript_forbidden(
         self, mock_current_team_id, sample_transcript_id, sample_transcript
@@ -209,7 +209,7 @@ class TestGetTranscriptEndpoint:
             response = client.get(f"/v1/transcripts/{sample_transcript_id}")
 
             assert response.status_code == 403
-            assert "don't have access" in response.json()["detail"]
+            assert "don't have access" in response.json()["error"]["message"].lower()
 
 
 class TestUpdateTranscriptEndpoint:
@@ -343,7 +343,7 @@ class TestRevertTranscriptEndpoint:
 
                 response = client.post(
                     f"/v1/transcripts/{sample_transcript_id}/revert",
-                    json={"text": "Revert confirmation"},
+                    json={"confirm": True},
                 )
 
                 assert response.status_code == 200
@@ -362,11 +362,11 @@ class TestRevertTranscriptEndpoint:
 
                 response = client.post(
                     f"/v1/transcripts/{sample_transcript_id}/revert",
-                    json={"text": "Revert confirmation"},
+                    json={"confirm": True},
                 )
 
                 assert response.status_code == 400
-                assert "No edits" in response.json()["detail"]
+                assert "No edits" in response.json()["error"]["message"]
 
 
 class TestExportTranscriptEndpoint:
