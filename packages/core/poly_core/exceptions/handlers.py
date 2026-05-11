@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from poly_core.constants import I18nKeys
+from poly_core.logging_context import get_request_id
 from poly_core.services.i18n import I18nService
 
 from .base import APIException, ErrorCode, ErrorDetail, ErrorResponse
@@ -57,6 +58,14 @@ def get_locale_from_request(request: Request) -> str:
         locale = "en"
 
     return locale
+
+
+def get_request_id_from_request(request: Request, fallback: str | None = None) -> str | None:
+    """Return the request ID from headers, exception metadata, or logging context."""
+    context_request_id = get_request_id()
+    if context_request_id == "-":
+        context_request_id = None
+    return request.headers.get("X-Request-ID") or fallback or context_request_id
 
 
 def localize_error_message(
@@ -122,7 +131,7 @@ async def api_exception_handler(request: Request, exc: APIException) -> JSONResp
     )
 
     # Get request_id from request headers or context
-    request_id = request.headers.get("X-Request-ID") or exc.request_id
+    request_id = get_request_id_from_request(request, exc.request_id)
 
     # Create error response
     error_response = ErrorResponse(
@@ -230,7 +239,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
     validation_error = ValidationError(
         message="Validation failed",
         details=error_details,
-        request_id=request.headers.get("X-Request-ID"),
+        request_id=get_request_id_from_request(request),
     )
 
     # Use the API exception handler
@@ -247,7 +256,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     logger.error(
         f"Unhandled exception: {exc}",
         extra={
-            "request_id": request.headers.get("X-Request-ID"),
+            "request_id": get_request_id_from_request(request),
             "path": request.url.path,
             "method": request.method,
             "traceback": traceback.format_exc(),
@@ -258,7 +267,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     # Create internal server error
     internal_error = InternalServerError(
         message="An unexpected error occurred",
-        request_id=request.headers.get("X-Request-ID"),
+        request_id=get_request_id_from_request(request),
     )
 
     # Use the API exception handler

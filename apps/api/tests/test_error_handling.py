@@ -35,8 +35,8 @@ class TestErrorResponseFormat:
 
     def test_error_response_has_nested_error_object(self, client):
         """Verify error responses have {error: {...}} structure."""
-        # Trigger a 404 error
-        response = client.get("/v1/jobs/00000000-0000-0000-0000-000000000000")
+        # Trigger a 404 error without hitting a protected endpoint first.
+        response = client.get("/v1/not-a-real-route")
 
         assert response.status_code == 404
         data = response.json()
@@ -64,7 +64,7 @@ class TestErrorResponseFormat:
 
     def test_error_response_includes_documentation_url(self, client):
         """Verify error responses include documentation_url."""
-        response = client.get("/v1/jobs/00000000-0000-0000-0000-000000000000")
+        response = client.get("/v1/not-a-real-route")
 
         data = response.json()
         error = data.get("error", {})
@@ -175,7 +175,7 @@ class TestHTTPStatusCodes:
 
     def test_not_found_errors_return_404(self, client):
         """Verify not found errors return 404."""
-        response = client.get("/v1/jobs/00000000-0000-0000-0000-000000000000")
+        response = client.get("/v1/not-a-real-route")
 
         assert response.status_code == 404
 

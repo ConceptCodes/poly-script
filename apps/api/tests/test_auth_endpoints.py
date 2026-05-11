@@ -1,10 +1,11 @@
 import uuid
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from poly_db.database import get_db
 from src.dependencies import get_async_auth_service, get_async_db, get_current_user
 from src.routes.auth import get_oauth_service
 
@@ -134,6 +135,7 @@ class TestAuthEndpoints:
     @pytest.mark.asyncio
     async def test_me_authenticated(self, client, mock_db):
         app.dependency_overrides[get_async_db] = lambda: mock_db
+        app.dependency_overrides[get_db] = lambda: Mock()
         mock_user = {
             "id": uuid.uuid4(),
             "email": "test@example.com",
@@ -145,15 +147,18 @@ class TestAuthEndpoints:
         }
         app.dependency_overrides[get_current_user] = lambda: mock_user
 
-        response = client.get(
-            "/v1/auth/me",
-            headers={"Authorization": "Bearer valid-token"},
-        )
+        with patch("src.routes.auth.TeamMemberRepository") as member_repo_class:
+            member_repo_class.return_value.list_by_user_id.return_value = []
+            response = client.get(
+                "/v1/auth/me",
+                headers={"Authorization": "Bearer valid-token"},
+            )
 
         assert response.status_code == 200
         data = response.json()
-        assert data["email"] == "test@example.com"
-        assert data["is_active"] is True
+        assert data["user"]["email"] == "test@example.com"
+        assert data["user"]["is_active"] is True
+        assert data["team"] is None
 
     def test_me_unauthenticated(self, client):
         response = client.get("/v1/auth/me")

@@ -302,6 +302,7 @@ async def get_job_detail(
             started_at=getattr(job, "started_at", None),
             finished_at=getattr(job, "finished_at", None),
             audio_duration_seconds=audio.duration_seconds if audio else None,
+            target_language=(job.options or {}).get("target_language"),
         )
 
 
