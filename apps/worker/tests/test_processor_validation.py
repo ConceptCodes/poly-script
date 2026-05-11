@@ -6,8 +6,8 @@ import wave
 
 import pytest
 
-from src.config import Settings
-from src.processor import AudioDownloadError, AudioValidationError, JobProcessor
+from apps.worker.src.config import Settings
+from apps.worker.src.processor import AudioDownloadError, AudioValidationError, JobProcessor
 
 
 class FakeResponse:

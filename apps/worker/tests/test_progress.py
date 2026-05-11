@@ -3,7 +3,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from src.progress import ProgressPublisher
+from apps.worker.src.progress import ProgressPublisher
 
 
 @pytest.fixture
@@ -15,7 +15,7 @@ def mock_redis():
 @pytest.fixture
 def publisher(mock_redis):
     """Create a ProgressPublisher instance."""
-    with patch("src.progress.get_redis_client", return_value=mock_redis):
+    with patch("apps.worker.src.progress.get_redis_client", return_value=mock_redis):
         return ProgressPublisher()
 
 

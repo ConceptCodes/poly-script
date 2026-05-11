@@ -4,7 +4,7 @@ import time
 from unittest.mock import Mock, patch
 
 import pytest
-from src.consumer import TranscriptionConsumer
+from apps.worker.src.consumer import TranscriptionConsumer
 
 
 @pytest.fixture
@@ -67,8 +67,8 @@ class TestTranscriptionConsumer:
 
         assert not consumer.is_running
 
-    @patch("src.consumer.get_db_session")
-    @patch("src.consumer.JobProcessor")
+    @patch("apps.worker.src.consumer.get_db_session")
+    @patch("apps.worker.src.consumer.JobProcessor")
     def test_process_work_item_success(self, mock_processor_class, mock_db_session, consumer, mock_queue):
         """Test processing a work item successfully."""
         work_item = {
