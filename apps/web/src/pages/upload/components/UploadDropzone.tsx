@@ -1,4 +1,3 @@
-import { Button } from "@poly/ui/button";
 import { Card, CardContent } from "@poly/ui/card";
 import { AudioWaveform, CheckCircle2, FileCode, FileMusic, Upload } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -162,14 +161,10 @@ export function UploadDropzone({ onFileSelected, disabled = false }: UploadDropz
                   <p className="text-sm text-muted-foreground">Supports MP3, WAV, M4A, OGG, WEBM</p>
                   <p className="text-xs text-muted-foreground/70">Maximum file size: 100MB</p>
                 </div>
-                <Button
-                  variant="default"
-                  className="precision-gradient shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 smooth-transition"
-                  disabled={disabled}
-                >
+                <span className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-primary-foreground precision-gradient shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 smooth-transition">
                   <Upload className="h-4 w-4 mr-2" />
                   Choose File
-                </Button>
+                </span>
               </div>
             )}
           </div>

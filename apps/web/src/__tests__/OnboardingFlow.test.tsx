@@ -7,6 +7,7 @@ import { LanguageStep } from "../pages/onboarding/LanguageStep";
 import { OnboardingPage } from "../pages/onboarding/OnboardingPage";
 import { PlanSelectionStep } from "../pages/onboarding/PlanSelectionStep";
 import { TeamNameStep } from "../pages/onboarding/TeamNameStep";
+import type { OnboardingData } from "../pages/onboarding/types";
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
@@ -29,6 +30,29 @@ const renderWithRouter = (component: React.ReactElement) => {
   return render(<BrowserRouter>{component}</BrowserRouter>);
 };
 
+const defaultOnboardingData: OnboardingData = {
+  language: "en",
+  teamName: "",
+  plan: "FREE",
+  members: [],
+};
+
+const StatefulStep = ({
+  children,
+}: {
+  children: (
+    data: OnboardingData,
+    updateData: <K extends keyof OnboardingData>(key: K, value: OnboardingData[K]) => void,
+  ) => React.ReactElement;
+}) => {
+  const [data, setData] = useState(defaultOnboardingData);
+  const updateData = <K extends keyof OnboardingData>(key: K, value: OnboardingData[K]) => {
+    setData((previous) => ({ ...previous, [key]: value }));
+  };
+
+  return children(data, updateData);
+};
+
 describe("Onboarding Flow", () => {
   it("renders onboarding page", () => {
     renderWithRouter(<OnboardingPage />);
@@ -37,7 +61,13 @@ describe("Onboarding Flow", () => {
 
   describe("LanguageStep", () => {
     it("renders language options", () => {
-      renderWithRouter(<LanguageStep />);
+      renderWithRouter(
+        <StatefulStep>
+          {(data, updateData) => (
+            <LanguageStep data={data} updateData={updateData} onNext={() => {}} />
+          )}
+        </StatefulStep>,
+      );
       expect(screen.getByText(/english/i)).toBeInTheDocument();
       expect(screen.getByText(/deutsch/i)).toBeInTheDocument();
       expect(screen.getByText(/español/i)).toBeInTheDocument();
@@ -47,7 +77,13 @@ describe("Onboarding Flow", () => {
 
     it("allows selecting a language", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<LanguageStep />);
+      renderWithRouter(
+        <StatefulStep>
+          {(data, updateData) => (
+            <LanguageStep data={data} updateData={updateData} onNext={() => {}} />
+          )}
+        </StatefulStep>,
+      );
 
       const germanOption = screen.getByText(/deutsch/i);
       await user.click(germanOption);
@@ -59,13 +95,25 @@ describe("Onboarding Flow", () => {
 
   describe("TeamNameStep", () => {
     it("renders team name input", () => {
-      renderWithRouter(<TeamNameStep />);
+      renderWithRouter(
+        <StatefulStep>
+          {(data, updateData) => (
+            <TeamNameStep data={data} updateData={updateData} onNext={() => {}} />
+          )}
+        </StatefulStep>,
+      );
       expect(screen.getByLabelText(/team name/i)).toBeInTheDocument();
     });
 
     it("validates team name is required", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<TeamNameStep />);
+      renderWithRouter(
+        <StatefulStep>
+          {(data, updateData) => (
+            <TeamNameStep data={data} updateData={updateData} onNext={() => {}} />
+          )}
+        </StatefulStep>,
+      );
 
       const nameInput = screen.getByLabelText(/team name/i);
       await user.type(nameInput, "a");
@@ -77,7 +125,13 @@ describe("Onboarding Flow", () => {
 
     it("allows entering team name", async () => {
       const user = userEvent.setup();
-      renderWithRouter(<TeamNameStep />);
+      renderWithRouter(
+        <StatefulStep>
+          {(data, updateData) => (
+            <TeamNameStep data={data} updateData={updateData} onNext={() => {}} />
+          )}
+        </StatefulStep>,
+      );
 
       const nameInput = screen.getByLabelText(/team name/i);
       await user.type(nameInput, "My Awesome Team");
