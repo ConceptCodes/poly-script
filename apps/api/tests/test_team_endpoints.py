@@ -1,9 +1,12 @@
 import uuid
-from unittest.mock import Mock, patch
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
+
+from src.dependencies import get_current_user
+from src.routes.teams import get_invitation_service, get_team_service
 
 from ..main import app
 from . import setup_paths as _setup_paths
@@ -13,205 +16,173 @@ del _setup_paths
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    original_overrides = app.dependency_overrides.copy()
+    app.dependency_overrides[get_current_user] = lambda: {
+        "id": uuid.UUID("550e8400-e29b-41d4-a716-446655440010"),
+        "email": "member@example.com",
+    }
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides = original_overrides
 
 
 @pytest.fixture
-def mock_db():
-    db = Mock(spec=Session)
-    return db
+def team_service():
+    service = Mock()
+    app.dependency_overrides[get_team_service] = lambda: service
+    return service
+
+
+@pytest.fixture
+def invitation_service():
+    service = Mock()
+    app.dependency_overrides[get_invitation_service] = lambda: service
+    return service
+
+
+def team_response(**overrides):
+    values = {
+        "id": uuid.UUID("550e8400-e29b-41d4-a716-446655440000"),
+        "name": "My Team",
+        "host_language": "en",
+        "plan": "FREE",
+        "monthly_upload_count": 0,
+        "extra_credits": 0,
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+def member_response(**overrides):
+    values = {
+        "id": uuid.UUID("550e8400-e29b-41d4-a716-446655440001"),
+        "user_id": uuid.UUID("550e8400-e29b-41d4-a716-446655440010"),
+        "team_id": uuid.UUID("550e8400-e29b-41d4-a716-446655440000"),
+        "role": "MEMBER",
+        "created_at": "2026-01-01T00:00:00Z",
+        "user_email": "member@example.com",
+        "user_full_name": "Member User",
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+def invitation_response(**overrides):
+    values = {
+        "id": uuid.UUID("550e8400-e29b-41d4-a716-446655440002"),
+        "team_id": uuid.UUID("550e8400-e29b-41d4-a716-446655440000"),
+        "email": "newuser@example.com",
+        "role": "MEMBER",
+        "expires_at": "2026-02-01T00:00:00Z",
+        "accepted_at": None,
+        "created_at": "2026-01-01T00:00:00Z",
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
 
 
 class TestTeamEndpoints:
-    def test_get_team_success(self, client, mock_db):
-        with patch("src.dependencies.get_db_session", return_value=mock_db):
-            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
-                mock_service = Mock()
-                mock_team_service_dep.return_value = mock_service
+    def test_get_team_success(self, client, team_service):
+        team = team_response()
+        team_service.get_team.return_value = team
 
-                mock_team = Mock()
-                mock_team.id = uuid.uuid4()
-                mock_team.name = "My Team"
-                mock_service.get_team.return_value = mock_team
+        response = client.get(f"/v1/teams/{team.id}")
 
-                response = client.get(
-                    f"/v1/teams/{mock_team.id}",
-                    headers={"Authorization": "Bearer valid-token"},
-                )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == str(team.id)
+        assert data["name"] == "My Team"
 
-                assert response.status_code == 200
-                data = response.json()
-                assert data["id"] == str(mock_team.id)
-                assert data["name"] == "My Team"
+    def test_get_team_not_found(self, client, team_service):
+        team_service.get_team.return_value = None
 
-    def test_get_team_not_found(self, client, mock_db):
-        with patch("src.dependencies.get_db_session", return_value=mock_db):
-            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
-                mock_service = Mock()
-                mock_team_service_dep.return_value = mock_service
+        response = client.get("/v1/teams/not-found-id")
 
-                mock_service.get_team.return_value = None
+        assert response.status_code == 404
 
-                response = client.get(
-                    "/v1/teams/not-found-id",
-                    headers={"Authorization": "Bearer valid-token"},
-                )
+    def test_create_team_success(self, client, team_service):
+        team = team_response(name="New Team")
+        team_service.create_team.return_value = team
 
-                assert response.status_code == 404
+        response = client.post(
+            "/v1/teams",
+            json={"name": "New Team", "host_language": "en"},
+        )
 
-    def test_create_team_success(self, client, mock_db):
-        with patch("src.dependencies.get_db_session", return_value=mock_db):
-            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
-                mock_service = Mock()
-                mock_team_service_dep.return_value = mock_service
+        assert response.status_code == 201
+        data = response.json()
+        assert data["id"] == str(team.id)
+        assert data["name"] == "New Team"
 
-                mock_team = Mock()
-                mock_team.id = uuid.uuid4()
-                mock_team.name = "New Team"
-                mock_service.create_team.return_value = mock_team
+    def test_update_team_success(self, client, team_service):
+        team = team_response(name="Updated Team")
+        team_service.update_team.return_value = team
 
-                response = client.post(
-                    "/v1/teams",
-                    headers={"Authorization": "Bearer valid-token"},
-                    json={"name": "New Team", "language": "en"},
-                )
+        response = client.patch(
+            f"/v1/teams/{team.id}",
+            json={"name": "Updated Team"},
+        )
 
-                assert response.status_code == 201
-                data = response.json()
-                assert data["id"] == str(mock_team.id)
-                assert data["name"] == "New Team"
+        assert response.status_code == 200
+        assert response.json()["name"] == "Updated Team"
 
-    def test_update_team_success(self, client, mock_db):
-        with patch("src.dependencies.get_db_session", return_value=mock_db):
-            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
-                mock_service = Mock()
-                mock_team_service_dep.return_value = mock_service
+    def test_delete_team_success(self, client, team_service):
+        team_service.delete_team.return_value = True
 
-                mock_team = Mock()
-                mock_team.id = uuid.uuid4()
-                mock_team.name = "Updated Team"
-                mock_service.update_team.return_value = mock_team
+        response = client.delete("/v1/teams/team-id")
 
-                response = client.patch(
-                    f"/v1/teams/{mock_team.id}",
-                    headers={"Authorization": "Bearer valid-token"},
-                    json={"name": "Updated Team"},
-                )
+        assert response.status_code == 204
 
-                assert response.status_code == 200
-                data = response.json()
-                assert data["name"] == "Updated Team"
+    def test_get_members_success(self, client, team_service):
+        team_service.get_members.return_value = [
+            member_response(role="ADMIN"),
+            member_response(id=uuid.UUID("550e8400-e29b-41d4-a716-446655440003")),
+        ]
 
-    def test_delete_team_success(self, client, mock_db):
-        with patch("src.dependencies.get_db_session", return_value=mock_db):
-            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
-                mock_service = Mock()
-                mock_team_service_dep.return_value = mock_service
+        response = client.get("/v1/teams/team-id/members")
 
-                mock_service.delete_team.return_value = True
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        assert data[0]["role"] == "ADMIN"
 
-                response = client.delete(
-                    "/v1/teams/team-id",
-                    headers={"Authorization": "Bearer valid-token"},
-                )
+    def test_send_invitation_success(self, client, invitation_service):
+        invitation = invitation_response()
+        invitation_service.create_invitation.return_value = invitation
 
-                assert response.status_code == 204
+        response = client.post(
+            "/v1/teams/team-id/invitations",
+            json={"email": "newuser@example.com", "role": "MEMBER"},
+        )
 
-    def test_get_members_success(self, client, mock_db):
-        with patch("src.dependencies.get_db_session", return_value=mock_db):
-            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
-                mock_service = Mock()
-                mock_team_service_dep.return_value = mock_service
+        assert response.status_code == 201
+        assert response.json()["id"] == str(invitation.id)
 
-                mock_member1 = Mock()
-                mock_member1.id = uuid.uuid4()
-                mock_member1.role = "ADMIN"
+    def test_accept_invitation_success(self, client, invitation_service):
+        invitation_service.accept_invitation.return_value = True
 
-                mock_member2 = Mock()
-                mock_member2.id = uuid.uuid4()
-                mock_member2.role = "MEMBER"
+        response = client.post("/v1/teams/invitations/test-token/accept")
 
-                mock_service.get_members.return_value = [mock_member1, mock_member2]
+        assert response.status_code == 204
 
-                response = client.get(
-                    "/v1/teams/team-id/members",
-                    headers={"Authorization": "Bearer valid-token"},
-                )
+    def test_update_member_role_success(self, client, team_service):
+        member = member_response(role="ADMIN")
+        team_service.update_member_role.return_value = member
 
-                assert response.status_code == 200
-                data = response.json()
-                assert len(data) == 2
+        response = client.patch(
+            "/v1/teams/team-id/members/user-id",
+            json={"role": "ADMIN"},
+        )
 
-    def test_send_invitation_success(self, client, mock_db):
-        with patch("src.dependencies.get_db_session", return_value=mock_db):
-            with patch("src.routes.teams.get_invitation_service") as mock_inv_service_dep:
-                mock_service = Mock()
-                mock_inv_service_dep.return_value = mock_service
+        assert response.status_code == 200
+        assert response.json()["role"] == "ADMIN"
 
-                mock_invitation = Mock()
-                mock_invitation.id = uuid.uuid4()
-                mock_invitation.token = "invite-token"
-                mock_service.create_invitation.return_value = mock_invitation
+    def test_remove_member_success(self, client, team_service):
+        team_service.remove_member.return_value = True
 
-                response = client.post(
-                    "/v1/teams/team-id/invitations",
-                    headers={"Authorization": "Bearer valid-token"},
-                    json={"email": "newuser@example.com", "role": "MEMBER"},
-                )
+        response = client.delete("/v1/teams/team-id/members/user-id")
 
-                assert response.status_code == 201
-                data = response.json()
-                assert data["id"] == str(mock_invitation.id)
-
-    def test_accept_invitation_success(self, client, mock_db):
-        with patch("src.dependencies.get_db_session", return_value=mock_db):
-            with patch("src.routes.teams.get_invitation_service") as mock_inv_service_dep:
-                mock_service = Mock()
-                mock_inv_service_dep.return_value = mock_service
-
-                mock_team_member = Mock()
-                mock_team_member.id = uuid.uuid4()
-                mock_service.accept_invitation.return_value = mock_team_member
-
-                response = client.post(
-                    "/v1/invitations/test-token/accept",
-                    headers={"Authorization": "Bearer valid-token"},
-                )
-
-                assert response.status_code == 204
-
-    def test_update_member_role_success(self, client, mock_db):
-        with patch("src.dependencies.get_db_session", return_value=mock_db):
-            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
-                mock_service = Mock()
-                mock_team_service_dep.return_value = mock_service
-
-                mock_member = Mock()
-                mock_member.id = uuid.uuid4()
-                mock_member.role = "ADMIN"
-                mock_service.update_member_role.return_value = mock_member
-
-                response = client.patch(
-                    "/v1/teams/team-id/members/user-id",
-                    headers={"Authorization": "Bearer valid-token"},
-                    json={"role": "ADMIN"},
-                )
-
-                assert response.status_code == 200
-                data = response.json()
-                assert data["role"] == "ADMIN"
-
-    def test_remove_member_success(self, client, mock_db):
-        with patch("src.dependencies.get_db_session", return_value=mock_db):
-            with patch("src.routes.teams.get_team_service") as mock_team_service_dep:
-                mock_service = Mock()
-                mock_team_service_dep.return_value = mock_service
-
-                mock_service.remove_member.return_value = True
-
-                response = client.delete(
-                    "/v1/teams/team-id/members/user-id",
-                    headers={"Authorization": "Bearer valid-token"},
-                )
-
-                assert response.status_code == 204
+        assert response.status_code == 204

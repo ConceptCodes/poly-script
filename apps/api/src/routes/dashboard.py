@@ -20,9 +20,9 @@ def get_dashboard_service(db: Session = Depends(get_db_session)) -> DashboardSer
 
 @router.get("/stats", response_model=DashboardStatsResponse)
 def get_dashboard_stats(
-    team_service: DashboardService = Depends(get_dashboard_service),
     current_user: dict = Depends(get_current_user),
     team_context: dict = Depends(get_team_context),
+    team_service: DashboardService = Depends(get_dashboard_service),
 ):
     """Get dashboard statistics for the current team."""
     try:
@@ -40,9 +40,9 @@ def get_dashboard_stats(
 @router.get("/recent-jobs", response_model=list[RecentJobItem])
 def get_recent_jobs(
     limit: int = Query(10, ge=1, le=50),
-    team_service: DashboardService = Depends(get_dashboard_service),
     current_user: dict = Depends(get_current_user),
     team_context: dict = Depends(get_team_context),
+    team_service: DashboardService = Depends(get_dashboard_service),
 ):
     """Get recent jobs for the current team."""
     try:
@@ -60,9 +60,9 @@ def get_recent_jobs(
 @router.get("/activity", response_model=list[ActivityItem])
 def get_team_activity(
     limit: int = Query(50, ge=1, le=100),
-    team_service: DashboardService = Depends(get_dashboard_service),
     current_user: dict = Depends(get_current_user),
     team_context: dict = Depends(get_team_context),
+    team_service: DashboardService = Depends(get_dashboard_service),
 ):
     """Get team activity feed."""
     try:
@@ -79,9 +79,9 @@ def get_team_activity(
 
 @router.get("/usage", response_model=UsageResponse)
 def get_usage(
-    team_service: DashboardService = Depends(get_dashboard_service),
     current_user: dict = Depends(get_current_user),
     team_context: dict = Depends(get_team_context),
+    team_service: DashboardService = Depends(get_dashboard_service),
 ):
     """Get usage statistics for the current month."""
     try:

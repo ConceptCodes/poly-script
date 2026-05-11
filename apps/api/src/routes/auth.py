@@ -135,6 +135,16 @@ def get_me(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    safe_user = {
+        "id": current_user["id"],
+        "email": current_user["email"],
+        "full_name": current_user.get("full_name"),
+        "is_verified": current_user.get("is_verified"),
+        "is_active": current_user.get("is_active"),
+        "is_suspended": current_user.get("is_suspended"),
+        "created_at": current_user.get("created_at"),
+    }
+
     member_repo = TeamMemberRepository(db)
     memberships = member_repo.list_by_user_id(current_user["id"])
 
@@ -150,7 +160,7 @@ def get_me(
                 plan=team.plan.value,
             )
 
-    return MeResponse(user=current_user, team=team_info)
+    return MeResponse(user=safe_user, team=team_info)
 
 
 @router.post("/verify-email", status_code=status.HTTP_204_NO_CONTENT)

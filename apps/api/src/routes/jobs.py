@@ -81,9 +81,6 @@ async def stream_job_progress(
     team_id: uuid.UUID = Depends(get_current_team_id),
     cancel_token: str | None = None,
 ):
-    from poly_db.database import get_db_session
-    from poly_db.repositories import TranscriptionJobRepository
-
     with get_db_session() as session:
         job_repo = TranscriptionJobRepository(session)
         job = job_repo.get_by_id(job_id)
@@ -101,6 +98,15 @@ async def stream_job_progress(
             )
 
     async def event_stream():
+        yield {
+            "event": "progress",
+            "data": {
+                "job_id": str(job.id),
+                "status": job.status.value,
+                "progress_pct": job.progress or 0,
+                "progress_stage": job.progress_stage,
+            },
+        }
         async for event in job_progress_streamer(job_id, team_id, cancel_token):
             yield event
 

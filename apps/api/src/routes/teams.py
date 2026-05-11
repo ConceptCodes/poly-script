@@ -45,8 +45,8 @@ def get_invitation_service(db: Session = Depends(get_db_session)) -> InvitationS
 @router.post("", response_model=TeamResponse, status_code=status.HTTP_201_CREATED)
 def create_team(
     request: CreateTeamRequest,
-    team_service: TeamService = Depends(get_team_service),
     current_user: dict = Depends(get_current_user),
+    team_service: TeamService = Depends(get_team_service),
 ):
     team = team_service.create_team(
         user_id=current_user["id"],
@@ -64,8 +64,8 @@ def create_team(
 @router.get("/{team_id}", response_model=TeamResponse)
 def get_team(
     team_id: str,
-    team_service: TeamService = Depends(get_team_service),
     current_user: dict = Depends(get_current_user),
+    team_service: TeamService = Depends(get_team_service),
 ):
     team = team_service.get_team(
         team_id=team_id,
@@ -83,8 +83,8 @@ def get_team(
 def update_team(
     team_id: str,
     request: UpdateTeamRequest,
-    team_service: TeamService = Depends(get_team_service),
     current_user: dict = Depends(get_current_user),
+    team_service: TeamService = Depends(get_team_service),
 ):
     team = team_service.update_team(
         team_id=team_id,
@@ -103,8 +103,8 @@ def update_team(
 @router.delete("/{team_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_team(
     team_id: str,
-    team_service: TeamService = Depends(get_team_service),
     current_user: dict = Depends(get_current_user),
+    team_service: TeamService = Depends(get_team_service),
 ):
     success = team_service.delete_team(team_id=team_id, user_id=current_user["id"])
     if not success:
@@ -117,8 +117,8 @@ def delete_team(
 @router.get("/{team_id}/members", response_model=list[TeamMemberResponse])
 def get_team_members(
     team_id: str,
-    team_service: TeamService = Depends(get_team_service),
     current_user: dict = Depends(get_current_user),
+    team_service: TeamService = Depends(get_team_service),
 ):
     members = team_service.get_members(
         team_id=team_id,
@@ -132,8 +132,8 @@ def update_member_role(
     team_id: str,
     member_id: str,
     request: UpdateMemberRoleRequest,
-    team_service: TeamService = Depends(get_team_service),
     current_user: dict = Depends(get_current_user),
+    team_service: TeamService = Depends(get_team_service),
 ):
     member = team_service.update_member_role(
         team_id=team_id,
@@ -153,8 +153,8 @@ def update_member_role(
 def remove_team_member(
     team_id: str,
     member_id: str,
-    team_service: TeamService = Depends(get_team_service),
     current_user: dict = Depends(get_current_user),
+    team_service: TeamService = Depends(get_team_service),
 ):
     success = team_service.remove_member(
         team_id=team_id,
@@ -174,8 +174,8 @@ def remove_team_member(
 def create_invitation(
     team_id: str,
     request: CreateInvitationRequest,
-    invitation_service: InvitationService = Depends(get_invitation_service),
     current_user: dict = Depends(get_current_user),
+    invitation_service: InvitationService = Depends(get_invitation_service),
 ):
     invitation = invitation_service.create_invitation(
         team_id=team_id,
@@ -194,8 +194,8 @@ def create_invitation(
 @router.get("/{team_id}/invitations", response_model=list[InvitationResponse])
 def get_team_invitations(
     team_id: str,
-    invitation_service: InvitationService = Depends(get_invitation_service),
     current_user: dict = Depends(get_current_user),
+    invitation_service: InvitationService = Depends(get_invitation_service),
 ):
     invitations = invitation_service.get_pending_invitations(team_id=team_id, user_id=current_user["id"])
     return invitations
@@ -205,8 +205,8 @@ def get_team_invitations(
 def cancel_invitation(
     team_id: str,
     invitation_id: str,
-    invitation_service: InvitationService = Depends(get_invitation_service),
     current_user: dict = Depends(get_current_user),
+    invitation_service: InvitationService = Depends(get_invitation_service),
 ):
     success = invitation_service.cancel_invitation(invitation_id=invitation_id, user_id=current_user["id"])
     if not success:
@@ -219,8 +219,8 @@ def cancel_invitation(
 @router.post("/invitations/{token}/accept", status_code=status.HTTP_204_NO_CONTENT)
 def accept_invitation(
     token: str,
-    invitation_service: InvitationService = Depends(get_invitation_service),
     current_user: dict = Depends(get_current_user),
+    invitation_service: InvitationService = Depends(get_invitation_service),
 ):
     success = invitation_service.accept_invitation(
         token=token,
@@ -232,5 +232,4 @@ def accept_invitation(
             detail=I18nKeys.INVALID_INVITATION_TOKEN.value,
         )
 
-teams_router = router
 teams_router = router

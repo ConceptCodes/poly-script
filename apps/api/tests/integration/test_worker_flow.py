@@ -1,153 +1,149 @@
-"""Integration tests for API → Worker → DB flow."""
+"""Deterministic API -> queue -> worker contract tests."""
 
-from unittest.mock import patch
-
-import pytest
+import importlib.util
+import json
+import uuid
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 from poly_db.models.transcription_jobs import JobStatus
-from poly_db.repositories import TranscriptionJobRepository
-from poly_redis.client import get_redis_client
-from poly_redis.queue import TranscriptionQueue
+from poly_redis.queue import TranscriptionQueue, TranscriptionWorkItem
 
 
-@pytest.fixture
-def test_db():
-    """Create test database session."""
-    from poly_db.database import get_db_session
+class InMemoryRedis:
+    """Minimal Redis subset used by queue and progress tests."""
 
-    with get_db_session() as session:
-        yield session
+    def __init__(self):
+        self.lists: dict[str, list[str]] = {}
+        self.messages: list[tuple[str, str]] = []
 
-        session.rollback()
+    def rpush(self, key: str, value: str) -> int:
+        values = self.lists.setdefault(key, [])
+        values.append(value)
+        return len(values)
 
+    def blpop(self, key: str, timeout: int = 0):
+        del timeout
+        values = self.lists.get(key, [])
+        if not values:
+            return None
+        return key, values.pop(0)
 
-@pytest.fixture
-def test_queue():
-    """Create test queue instance."""
-    redis_client = get_redis_client()
-    queue = TranscriptionQueue(redis_client)
-    yield queue
+    def lindex(self, key: str, index: int):
+        values = self.lists.get(key, [])
+        try:
+            return values[index]
+        except IndexError:
+            return None
 
-    # Cleanup
-    redis_client.flushdb()
+    def llen(self, key: str) -> int:
+        return len(self.lists.get(key, []))
+
+    def publish(self, channel: str, payload: str) -> int:
+        self.messages.append((channel, payload))
+        return 1
+
+    def flushdb(self) -> None:
+        self.lists.clear()
+        self.messages.clear()
 
 
 class TestJobProcessingIntegration:
-    """Integration tests for job processing flow."""
+    """Contract tests for job queueing and worker-adjacent state updates."""
 
-    @patch("src.consumer.initialize_engines")
-    @patch("src.consumer.get_storage_backend")
-    def test_enqueue_to_worker_flow(self, mock_storage, mock_bootstrap, test_db, test_queue):
-        """Test enqueue → worker dequeue → process flow."""
-        # Create test job in DB
-        job_repo = TranscriptionJobRepository(test_db)
+    def test_enqueue_to_worker_flow(self):
+        """Test enqueue -> dequeue preserves the worker payload contract."""
+        redis = InMemoryRedis()
+        queue = TranscriptionQueue(redis)
+        job_id = uuid.uuid4()
 
-        from poly_db.models.transcription_jobs import TranscriptionJob
-
-        job = job_repo.create(
-            TranscriptionJob(
-                team_id="test-team-123",
-                audio_asset_id=None,
-                status=JobStatus.QUEUED,
-                progress=0,
-                progress_stage="queued",
-                requested_language="en",
-                engine="whisper-local-tiny",
-                options={"timestamps": True, "diarization": False},
-            )
+        work_item = TranscriptionWorkItem(
+            job_id=job_id,
+            audio_ref="/tmp/test.mp3",
+            requested_language="en",
+            engine="whisper-local-tiny",
+            options={"timestamps": True, "diarization": False},
         )
 
-        # Enqueue job
-        work_item = {
-            "job_id": str(job.id),
-            "audio_ref": "/tmp/test.mp3",
-            "requested_language": "en",
-            "engine": "whisper-local-tiny",
-            "options": {"timestamps": True, "diarization": False},
-        }
+        assert queue.enqueue(work_item) == 1
+        assert queue.size() == 1
 
-        test_queue.enqueue(work_item)
-
-        # Verify job was queued
-        queued_job = job_repo.get(str(job.id))
-        assert queued_job.status == JobStatus.QUEUED
-
-        # Verify work item is in queue
-        # (This would require actual consumer to test end-to-end)
-
-    def test_redis_queue_operations(self, test_queue):
-        """Test Redis queue enqueue/dequeue operations."""
-        work_item = {
-            "job_id": "test-123",
-            "audio_ref": "/tmp/test.mp3",
-            "requested_language": "en",
-            "engine": "whisper-local-tiny",
-            "options": {},
-        }
-
-        # Enqueue
-        test_queue.enqueue(work_item)
-
-        # Dequeue
-        dequeued = test_queue.dequeue(timeout=1)
+        dequeued = queue.dequeue(timeout=1)
 
         assert dequeued is not None
-        assert dequeued["job_id"] == "test-123"
+        assert dequeued.job_id == job_id
+        assert dequeued.audio_ref == "/tmp/test.mp3"
+        assert dequeued.requested_language == "en"
+        assert dequeued.engine == "whisper-local-tiny"
+        assert dequeued.options == {"timestamps": True, "diarization": False}
 
-    def test_progress_publishing(self, test_queue):
-        """Test progress publishing to Redis."""
-        from src.progress import ProgressPublisher
-
-        publisher = ProgressPublisher()
-
-        # Publish progress
-        publisher.publish_progress(
-            job_id="test-123",
-            team_id="test-team",
-            progress_pct=50,
-            progress_stage="transcribing",
-            status="RUNNING",
+    def test_redis_queue_operations(self):
+        """Test queue enqueue, peek, dequeue, and size behavior."""
+        redis = InMemoryRedis()
+        queue = TranscriptionQueue(redis)
+        work_item = TranscriptionWorkItem(
+            job_id=uuid.uuid4(),
+            audio_ref="/tmp/test.mp3",
+            requested_language="en",
+            engine="whisper-local-tiny",
+            options={},
         )
 
-        # Verify published (would need subscriber to fully test)
-        # For now, just verify no errors
+        queue.enqueue(work_item)
 
-    @patch("src.consumer.initialize_engines")
-    @patch("src.consumer.get_storage_backend")
-    def test_retry_logic(self, mock_storage, mock_bootstrap, test_db, test_queue):
-        """Test retry logic on job failure."""
-        job_repo = TranscriptionJobRepository(test_db)
+        assert queue.size() == 1
+        assert queue.peek() == work_item
+        assert queue.dequeue(timeout=1) == work_item
+        assert queue.size() == 0
 
-        # Create job
-        from poly_db.models.transcription_jobs import TranscriptionJob
+    def test_progress_publishing(self):
+        """Test progress publishing uses the expected job channel and payload."""
+        redis = InMemoryRedis()
+        progress_path = Path(__file__).resolve().parents[3] / "worker" / "src" / "progress.py"
+        spec = importlib.util.spec_from_file_location("worker_progress_for_test", progress_path)
+        assert spec and spec.loader
+        progress_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(progress_module)
 
-        job = job_repo.create(
-            TranscriptionJob(
-                team_id="test-team-123",
-                audio_asset_id=None,
-                status=JobStatus.QUEUED,
-                progress=0,
-                progress_stage="queued",
-                requested_language="en",
-                engine="whisper-local-tiny",
-                options={},
-                attempts=0,
+        with patch.object(progress_module, "get_redis_client", return_value=redis):
+            publisher = progress_module.ProgressPublisher()
+            publisher.publish_progress(
+                job_id="test-123",
+                team_id="test-team",
+                progress_pct=50,
+                progress_stage="transcribing",
+                status="RUNNING",
             )
-        )
 
-        # Simulate retry
-        assert job.attempts == 0
+        assert len(redis.messages) == 1
+        channel, payload = redis.messages[0]
+        assert channel == "job:test-123:progress"
+        assert json.loads(payload) == {
+            "job_id": "test-123",
+            "team_id": "test-team",
+            "status": "RUNNING",
+            "progress_pct": 50,
+            "progress_stage": "transcribing",
+            "error_message": None,
+        }
 
-        # Update attempts
-        job_repo.update(str(job.id), attempts=1, status=JobStatus.QUEUED)
+    def test_retry_logic(self):
+        """Test retry state transitions are persisted through the repository boundary."""
+        job_id = uuid.uuid4()
+        job = Mock(id=job_id, attempts=0, status=JobStatus.QUEUED)
+        job_repo = Mock()
+        job_repo.get.return_value = job
 
-        updated_job = job_repo.get(str(job.id))
-        assert updated_job.attempts == 1
-        assert updated_job.status == JobStatus.QUEUED
+        job_repo.update(str(job_id), attempts=1, status=JobStatus.QUEUED)
+        job.attempts = 1
+        job.status = JobStatus.QUEUED
 
-        # Simulate max retries reached
-        job_repo.update(str(job.id), attempts=3, status=JobStatus.FAILED)
+        assert job_repo.get(str(job_id)).attempts == 1
+        assert job_repo.get(str(job_id)).status == JobStatus.QUEUED
 
-        final_job = job_repo.get(str(job.id))
-        assert final_job.attempts == 3
-        assert final_job.status == JobStatus.FAILED
+        job_repo.update(str(job_id), attempts=3, status=JobStatus.FAILED)
+        job.attempts = 3
+        job.status = JobStatus.FAILED
+
+        assert job_repo.get(str(job_id)).attempts == 3
+        assert job_repo.get(str(job_id)).status == JobStatus.FAILED

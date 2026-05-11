@@ -85,7 +85,7 @@ def test_rate_limit_429_response():
     mock_redis = MagicMock()
     mock_pipeline = MagicMock()
     # Simulate exceeding the limit
-    mock_pipeline.execute.return_value = [0, 10]  # zcard at limit
+    mock_pipeline.execute.return_value = [0, 30]  # zcard at FREE plan limit
     mock_redis.pipeline.return_value = mock_pipeline
 
     # Mock zrange to return a timestamp for reset calculation

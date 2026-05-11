@@ -1,4 +1,5 @@
 import uuid
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -286,6 +287,128 @@ class TranscriptService:
             "created_at": transcript.created_at,
             "updated_at": transcript.updated_at,
         }
+
+    def split_segment(
+        self,
+        transcript_id: str,
+        segment_id: int,
+        user_id: str,
+        split_at_ms: int,
+    ) -> tuple[Transcript, list[int]]:
+        """Split a transcript segment into two segments at a timestamp."""
+        transcript = self.repo.get(transcript_id)
+        if not transcript:
+            raise ValueError(f"Transcript {transcript_id} not found")
+
+        segments = deepcopy(transcript.segments or [])
+        if segment_id < 0 or segment_id >= len(segments):
+            raise ValueError(f"Invalid segment_id: {segment_id}")
+
+        segment = segments[segment_id]
+        start_ms = segment.get("start_ms", 0)
+        end_ms = segment.get("end_ms", 0)
+        if split_at_ms <= start_ms or split_at_ms >= end_ms:
+            raise ValueError("split_at_ms must be between segment start_ms and end_ms")
+
+        previous_segments = deepcopy(segments)
+        first_segment = {**segment, "end_ms": split_at_ms}
+        second_segment = {**segment, "start_ms": split_at_ms}
+        segments[segment_id : segment_id + 1] = [first_segment, second_segment]
+
+        transcript.segments = segments
+        self.session.flush()
+        self._log_segment_edit(transcript_id, user_id, previous_segments, segments)
+        return transcript, [segment_id, segment_id + 1]
+
+    def merge_segments(
+        self,
+        transcript_id: str,
+        segment_ids: list[int],
+        user_id: str,
+    ) -> tuple[Transcript, int, list[int]]:
+        """Merge consecutive transcript segments into one segment."""
+        transcript = self.repo.get(transcript_id)
+        if not transcript:
+            raise ValueError(f"Transcript {transcript_id} not found")
+
+        if len(segment_ids) < 2:
+            raise ValueError("At least 2 segments required")
+
+        sorted_ids = sorted(segment_ids)
+        if sorted_ids != list(range(sorted_ids[0], sorted_ids[-1] + 1)):
+            raise ValueError("Segments must be consecutive")
+
+        segments = deepcopy(transcript.segments or [])
+        if sorted_ids[0] < 0 or sorted_ids[-1] >= len(segments):
+            raise ValueError("Invalid segment_id")
+
+        previous_segments = deepcopy(segments)
+        selected = [segments[index] for index in sorted_ids]
+        merged_segment = {
+            **selected[0],
+            "end_ms": selected[-1].get("end_ms", selected[0].get("end_ms", 0)),
+            "text": " ".join(segment.get("text", "") for segment in selected).strip(),
+        }
+
+        merged_id = sorted_ids[0]
+        removed_ids = sorted_ids[1:]
+        segments[merged_id : sorted_ids[-1] + 1] = [merged_segment]
+
+        transcript.segments = segments
+        self.session.flush()
+        self._log_segment_edit(transcript_id, user_id, previous_segments, segments)
+        return transcript, merged_id, removed_ids
+
+    def update_segment_timestamps(
+        self,
+        transcript_id: str,
+        segment_id: int,
+        user_id: str,
+        start_ms: int,
+        end_ms: int,
+    ) -> Transcript:
+        """Update a segment's timestamps while preventing invalid overlap."""
+        transcript = self.repo.get(transcript_id)
+        if not transcript:
+            raise ValueError(f"Transcript {transcript_id} not found")
+
+        if start_ms >= end_ms:
+            raise ValueError("start_ms must be less than end_ms")
+
+        segments = deepcopy(transcript.segments or [])
+        if segment_id < 0 or segment_id >= len(segments):
+            raise ValueError(f"Invalid segment_id: {segment_id}")
+
+        if segment_id > 0 and start_ms < segments[segment_id - 1].get("end_ms", 0):
+            raise ValueError("start_ms cannot overlap with previous segment")
+
+        if segment_id < len(segments) - 1 and end_ms > segments[segment_id + 1].get("start_ms", 0):
+            raise ValueError("end_ms cannot overlap with next segment")
+
+        previous_segments = deepcopy(segments)
+        segments[segment_id]["start_ms"] = start_ms
+        segments[segment_id]["end_ms"] = end_ms
+
+        transcript.segments = segments
+        self.session.flush()
+        self._log_segment_edit(transcript_id, user_id, previous_segments, segments)
+        return transcript
+
+    def _log_segment_edit(
+        self,
+        transcript_id: str,
+        user_id: str,
+        previous_segments: list[dict[str, Any]],
+        new_segments: list[dict[str, Any]],
+    ) -> None:
+        edit = TranscriptEdit(
+            transcript_id=transcript_id,
+            user_id=uuid.UUID(user_id) if user_id else None,
+            previous_segments=previous_segments,
+            new_segments=new_segments,
+        )
+        self.edit_repo.create(edit)
+        self.session.flush()
 
     def get_edit_history(
         self,
