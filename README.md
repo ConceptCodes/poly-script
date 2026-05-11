@@ -295,7 +295,9 @@ poly-script/
 ├── justfile              # Task runner recipes
 ├── pyproject.toml        # Python workspace config
 ├── package.json          # Bun workspace config
-└── .env.example          # Environment template
+└── infra/                # Deployment and environment templates
+    ├── .env.example      # Environment template
+    └── railway-prod.json # Production service configuration
 ```
 
 ---
@@ -332,7 +334,7 @@ Install the following tools before setting up the project:
 
 3. **Configure environment**
    ```bash
-   cp .env.example .env
+   cp infra/.env.example .env
    # Edit .env with your configuration
    ```
 
@@ -495,7 +497,7 @@ The API uses JWT tokens for authentication:
 
 ## 🌐 Environment Variables
 
-See `.env.example` for a complete list. Key variables:
+See `infra/.env.example` for a complete list. Key variables:
 
 ### Database & Cache
 - `DATABASE_URL` - PostgreSQL connection string
@@ -565,7 +567,7 @@ This project is configured for deployment on [Railway](https://railway.app).
 
 3. **Set environment variables**
    ```bash
-   # Set all required variables from .env.example
+   # Set all required variables from infra/.env.example
    railway variables set DATABASE_URL=<value>
    railway variables set REDIS_URL=<value>
    # ... set all other variables
@@ -590,7 +592,7 @@ This project is configured for deployment on [Railway](https://railway.app).
 
 ### Production Configuration
 
-The `railway-prod.json` file contains the production service configuration.
+The `infra/railway-prod.json` file contains the production service configuration.
 
 **Production checklist:**
 - [ ] Set all environment variables
