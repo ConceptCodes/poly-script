@@ -1,3 +1,1991 @@
-Canonical specification: ../app-spec.txt
+<project_specification>
+  <project_name>PolyScript - Multi-Language Transcription Service</project_name>
 
-Keep this mirror in sync with the root spec when endpoint, model, config, or flow changes are introduced.
+  <overview>
+    Build a job-based, multi-language speech-to-text (STT) transcription service in a monorepo.
+    
+    The system consists of:
+    - apps/marketing: Astro static marketing site (5 languages: en, de, es, fr, jp)
+    - apps/web: Vite web app (React + TypeScript) for authenticated users
+    - apps/admin: Vite admin panel for super admin system management
+    - apps/api: FastAPI backend (HTTP API, SSE endpoints)
+    
+    Users sign up and become team admins. They can invite team members with different roles (ADMIN, MEMBER, VIEWER).
+    The system supports full internationalization in 5 languages with localized UI and API responses.
+    
+    Jobs are processed asynchronously: upload → enqueue to Redis → worker service processes → results saved to DB.
+  </overview>
+
+  <!-- ============================================ -->
+  <!-- SECTION 1: TECHNOLOGY STACK -->
+  <!-- ============================================ -->
+  
+  <technology_stack>
+    <frontend_web>
+      <framework>React with Vite</framework>
+      <language>TypeScript</language>
+      <styling>Tailwind CSS</styling>
+      <routing>React Router</routing>
+      <state_management>React hooks + Zustand</state_management>
+      <i18n>i18next for client-side translations</i18n>
+      <package_manager>Bun workspaces</package_manager>
+      <port>5173 (dev default)</port>
+    </frontend_web>
+
+    <frontend_marketing>
+      <framework>Astro (static site generation)</framework>
+      <language>TypeScript</language>
+      <styling>Tailwind CSS</styling>
+      <i18n>Astro i18n routing for 5 languages (en, de, es, fr, jp)</i18n>
+      <package_manager>Bun workspaces</package_manager>
+      <port>3000 (dev default)</port>
+      <purpose>Public marketing pages, pricing, docs, blog</purpose>
+    </frontend_marketing>
+
+    <frontend_admin>
+      <framework>React with Vite</framework>
+      <language>TypeScript</language>
+      <styling>Tailwind CSS</styling>
+      <routing>React Router</routing>
+      <package_manager>Bun workspaces</package_manager>
+      <port>5174 (dev default)</port>
+      <purpose>Super admin dashboard for service operators</purpose>
+    </frontend_admin>
+
+    <backend>
+      <runtime>Python 3.11+</runtime>
+      <package_manager>uv</package_manager>
+      <framework>FastAPI</framework>
+      <server>uvicorn</server>
+      <database>PostgreSQL (prod), SQLite (dev allowed)</database>
+      <orm>SQLAlchemy</orm>
+      <migrations>Alembic</migrations>
+      <queue>Redis</queue>
+      <background_processing>Separate apps/worker service with dedicated event loop thread</background_processing>
+      <port>8000 (dev default)</port>
+    </backend>
+
+    <shared_packages>
+      <ui>shadcn/ui components + theme (TypeScript, Bun)</ui>
+      <storage_db>SQLAlchemy models + repositories (Python, uv)</storage_db>
+      <storage_redis>Redis client + queue primitives (Python, uv)</storage_redis>
+      <stt>STT engines + normalization layer (Python, uv)</stt>
+      <core>Business logic services (Python, uv)</core>
+    </shared_packages>
+
+    <monorepo_layout>
+      <!-- Bun + TypeScript Apps -->
+      <typescript_apps>
+        - apps/web          # Vite + React web application
+        - apps/admin        # Vite + React admin panel
+        - apps/marketing    # Astro static site
+      </typescript_apps>
+      
+      <!-- Python + uv Apps -->
+      <python_apps>
+        - apps/api          # FastAPI backend (HTTP API, SSE endpoints)
+        - apps/worker        # Background transcription worker service
+      </python_apps>
+      
+      <!-- Bun + TypeScript Packages -->
+      <typescript_packages>
+        - packages/ui       # shadcn/ui components + theme (shared by web, admin)
+      </typescript_packages>
+      
+      <!-- Python + uv Packages -->
+      <python_packages>
+        - packages/core         # Business logic services (auth, billing, teams, jobs)
+        - packages/storage/db   # SQLAlchemy models + repositories
+        - packages/storage/redis # Redis client + queue primitives
+        - packages/stt          # STT engines + normalization layer
+      </python_packages>
+    </monorepo_layout>
+
+
+    <communication>
+      <api>RESTful JSON endpoints</api>
+      <realtime>Server-Sent Events (SSE) for live progress</realtime>
+      <auth>JWT tokens</auth>
+      <cors>Restrict to web origin in production</cors>
+    </communication>
+  </technology_stack>
+
+  <!-- ============================================ -->
+  <!-- SECTION 2: PREREQUISITES & SETUP -->
+  <!-- ============================================ -->
+  
+  <prerequisites>
+    <environment_setup>
+      - Bun for TypeScript apps (apps/web, apps/admin, apps/marketing, packages/ui)
+      - Python 3.11+ with uv for apps/api and Python packages
+      - Redis available (docker or local)
+      - PostgreSQL available (docker or local)
+      - Storage directory for audio artifacts writable by API process
+      - Storage adapters for different backends (local filesystem, S3)
+    </environment_setup>
+    
+    <internationalization>
+      - Supported languages: en (English), de (German), es (Spanish), fr (French), jp (Japanese)
+      - Web apps use i18next for client-side translations
+      - Marketing site uses Astro i18n routing
+      - API returns localized error messages based on Accept-Language header
+      - Translation files stored in each app's locale/ directory
+    </internationalization>
+  </prerequisites>
+
+  <!-- ============================================ -->
+  <!-- SECTION 3: DATABASE SCHEMA -->
+  <!-- ============================================ -->
+  
+  <database_schema>
+    <tables>
+      <!-- TEAMS & USERS -->
+      <teams>
+        - id (uuid, pk)
+        - name (text)
+        - default_language (text, default 'en')
+        - subscription_plan (text enum: FREE|STANDARD|PRO, default 'FREE')
+        - subscription_status (text enum: ACTIVE|CANCELED|PAST_DUE|TRIALING, default 'ACTIVE')
+        - credits_balance (int, default 0)  # for FREE plan credit purchases
+        - monthly_upload_count (int, default 0)  # resets monthly
+        - monthly_translation_count (int, default 0)  # resets monthly, tracks translation usage
+        - monthly_reset_date (datetime)  # when to reset monthly_upload_count and monthly_translation_count
+        - is_suspended (boolean, default false)
+        - suspended_at (datetime nullable)
+        - suspended_by (uuid nullable, fk -> admin_users.id)
+        - created_at (datetime)
+        - updated_at (datetime)
+      </teams>
+      
+      <subscriptions>
+        - id (uuid, pk)
+        - team_id (uuid, fk -> teams.id, unique)
+        - plan (text enum: FREE|STANDARD|PRO)
+        - status (text enum: ACTIVE|CANCELED|PAST_DUE|TRIALING)
+        - stripe_subscription_id (text nullable, unique)
+        - stripe_customer_id (text nullable)
+        - current_period_start (datetime)
+        - current_period_end (datetime)
+        - cancel_at_period_end (boolean, default false)
+        - canceled_at (datetime nullable)
+        - trial_end (datetime nullable)
+        - created_at (datetime)
+        - updated_at (datetime)
+      </subscriptions>
+      
+      <payment_methods>
+        - id (uuid, pk)
+        - team_id (uuid, fk -> teams.id)
+        - stripe_payment_method_id (text, unique)
+        - type (text: card|bank_account)
+        - card_brand (text nullable)  # visa, mastercard, etc.
+        - card_last4 (text nullable)
+        - is_default (boolean, default false)
+        - created_at (datetime)
+        - updated_at (datetime)
+      </payment_methods>
+      
+      <invoices>
+        - id (uuid, pk)
+        - team_id (uuid, fk -> teams.id)
+        - stripe_invoice_id (text, unique)
+        - amount_due (int)  # in cents
+        - amount_paid (int)  # in cents
+        - currency (text, default 'usd')
+        - status (text: draft|open|paid|void|uncollectible)
+        - invoice_pdf_url (text nullable)
+        - period_start (datetime)
+        - period_end (datetime)
+        - created_at (datetime)
+        - paid_at (datetime nullable)
+      </invoices>
+      
+      <credit_purchases>
+        - id (uuid, pk)
+        - team_id (uuid, fk -> teams.id)
+        - credits_purchased (int)
+        - amount_paid (int)  # in cents
+        - currency (text, default 'usd')
+        - stripe_payment_intent_id (text, unique)
+        - status (text: pending|succeeded|failed)
+        - created_at (datetime)
+        - completed_at (datetime nullable)
+      </credit_purchases>
+      
+      <usage_logs>
+        - id (uuid, pk)
+        - team_id (uuid, fk -> teams.id)
+        - job_id (uuid, fk -> transcription_jobs.id)
+        - upload_type (text: subscription|credit)
+        - credits_used (int, default 0)  # if credit-based
+        - created_at (datetime)
+      </usage_logs>
+      
+      <users>
+        - id (uuid, pk)
+        - email (text, unique)
+        - password_hash (text nullable)  # null if OAuth-only user
+        - full_name (text nullable)
+        - preferred_language (text, default 'en')
+        - email_verified (boolean, default false)
+        - email_verification_token (text nullable)
+        - email_verification_sent_at (datetime nullable)
+        - is_suspended (boolean, default false)
+        - suspended_at (datetime nullable)
+        - suspended_by (uuid nullable, fk -> admin_users.id)
+        - deleted_at (datetime nullable)  # soft delete for deletion policy
+        - created_at (datetime)
+        - updated_at (datetime)
+        - last_login_at (datetime nullable)
+      </users>
+      
+      <oauth_accounts>
+        - id (uuid, pk)
+        - user_id (uuid, fk -> users.id)
+        - provider (text: google)  # Only Google OAuth supported
+        - provider_user_id (text)
+        - access_token (text nullable)
+        - refresh_token (text nullable)
+        - expires_at (datetime nullable)
+        - created_at (datetime)
+        - updated_at (datetime)
+        - unique constraint on (provider, provider_user_id)
+      </oauth_accounts>
+      
+      <password_resets>
+        - id (uuid, pk)
+        - user_id (uuid, fk -> users.id)
+        - token_hash (text, unique)
+        - expires_at (datetime)
+        - used_at (datetime nullable)
+        - created_at (datetime)
+      </password_resets>
+      
+      <refresh_tokens>
+        - id (uuid, pk)
+        - user_id (uuid, fk -> users.id)
+        - token_hash (text, unique)
+        - expires_at (datetime)
+        - revoked_at (datetime nullable)
+        - created_at (datetime)
+      </refresh_tokens>
+      
+      <admin_users>
+        - id (uuid, pk)
+        - email (text, unique)
+        - password_hash (text)
+        - full_name (text)
+        - role (text enum: SUPER_ADMIN|ADMIN)
+        - created_at (datetime)
+        - updated_at (datetime)
+        - last_login_at (datetime nullable)
+      </admin_users>
+      
+      <team_members>
+        - id (uuid, pk)
+        - team_id (uuid, fk -> teams.id)
+        - user_id (uuid, fk -> users.id)
+        - role (text enum: ADMIN|MEMBER|VIEWER)
+        - invited_by (uuid nullable, fk -> users.id)
+        - invited_at (datetime)
+        - joined_at (datetime nullable)
+        - created_at (datetime)
+        - unique constraint on (team_id, user_id)
+      </team_members>
+      
+      <team_invitations>
+        - id (uuid, pk)
+        - team_id (uuid, fk -> teams.id)
+        - email (text)
+        - role (text enum: ADMIN|MEMBER|VIEWER)
+        - invited_by (uuid, fk -> users.id)
+        - token (text, unique)
+        - expires_at (datetime)
+        - accepted_at (datetime nullable)
+        - created_at (datetime)
+      </team_invitations>
+      
+      <!-- JOBS & TRANSCRIPTS -->
+      <transcription_jobs>
+        - id (uuid, pk)
+        - team_id (uuid, fk -> teams.id)
+        - created_by (uuid, fk -> users.id)
+        - status (text enum: QUEUED|RUNNING|SUCCEEDED|FAILED|CANCELED)
+        - requested_language (text nullable)
+        - detected_language (text nullable)
+        - target_language (text nullable)  # target language for translation
+        - engine (text)
+        - options_json (json)
+        - progress_pct (int, 0-100)
+        - progress_stage (text nullable: downloading|decoding|transcribing|translating|formatting|saving)
+        - attempts (int, default 0)
+        - error_code (text nullable)
+        - error_message (text nullable, sanitized)
+        - created_at (datetime)
+        - started_at (datetime nullable)
+        - finished_at (datetime nullable)
+      </transcription_jobs>
+
+      <audio_assets>
+        - id (uuid, pk)
+        - job_id (uuid, fk -> transcription_jobs.id, unique)
+        - source_type (text: upload|url)
+        - source_url (text nullable)
+        - mime_type (text nullable)
+        - original_filename (text nullable)
+        - storage_uri (text)  # local path or S3 URI
+        - bytes (bigint nullable)
+        - duration_ms (int nullable)
+        - created_at (datetime)
+      </audio_assets>
+
+      <transcripts>
+        - id (uuid, pk)
+        - job_id (uuid, fk -> transcription_jobs.id, unique)
+        - text (text)
+        - segments_json (json)  # [{start_ms, end_ms, text, speaker?}]
+        - format_versions_json (json nullable)  # {srt_uri, vtt_uri, etc.}
+        - created_at (datetime)
+        - updated_at (datetime nullable)
+      </transcripts>
+      
+      <translation_artifacts>
+        - id (uuid, pk)
+        - job_id (uuid, fk -> transcription_jobs.id, unique)
+        - status (text enum: PENDING|RUNNING|SUCCEEDED|FAILED|CANCELED)
+        - target_language (text)
+        - text (text)
+        - segments_json (json)  # [{start_ms, end_ms, text, speaker?}]
+        - engine (text)  # e.g., translategemma-4b-it
+        - engine_version (text)
+        - error_code (text nullable)
+        - error_message (text nullable, sanitized)
+        - created_at (datetime)
+        - updated_at (datetime nullable)
+      </translation_artifacts>
+      
+      <transcript_edits>
+        - id (uuid, pk)
+        - transcript_id (uuid, fk -> transcripts.id)
+        - edited_by (uuid, fk -> users.id)
+        - field_edited (text: full_text|segment)
+        - segment_id (int nullable)  # segment index if editing segment
+        - previous_value (text)
+        - new_value (text)
+        - created_at (datetime)
+      </transcript_edits>
+      
+      <!-- USER SETTINGS -->
+      <user_settings>
+        - id (uuid, pk)
+        - user_id (uuid, fk -> users.id, unique)
+        - preferred_language (text, default 'en')
+        - theme (text: light|dark|auto, default 'auto')
+        - email_notifications (boolean, default true)
+        - job_completion_notifications (boolean, default true)
+        - created_at (datetime)
+        - updated_at (datetime)
+      </user_settings>
+      
+      <!-- ADMIN & AUDIT -->
+      <audit_logs>
+        - id (uuid, pk)
+        - admin_user_id (uuid, fk -> admin_users.id, nullable)
+        - target_type (text)  # Resource type: admin_user, admin_auth, user, team, job, system
+        - target_id (text)  # Resource ID as string
+        - action (text)  # Action performed
+        - previous_state (json nullable)  # State before action
+        - new_state (json nullable)  # State after action
+        - reason (text nullable)  # Reason for action (e.g., suspension reason)
+        - created_at (datetime)
+        - updated_at (datetime)
+      </audit_logs>
+    </tables>
+  </database_schema>
+
+  <!-- ============================================ -->
+  <!-- SECTION 4: API ENDPOINTS -->
+  <!-- ============================================ -->
+  
+  <api_endpoints>
+    <!-- HEALTH & STATUS -->
+    <health>
+      - GET /v1/health  # API health check
+    </health>
+    
+    <!-- AUTHENTICATION -->
+    <auth>
+      <!-- Email/Password -->
+      - POST /v1/auth/signup  # Create user + team, sends verification email, returns JWT
+      - POST /v1/auth/login  # Email/password login (requires verified email), returns JWT
+      - POST /v1/auth/logout  # Revoke refresh token
+      - POST /v1/auth/refresh  # Refresh JWT using refresh token
+      - GET /v1/auth/me  # Get current user info
+      
+      <!-- Email Verification -->
+      - POST /v1/auth/verify-email  # Verify email with token from email link
+      - POST /v1/auth/verify-email-code  # Verify email with 6-digit code
+      - POST /v1/auth/resend-verification  # Resend verification email
+      
+      <!-- Password Reset -->
+      - POST /v1/auth/forgot-password  # Request password reset (sends email)
+      - POST /v1/auth/reset-password  # Reset password with token from email
+      
+      <!-- Google OAuth (PKCE supported) -->
+      - GET /v1/auth/oauth/google  # Redirect to Google OAuth (accepts: code_challenge, code_challenge_method, state)
+      - GET /v1/auth/oauth/google/callback  # Handle Google OAuth callback (accepts: code, state, code_verifier)
+
+      <!-- ADMIN SCRIPT -->
+      - scripts/create_admin.py: Bootstrap a SUPER_ADMIN user via AdminAuthService
+        - Usage: python apps/api/scripts/create_admin.py --email admin@example.com --password StrongPass! --full-name "Admin User"
+        - Or set environment variables: ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_FULL_NAME
+        - Requires ADMIN_JWT_SECRET: separate secret for admin tokens
+    </auth>
+    
+    <!-- TEAMS & MEMBERS -->
+    <teams>
+      - GET /v1/teams/:teamId  # Get team details
+      - PATCH /v1/teams/:teamId  # Update team (name, default_language)
+      - DELETE /v1/teams/:teamId  # Delete team (ADMIN only, follows deletion policy)
+      - GET /v1/teams/:teamId/members  # List team members
+      - PATCH /v1/teams/:teamId/members/:memberId  # Update member role
+      - DELETE /v1/teams/:teamId/members/:memberId  # Remove member
+      - POST /v1/teams/:teamId/invitations  # Invite member via email
+      - GET /v1/teams/:teamId/invitations  # List pending invitations
+      - DELETE /v1/teams/:teamId/invitations/:invitationId  # Cancel invitation
+      - POST /v1/invitations/:token/accept  # Accept invitation (validates expiry)
+    </teams>
+    
+    <!-- ONBOARDING -->
+    <onboarding>
+      - POST /v1/onboarding/complete  # Complete onboarding (team name, language, plan, optional invites)
+      - Request fields: team_name, host_language, plan (optional, defaults to FREE), invite_emails (optional array)
+      - Response: team_id, name, host_language, plan
+    </onboarding>
+    <!-- DASHBOARD -->
+    <dashboard>
+      - GET /v1/dashboard/stats  # Get dashboard statistics (team-scoped)
+      - Response: total_jobs, succeeded_jobs, failed_jobs, member_count, plan, credits_balance, max_members, max_jobs_per_month
+      - GET /v1/dashboard/recent-jobs?limit=10  # Get recent jobs (team-scoped)
+      - GET /v1/dashboard/activity?limit=50  # Get team activity feed (team-scoped)
+      - Response: list of {type, display_name, icon, message, timestamp}
+      - GET /v1/dashboard/usage  # Get usage statistics for current month (team-scoped)
+      - Response: jobs_created, jobs_succeeded, jobs_failed, month_start
+    </dashboard>
+
+    <!-- SETTINGS -->
+    <settings>
+      - GET /v1/settings/user  # Get current user profile and settings
+      - Response: id, email, full_name, is_verified, is_active, created_at
+      - PATCH /v1/settings/user  # Update user profile (full_name, avatar_url)
+      - POST /v1/settings/user/email  # Update user email (requires re-verification)
+      - Request: new_email
+      - POST /v1/settings/user/password  # Update user password
+      - Request: current_password, new_password
+      - GET /v1/settings/team  # Get team settings (team-scoped)
+      - Response: id, name, host_language, plan, credits_balance, created_at, members_count
+      - PATCH /v1/settings/team  # Update team settings (admin only, team-scoped)
+      - Request: name, host_language
+      - GET /v1/settings/team/members  # Get team members list (team-scoped)
+      - Response: list of {id, user_id, email, full_name, role, created_at}
+      - GET /v1/settings/billing  # Get billing information (team-scoped)
+      - Response: plan, credits_balance, stripe_customer_id, stripe_subscription_id
+    </settings>
+    <!-- JOBS -->
+    <jobs>
+      - POST /v1/jobs  # Create job from multipart upload (team-scoped)
+      - POST /v1/jobs/url  # Create job from URL (team-scoped)
+      - GET /v1/jobs  # List jobs with pagination & filters (team-scoped)
+      - GET /v1/jobs/pending  # List QUEUED|RUNNING jobs (team-scoped)
+      - GET /v1/jobs/completed  # List SUCCEEDED|FAILED|CANCELED jobs (team-scoped)
+      - GET /v1/jobs/:jobId  # Get job status & progress (team-scoped)
+      - GET /v1/jobs/:jobId/live  # SSE endpoint for live progress updates
+      - POST /v1/jobs/:jobId/cancel  # Cancel job (best-effort, team-scoped)
+      - GET /v1/jobs/:jobId/result  # Get transcript results (team-scoped)
+    </jobs>
+    
+    <!-- CONTACT -->
+    <contact>
+      - POST /v1/contact  # Contact form submission
+    </contact>
+    
+    <!-- TRANSCRIPTS -->
+    <transcripts>
+      - GET /v1/transcripts/:transcriptId  # Get transcript by ID (team-scoped)
+      - PATCH /v1/transcripts/:transcriptId  # Update full transcript text (team-scoped)
+      - GET /v1/transcripts/:transcriptId/segments  # Get segments with timestamps
+      - PATCH /v1/transcripts/:transcriptId/segments/:segmentId  # Edit individual segment
+      - POST /v1/transcripts/:transcriptId/revert  # Revert to original transcript
+      - GET /v1/transcripts/:transcriptId/history  # Get edit history
+      - GET /v1/transcripts/:transcriptId/export?format=txt|json|srt|vtt  # Export
+      - POST /v1/transcripts/:transcriptId/export  # Generate export artifacts (async)
+    </transcripts>
+    
+    <!-- USER SETTINGS -->
+    <user_settings>
+      - GET /v1/users/:userId/settings  # Get user settings
+      - PATCH /v1/users/:userId/settings  # Update settings (language, theme, notifications)
+      - PATCH /v1/users/:userId/password  # Change password
+      - DELETE /v1/users/:userId  # Delete own account (follows deletion policy)
+    </user_settings>
+    
+    <!-- STT ENGINES -->
+    <engines>
+      - GET /v1/engines  # List available STT engines + capabilities
+    </engines>
+    
+    <!-- BILLING & SUBSCRIPTIONS -->
+    <billing>
+      <!-- Subscription Management -->
+      - GET /v1/billing/subscription  # Get current subscription details
+      - POST /v1/billing/subscription/upgrade  # Upgrade plan (FREE->STANDARD->PRO)
+      - POST /v1/billing/subscription/downgrade  # Downgrade plan
+      - POST /v1/billing/subscription/cancel  # Cancel subscription (at period end)
+      - POST /v1/billing/subscription/reactivate  # Reactivate canceled subscription
+      
+      <!-- Payment Methods -->
+      - GET /v1/billing/payment-methods  # List payment methods
+      - POST /v1/billing/payment-methods  # Add payment method (Stripe token)
+      - PATCH /v1/billing/payment-methods/:methodId/default  # Set as default
+      - DELETE /v1/billing/payment-methods/:methodId  # Remove payment method
+      
+      <!-- Credits (FREE plan only) -->
+      - GET /v1/billing/credits  # Get current credits balance
+      - POST /v1/billing/credits/purchase  # Purchase credits (Stripe payment)
+      - GET /v1/billing/credits/history  # Credit purchase history
+      
+      <!-- Invoices -->
+      - GET /v1/billing/invoices  # List invoices (pagination)
+      - GET /v1/billing/invoices/:invoiceId  # Get invoice details
+      - GET /v1/billing/invoices/:invoiceId/pdf  # Download invoice PDF
+      
+      <!-- Usage -->
+      - GET /v1/billing/usage  # Get current period usage (uploads count)
+      - GET /v1/billing/usage/history  # Historical usage by month
+      
+      <!-- Pricing -->
+      - GET /v1/billing/pricing  # Get pricing plans and limits
+      
+      <!-- Stripe Webhooks -->
+      - POST /v1/webhooks/stripe  # Stripe webhook handler (invoice.paid, subscription.updated, etc.)
+    </billing>
+    
+    <!-- ADMIN ENDPOINTS (Super Admin Only) -->
+    <admin>
+      <!-- Auth -->
+      - POST /v1/admin/auth/login  # Admin login (separate from user auth)
+      
+      <!-- Dashboard -->
+      - GET /v1/admin/dashboard/stats  # Overview stats (users, teams, jobs, storage)
+      - GET /v1/admin/system/health  # System health metrics (API, queue, worker)
+      
+      <!-- Users Management -->
+      - GET /v1/admin/users  # List all users (pagination, search, filters)
+      - GET /v1/admin/users/:userId  # Get user details
+      - POST /v1/admin/users/:userId/suspend  # Suspend user account
+      - POST /v1/admin/users/:userId/unsuspend  # Unsuspend user account
+      - DELETE /v1/admin/users/:userId  # Delete user account
+      - POST /v1/admin/users/:userId/impersonate  # Generate impersonation token
+      
+      <!-- Teams Management -->
+      - GET /v1/admin/teams  # List all teams (pagination, search, filters)
+      - GET /v1/admin/teams/:teamId  # Get team details + activity
+      - POST /v1/admin/teams/:teamId/suspend  # Suspend team
+      - POST /v1/admin/teams/:teamId/unsuspend  # Unsuspend team
+      - DELETE /v1/admin/teams/:teamId  # Delete team
+      
+      <!-- Jobs Monitoring -->
+      - GET /v1/admin/jobs  # List all jobs across all teams
+      - GET /v1/admin/jobs/:jobId  # Get job details + logs
+      - POST /v1/admin/jobs/:jobId/retry  # Retry failed job
+      - POST /v1/admin/jobs/:jobId/cancel  # Cancel running job
+      
+      <!-- Analytics -->
+      - GET /v1/admin/analytics/usage  # Usage analytics (jobs, minutes, languages, timeframe: start/end, granularity: day/week/month)
+      - GET /v1/admin/analytics/errors  # Error rate trends (timeframe: start/end)
+      - GET /v1/admin/analytics/jobs  # Job volume analytics by status (timeframe: start/end)
+      
+      <!-- System Settings -->
+      - GET /v1/admin/system/settings  # Get system settings
+      - PATCH /v1/admin/system/settings  # Update system settings
+      
+      <!-- Audit Logs -->
+      - GET /v1/admin/audit-logs  # List audit logs (pagination, filters: admin_id, action, time range)
+      - GET /v1/admin/audit-logs/{audit_id}  # Get single audit log detail
+      
+      <!-- Impersonation -->
+      - POST /v1/admin/impersonation  # Create impersonation token for user (SUPER_ADMIN only)
+      - DELETE /v1/admin/impersonation/{token_id}  # Revoke impersonation token (SUPER_ADMIN only)
+    </admin>
+  </api_endpoints>
+
+  <!-- ============================================ -->
+  <!-- SECTION 5: ENVIRONMENT VARIABLES -->
+  <!-- ============================================ -->
+  
+  <environment_variables>
+    <api>
+      - DATABASE_URL: PostgreSQL connection string
+      - REDIS_URL: Redis connection string
+      - JWT_SECRET: Secret key for JWT signing
+      - JWT_EXPIRY: JWT token expiry (default: 15m)
+      - ADMIN_JWT_SECRET: Separate secret for admin tokens
+      - CORS_ORIGINS: Comma-separated allowed origins
+      - STORAGE_BACKEND: local|s3 (default: local)
+      - STORAGE_PATH: Local storage path (if local backend)
+      - STORAGE_MIN_FREE_BYTES: Minimum free disk bytes required for local writes (default: 0)
+      - AWS_S3_BUCKET: S3 bucket name (if s3 backend)
+      - AWS_REGION: AWS region (if s3 backend)
+      - SMTP_HOST: Email server host for invitations (default: smtp.gmail.com)
+      - SMTP_PORT: Email server port (default: 587 for Gmail TLS)
+      - SMTP_USER: Email server username
+      - SMTP_PASSWORD: Email server password (use Gmail app password)
+      - SMTP_FROM: From email address
+      - DEFAULT_LANGUAGE: Default UI language (default: en)
+      - SUPPORTED_LANGUAGES: Comma-separated list (en,de,es,fr,jp)
+      - MAX_UPLOAD_SIZE_MB: Max audio file size (default: 100)
+      - QUEUE_MAX_RETRIES: Max job retry attempts (default: 3)
+      - QUEUE_RETRY_BACKOFF: Exponential backoff multiplier (default: 2)
+      - RATE_LIMIT_PER_MINUTE: Max requests per minute per team (default: 60)
+      - STRIPE_SECRET_KEY: Stripe secret key for payments
+      - STRIPE_PUBLISHABLE_KEY: Stripe publishable key (for frontend)
+      - STRIPE_WEBHOOK_SECRET: Stripe webhook signing secret
+      - STRIPE_PRICE_ID_STANDARD: Stripe price ID for STANDARD plan
+      - STRIPE_PRICE_ID_PRO: Stripe price ID for PRO plan
+      - CREDIT_PRICE_PER_UPLOAD: Price per credit in cents (default: 100 = $1)
+      - STRIPE_CHECKOUT_SUCCESS_URL: Path to checkout success page (default: /checkout/success)
+      - STRIPE_CHECKOUT_CANCEL_URL: Path to checkout cancel page (default: /checkout/cancel)
+      # OAuth
+      - GOOGLE_CLIENT_ID: Google OAuth client ID
+      - GOOGLE_CLIENT_SECRET: Google OAuth client secret
+      - OAUTH_REDIRECT_URL: OAuth callback URL (e.g., https://app.polyscript.io/api/v1/auth/oauth/google/callback)
+      # PKCE (Proof Key for Code Exchange) for OAuth
+      - OAuth endpoints support PKCE flow for enhanced security
+      - GET /v1/auth/oauth/google accepts: code_challenge, code_challenge_method=S256
+      - POST /v1/auth/oauth/google/callback accepts: code_verifier
+      - Client must generate code_verifier and code_challenge (S256) before initiating OAuth
+      # Application URLs
+      - APP_URL: Base URL for web app (for email links)
+      - ADMIN_URL: Base URL for admin panel
+      # AWS (for S3 storage)
+      - AWS_ACCESS_KEY_ID: AWS access key (if s3 backend)
+      - AWS_SECRET_ACCESS_KEY: AWS secret key (if s3 backend)
+      # Email Token Expiry
+      - EMAIL_VERIFICATION_EXPIRY: Token expiry in hours (default: 24)
+      - PASSWORD_RESET_EXPIRY: Token expiry in hours (default: 1)
+      - INVITATION_EXPIRY: Invitation expiry in days (default: 7)
+      # Deletion Policy
+      - DELETION_GRACE_PERIOD_DAYS: Days before soft-deleted content is hard-deleted (default: 30)
+      - ORPHANED_CONTENT_RETENTION_DAYS: Days orphaned content kept before deletion (default: 90)
+    </api>
+
+    <worker>
+      - DATABASE_URL: PostgreSQL connection string
+      - REDIS_URL: Redis connection string
+      - STORAGE_BACKEND: local|s3 (default: local)
+      - STORAGE_PATH: Local storage path (if local backend)
+      - STORAGE_MIN_FREE_BYTES: Minimum free disk bytes required for local writes (default: 0)
+      - AWS_S3_BUCKET: S3 bucket name (if s3 backend)
+      - AWS_REGION: AWS region (if s3 backend)
+      - AWS_ACCESS_KEY_ID: AWS access key (if s3 backend)
+      - AWS_SECRET_ACCESS_KEY: AWS secret key (if s3 backend)
+      - DOWNLOAD_MAX_RETRIES: Max download attempts for URL ingestion (default: 3)
+      - DOWNLOAD_RETRY_BACKOFF: Exponential backoff multiplier for downloads (default: 2)
+      - DOWNLOAD_TIMEOUT_SECONDS: HTTP timeout for downloads (default: 60)
+      - DOWNLOAD_CHUNK_SIZE_BYTES: Download chunk size (default: 8192)
+      - DOWNLOAD_MAX_BYTES: Max download size in bytes; 0 disables (default: 0)
+    </worker>
+    
+    <web_apps>
+      - VITE_API_URL: API base URL
+      - VITE_DEFAULT_LANGUAGE: Default UI language (default: en)
+    </web_apps>
+    
+    <marketing>
+      - PUBLIC_API_URL: API base URL for contact forms
+    </marketing>
+    
+    <admin>
+      - VITE_API_URL: API base URL
+      - VITE_ADMIN_MODE: true (enables admin-specific features)
+    </admin>
+  </environment_variables>
+
+  <!-- ============================================ -->
+  <!-- SECTION 6: CORE FEATURES -->
+  <!-- ============================================ -->
+  
+  <core_features>
+    <!-- TEAMS & MEMBERS -->
+    <teams_and_members>
+      - Multi-tenant architecture: each team is isolated
+      - User signup creates a new team with user as admin
+      - Team roles:
+        - ADMIN: full access, can invite/remove members, manage billing
+        - MEMBER: can create jobs, view team jobs, edit transcripts
+        - VIEWER: read-only access to team jobs
+      - Onboarding flow:
+        1. User signs up (email + password or OAuth)
+        2. User becomes team admin
+        3. User selects host language (en, de, es, fr, jp)
+        4. User sets team name
+        5. User can invite team members via email (optional)
+        6. Invited members receive email with signup link
+      - Team settings:
+        - Team name
+        - Default host language
+        - Member management
+      - Member management:
+        - Invite members (send email invitation with token)
+        - Change member roles (ADMIN only)
+        - Remove members (ADMIN only)
+        - View pending invitations
+    </teams_and_members>
+
+    <!-- SUBSCRIPTIONS & BILLING -->
+    <subscriptions_and_billing>
+      - Three subscription plans:
+        - FREE: $0/month
+          - 5 uploads per month
+          - 2 languages supported
+          - 1 team member (admin only)
+          - Can purchase credits when monthly limit reached ($1 per upload)
+          - 5 translations per month
+        - STANDARD: $10/month
+          - 25 uploads per month
+          - 5 languages supported
+          - Up to 5 team members
+          - No credit purchases needed
+          - 25 translations per month
+        - PRO: $30/month
+          - Unlimited uploads
+          - 5 languages supported
+          - Unlimited team members
+          - Priority support
+          - Unlimited translations
+      - Subscription management:
+        - Upgrade/downgrade plans (prorated billing)
+        - Cancel subscription (at period end)
+        - Reactivate canceled subscription
+        - View current plan and usage
+      - Credit system (FREE plan only):
+        - Purchase credits when monthly limit reached
+        - $1 per credit (1 credit = 1 upload)
+        - Credits never expire
+        - Credits balance tracked in teams table
+      - Payment processing:
+        - Stripe integration for subscriptions and credit purchases
+        - Secure payment method storage
+        - Automatic monthly billing
+        - Invoice generation and PDF download
+      - Usage tracking:
+        - Monthly upload count per team
+        - Monthly translation count per team (resets monthly)
+        - Reset on subscription renewal date
+        - Usage logs for audit trail
+      - Plan enforcement (gating logic):
+        - Check plan limits before job creation
+        - Check translation limits before translation stage
+        - Block upload if FREE plan limit reached and no credits
+        - Block team member invite if plan limit reached
+        - Block language selection if not in plan
+        - Show upgrade prompt when limits reached
+      - Billing pages:
+        - Subscription overview (current plan, usage, next billing date)
+        - Payment methods management
+        - Invoice history
+        - Credit purchase (FREE plan only)
+        - Upgrade/downgrade options
+    </subscriptions_and_billing>
+
+    <!-- TRANSCRIPTION JOBS -->
+    <transcription_jobs>
+      - Create transcription job from audio upload (multipart/form-data)
+      - Create transcription job from remote URL (JSON payload)
+      - Job state machine:
+        - QUEUED: created and enqueued
+        - RUNNING: actively processing
+        - SUCCEEDED: results saved and available
+        - FAILED: terminal error after retries
+        - CANCELED: user-requested cancel (best-effort)
+      - Progress reporting:
+        - progress_pct (0..100 best-effort)
+        - progress_stage (downloading | decoding | transcribing | formatting | saving)
+      - Retry policy:
+        - max attempts configurable (default 3)
+        - exponential backoff configurable
+        - attempts persisted in DB
+      - Live progress updates via SSE
+      - Team-scoped: users can only see their team's jobs
+    </transcription_jobs>
+
+    <!-- MULTI-LANGUAGE SUPPORT -->
+    <multi_language_support>
+      - Optional requested_language parameter (BCP-47 preferred: en, en-US, fr, es, etc.)
+      - Engine autodetect when requested_language is null
+      - Persist detected_language to DB
+      - Return final language code in results payload
+    </multi_language_support>
+
+    <!-- TRANSLATION -->
+    <translation>
+      - Optional target_language parameter on job creation (BCP-47: en, de, es, fr, jp, etc.)
+      - Translation runs automatically post-ASR when target_language is provided
+      - Translation is plan-gated: FREE 5/mo, STANDARD 25/mo, PRO unlimited
+      - Translation stored in separate translation_artifacts table with independent status
+      - Translation failures do NOT mark transcription as FAILED
+      - TranslateGemma engine runs locally via HF Transformers in worker
+      - TranslateGemma supports 55 languages
+      - 2k token input limit; text is chunked if needed
+      - Progress stage includes "translating" when translation is active
+      - Translation artifacts include: text, segments, engine, engine_version
+    </translation>
+
+    <!-- STT ENGINE SYSTEM -->
+    <stt_engine_system>
+      - Pluggable STT engines behind a single normalized interface (packages/stt)
+      - Engine registry: resolve engine by name; default engine via config
+      - Normalized transcript output:
+        - full text
+        - segments: list of { start_ms, end_ms, text, speaker? }
+        - optional confidence (engine-dependent)
+        - engine metadata (name/version)
+      - Feature flags per engine:
+        - timestamps (on/off)
+        - diarization (best-effort; optional)
+    </stt_engine_system>
+
+    <!-- STORAGE & PERSISTENCE -->
+    <storage_and_persistence>
+      - Audio storage:
+        - dev: local filesystem (e.g., ./data/audio/<job_id>.<ext>)
+        - prod: S3-compatible storage with presigned URLs
+        - storage_uri saved to DB
+        - Local storage enforces minimum free space (STORAGE_MIN_FREE_BYTES)
+        - S3 uploads include checksum validation (Content-MD5)
+      - DB is system of record for job status and transcript results
+      - Redis used for queue transport only; safe to flush without losing correctness
+    </storage_and_persistence>
+    <!-- WORKER SERVICE -->
+    <worker_service>
+      - Worker runs as separate `apps/worker` service with dedicated event loop thread
+      - Worker lifecycle:
+        - Starts via `python apps/worker/main.py` or configured process manager
+        - Initializes STT engines, storage backend, and Redis client on startup
+        - Spawns consumer thread with its own asyncio event loop
+        - Listens to SIGTERM/SIGINT for graceful shutdown
+      - Consumer thread implementation:
+        - Dedicated thread ("TranscriptionConsumer") runs consumer loop
+        - Thread creates its own asyncio event loop via `asyncio.new_event_loop()`
+        - Consumer blocks on Redis queue with 1s timeout to check shutdown flag
+        - Processes jobs sequentially (no parallelization)
+        - Graceful shutdown: completes current job, stops blocking queue, exits
+      - Job processing pipeline (7 stages):
+        1. Starting (0%): Mark job RUNNING, increment attempts, set started_at
+        2. Downloading (0-10%): For URL jobs, download audio; uploads already stored
+        3. Decoding (10-20%): Validate audio format, extract duration
+        4. Transcribing (20-90%): Call STT engine (whisper-local, etc.)
+        5. Formatting (90-95%): Normalize output, generate segments JSON
+        6. Translating (95-98%): If target_language specified, translate (optional)
+        7. Saving (95-100%): Save transcript to DB, mark SUCCEEDED
+      - Download validation:
+        - Enforces Content-Length when present and validates downloaded size
+        - Logs SHA-256 checksum for auditability
+        - Retries with exponential backoff on partial/failed downloads
+      - Audio validation:
+        - Detects codec/extension mismatches and corrupt files with explicit errors
+        - Rejects zero-duration or empty audio
+        - Supported formats: MP3, WAV, M4A, AAC, FLAC, AMR, AMR-WB, OGG, WEBM, MP4
+      - GPU fallback:
+        - On CUDA/MPS errors, fall back to CPU inference for Whisper/TranslateGemma
+      - VAD telemetry:
+        - Logs speech vs total duration ratio and warns when >90% is filtered
+      - Monitoring:
+        - Log validation failures, download errors, and accelerator fallbacks with job_id/team_id
+      - Progress updates:
+        - Update DB (progress_pct, progress_stage) on each stage transition
+        - Publish to Redis pub/sub channel `job:{job_id}:progress`
+        - SSE endpoint in apps/api listens to this channel for live updates
+      - Retry policy:
+        - On failure: increment attempts in DB
+        - If attempts < max_retries: calculate backoff delay (backoff ** attempts), re-enqueue, mark QUEUED
+        - If attempts >= max_retries: mark FAILED with error_code, error_message, finished_at
+        - Configurable via QUEUE_MAX_RETRIES (default: 3) and QUEUE_RETRY_BACKOFF (default: 2)
+      - Queue contract:
+        - Queue key: `transcription:queue`
+        - Work item payload (JSON):
+          - job_id (uuid)
+          - audio_ref (db reference to where audio is stored)
+          - requested_language (nullable)
+          - engine (nullable; resolved via default if null)
+          - options (object)
+      - Cancel handling:
+        - Check Redis key `cancel:{job_id}` before processing
+        - If set, mark job CANCELED immediately (best-effort)
+    </worker_service>
+
+    <!-- TRANSCRIPT EDITING -->
+    <transcript_editing>
+      - Edit full transcript text
+      - Edit individual segments with timestamps
+      - Edit history tracking (who, what, when)
+      - Revert to original functionality
+      - Auto-save indicator in UI
+      - Team members with MEMBER or ADMIN role can edit
+    </transcript_editing>
+
+    <!-- EXPORT & ARTIFACTS -->
+    <export_and_artifacts>
+      - Export formats: TXT, JSON, SRT, VTT
+      - Async generation for large transcripts
+      - Artifact caching (avoid regenerating)
+      - Bulk export for multiple transcripts
+      - Presigned download URLs (for S3)
+    </export_and_artifacts>
+
+    <!-- USER SETTINGS -->
+    <user_settings>
+      - Preferred language selection (en, de, es, fr, jp)
+      - Theme selection (light, dark, auto)
+      - Email notification preferences
+      - Job completion notifications
+      - Profile management (name, password)
+    </user_settings>
+
+    <!-- ADMIN PANEL -->
+    <admin_panel>
+      - Super admin dashboard for service operators
+      - User management (view, suspend, delete, impersonate)
+      - Team management (view, suspend, delete)
+      - Jobs monitoring (view all, retry, cancel)
+      - System settings (engines, rate limits, storage, email)
+      - Analytics (usage, errors, trends)
+      - Audit logs (all admin actions logged)
+    </admin_panel>
+
+    <!-- DELETION POLICY -->
+    <deletion_policy>
+      - Soft delete pattern: set deleted_at timestamp instead of hard delete
+      - Grace period: configurable days before hard deletion (default 30)
+      
+      User Deletion:
+        - User requests deletion → soft delete (set deleted_at)
+        - If user is only ADMIN of a team → entire team loses access
+        - Jobs created by user → orphaned (created_by remains but user marked deleted)
+        - Transcript edits by user → kept for orphaned_content_retention_days, then deleted
+        - OAuth accounts → deleted immediately
+        - Refresh tokens → revoked immediately
+        
+      Team Deletion:
+        - Team admin requests deletion → soft delete team
+        - All team members lose access immediately
+        - Jobs and transcripts → marked for deletion
+        - Audio files → scheduled for cleanup after grace period
+        - Stripe subscription → canceled immediately
+        - Invoices → retained for legal/accounting (marked as archived)
+        
+      Content Deletion Criteria (extensible):
+        - deleted_at older than DELETION_GRACE_PERIOD_DAYS → hard delete
+        - Orphaned content older than ORPHANED_CONTENT_RETENTION_DAYS → hard delete
+        - Expired invitations → delete immediately
+        - Expired password reset tokens → delete immediately
+        - Revoked refresh tokens older than 7 days → delete
+    </deletion_policy>
+
+    <!-- BACKGROUND TASKS (Cron Jobs) -->
+    <background_tasks>
+      Scheduled via cron or task scheduler (e.g., APScheduler, Celery Beat):
+      - Maintenance entrypoint: apps/api/scripts/run_maintenance.py
+        - Runs reset_monthly_usage + cleanup_expired_* + cleanup_revoked_tokens + cleanup_soft_deleted_users
+        - Schedule: hourly or daily depending on workload
+      
+      - cleanup_expired_invitations
+        - Frequency: daily
+        - Action: delete team_invitations where expires_at < now()
+        
+      - cleanup_expired_password_resets
+        - Frequency: hourly
+        - Action: delete password_resets where expires_at < now()
+        
+      - cleanup_revoked_tokens
+        - Frequency: daily
+        - Action: delete refresh_tokens where revoked_at < (now - 7 days)
+        
+      - hard_delete_soft_deleted_content
+        - Frequency: daily
+        - Action: find and hard delete records where deleted_at < (now - DELETION_GRACE_PERIOD_DAYS)
+        - Scope: users, teams, jobs, transcripts, audio_assets
+        
+      - cleanup_orphaned_content
+        - Frequency: daily
+        - Action: delete orphaned content older than ORPHANED_CONTENT_RETENTION_DAYS
+        - Scope: transcript_edits where user is deleted
+        
+      - cleanup_audio_files
+        - Frequency: daily
+        - Action: delete audio files for hard-deleted jobs
+        - Storage: local filesystem or S3
+        
+      - reset_monthly_usage
+        - Frequency: hourly (check for teams due for reset)
+        - Action: reset monthly_upload_count to 0 for teams where monthly_reset_date <= now()
+        - Update monthly_reset_date to next period
+        
+      - sync_stripe_subscriptions
+        - Frequency: daily
+        - Action: verify subscription status with Stripe, update local records
+        - Handle: expired, canceled, past_due subscriptions
+    </background_tasks>
+  </core_features>
+
+  <!-- ============================================ -->
+  <!-- SECTION 7: CORE SERVICES (Business Logic) -->
+  <!-- ============================================ -->
+  
+  <core_services>
+    <auth_service>
+      - User registration and login
+      - JWT token generation and validation
+      - Password hashing (bcrypt)
+      - OAuth integration (Google, GitHub)
+      - Token refresh logic
+      - Admin authentication (separate from user auth)
+    </auth_service>
+    
+    <team_service>
+      - Team creation on user signup
+      - Team member management (add, remove, update role)
+      - Team invitation flow (generate token, send email, accept)
+      - Team settings management
+      - Multi-tenant data isolation
+      - Team suspension/unsuspension
+    </team_service>
+    
+    <job_manager_service>
+      - Job creation (upload or URL)
+      - Job status tracking
+      - Job cancellation
+      - Job listing with filters (team-scoped)
+      - Progress updates
+      - Retry logic with exponential backoff
+    </job_manager_service>
+    
+    <storage_service>
+      - Audio file upload handling
+      - Storage backend abstraction (local/S3)
+      - File cleanup on job completion/failure
+      - Presigned URL generation (for S3)
+    </storage_service>
+    
+    <stt_engine_registry>
+      - Engine registration and discovery
+      - Engine capability reporting
+      - Engine selection logic
+      - Result normalization
+    </stt_engine_registry>
+    
+    <transcript_service>
+      - Transcript retrieval (team-scoped)
+      - Transcript editing (full text or individual segments)
+      - Edit history tracking (who, what, when)
+      - Revert to original functionality
+      - Real-time updates via SSE for live transcription
+    </transcript_service>
+    
+    <export_service>
+      - Generate export artifacts (TXT, JSON, SRT, VTT)
+      - Format conversion logic
+      - Artifact caching (avoid regenerating)
+      - Bulk export for multiple transcripts
+      - Presigned download URLs (for S3)
+    </export_service>
+    
+    <notification_service>
+      - Email sending (SMTP)
+      - Invitation emails
+      - Job completion notifications
+      - Template rendering
+    </notification_service>
+    
+    <i18n_service>
+      - Translation key lookup
+      - Language fallback logic
+      - API error message localization
+      - Accept-Language header parsing
+    </i18n_service>
+    
+    <billing_service>
+      - Subscription management (create, upgrade, downgrade, cancel)
+      - Stripe integration (customers, subscriptions, payment methods)
+      - Plan limit enforcement (check before job creation, member invite)
+      - Credit purchase processing
+      - Usage tracking (increment monthly_upload_count, log usage)
+      - Monthly reset logic (reset upload count on renewal date)
+      - Invoice generation and retrieval
+      - Webhook handling (subscription updates, payment events)
+      - Prorated billing calculations
+      - Payment method management
+    </billing_service>
+    
+    <admin_service>
+      - User/team suspension and deletion
+      - Impersonation token generation
+      - System settings management
+      - Analytics data aggregation
+      - Audit log creation
+    </admin_service>
+  </core_services>
+
+  <!-- ============================================ -->
+  <!-- SECTION 8: UI/UX SPECIFICATIONS -->
+  <!-- ============================================ -->
+  
+  <ui_specifications>
+    <!-- WEB APP (apps/web) -->
+    <web_app>
+      <pages>
+        <login_page>
+          - Email + password form
+          - "Continue with Google" OAuth button
+          - "Forgot password?" link
+          - "Create account" link to signup
+          - Error states: invalid credentials, email not verified, account suspended
+        </login_page>
+        
+        <signup_page>
+          - Email + password form (with password confirmation)
+          - "Continue with Google" OAuth button
+          - Terms of service checkbox
+          - After signup: show "verify your email" message
+          - After Google OAuth: redirect to onboarding
+        </signup_page>
+        
+        <email_verification_page>
+          - Pending verification state:
+            - "Check your email" message with user's email
+            - "Resend verification email" button
+            - "Use a different email" link (back to signup)
+          - Verification success state:
+            - "Email verified!" confirmation
+            - "Continue to onboarding" button
+          - Verification failed state:
+            - "Link expired or invalid" message
+            - "Resend verification email" button
+        </email_verification_page>
+        
+        <forgot_password_page>
+          - Email input form
+          - "Send reset link" button
+          - Success: "Check your email for reset link"
+          - "Back to login" link
+        </forgot_password_page>
+        
+        <reset_password_page>
+          - New password + confirmation form
+          - Password strength indicator
+          - "Reset password" button
+          - Success: "Password reset! Continue to login"
+          - Error: "Link expired or invalid" with "Request new link"
+        </reset_password_page>
+        
+        <onboarding_page>
+          - Step 1: Select host language (en, de, es, fr, jp)
+          - Step 2: Set team name
+          - Step 3: Invite team members (optional, can skip)
+            - Email input + role selector
+            - Add multiple invitations
+          - Step 4: Complete and redirect to dashboard
+        </onboarding_page>
+        
+        <dashboard_page>
+          - Overview stats: total jobs, pending, completed, failed
+          - Quick actions: Upload new audio, View pending jobs, Browse library
+          - Recent jobs list (last 5)
+        </dashboard_page>
+        
+        <upload_page>
+          - Page title: "Transcribe Audio"
+          - Large drag-and-drop zone centered
+          - Options card below:
+            - Language dropdown (Auto by default)
+            - Engine dropdown (Default by config)
+            - Toggle: Timestamps (default on)
+            - Toggle: Diarization (default off)
+          - Primary button: "Start Transcription"
+          - Plan gating:
+            - If FREE plan and monthly limit reached and no credits:
+              - Disable upload
+              - Show "Upgrade to continue" banner with link to billing page
+              - Show "Buy credits" button
+            - If STANDARD plan and monthly limit reached:
+              - Show "Upgrade to PRO for unlimited uploads" banner
+            - If language not in plan (FREE plan only supports 2 languages):
+              - Disable restricted languages in dropdown
+              - Show tooltip: "Upgrade to STANDARD for all languages"
+          - After submit: navigate to Live Transcript Viewer
+        </upload_page>
+        
+        <pending_jobs_page>
+          - Page title: "Pending Jobs"
+          - List of jobs with status QUEUED or RUNNING
+          - Each row shows:
+            - Job ID (shortened) + copy button
+            - Audio filename
+            - Status pill (QUEUED | RUNNING)
+            - Progress bar (if RUNNING)
+            - Progress stage label
+            - Estimated time remaining (if available)
+            - Created time
+            - Cancel button
+          - Auto-refresh every 3 seconds or use SSE for live updates
+          - Click row to view live transcript
+        </pending_jobs_page>
+        
+        <library_page>
+          - Page title: "Transcript Library"
+          - Filters:
+            - Status: All | Succeeded | Failed
+            - Date range picker
+            - Language filter
+            - Search by filename or transcript content
+          - Sort options: Date (newest/oldest), Duration, Language
+          - Grid or list view toggle
+          - Each item shows:
+            - Thumbnail or waveform visualization
+            - Filename
+            - Status pill
+            - Language (detected)
+            - Duration
+            - Created date
+            - Quick actions: View, Export, Delete
+          - Pagination (infinite scroll or page-based)
+          - Bulk actions: Export multiple, Delete multiple
+        </library_page>
+        
+        <live_transcript_viewer_page>
+          - Page title: Job filename + status pill
+          - Real-time progress bar + stage indicator
+          - Live transcript area:
+            - Shows segments as they are transcribed
+            - Auto-scroll to latest segment
+            - Each segment shows: [timestamp] text
+            - Highlight newly added segments
+          - SSE connection for live updates
+          - When complete: redirect to transcript editor or show "View Full Transcript" button
+        </live_transcript_viewer_page>
+        
+        <transcript_editor_page>
+          - Page title: Job filename + "Edit Transcript"
+          - Header:
+            - Status pill (SUCCEEDED)
+            - Language badge
+            - Duration
+            - Created date
+            - Export button (dropdown: TXT, JSON, SRT, VTT)
+          - Transcript editor:
+            - Full text view (editable textarea)
+            - Segments view (list of editable segments with timestamps)
+            - Toggle between full text and segments view
+            - Segment editor:
+              - [mm:ss.mmm - mm:ss.mmm] editable text
+              - Speaker label (if diarization enabled)
+              - Edit button per segment
+              - Save/Cancel buttons
+            - Auto-save indicator
+            - Edit history button (shows who edited what and when)
+          - Audio player:
+            - Playback controls
+            - Seek to segment on click
+            - Highlight current segment during playback
+          - Actions:
+            - Save edits
+            - Revert to original
+            - Export
+            - Delete transcript
+        </transcript_editor_page>
+        
+        <team_settings_page>
+          - Team name (editable, ADMIN only)
+          - Default language (dropdown, ADMIN only)
+          - Members list:
+            - Name, email, role, joined date
+            - Change role dropdown (ADMIN only)
+            - Remove button (ADMIN only)
+          - Pending invitations list:
+            - Email, role, invited by, invited date
+            - Cancel button (ADMIN only)
+          - Invite new member button (ADMIN only)
+        </team_settings_page>
+        
+        <billing_page>
+          - Page title: "Billing & Subscription"
+          - Current Plan section:
+            - Plan name (FREE, STANDARD, PRO) with badge
+            - Plan price
+            - Current period (start - end dates)
+            - Usage this month:
+              - Uploads used / Uploads limit (or "Unlimited")
+              - Progress bar
+              - Credits balance (if FREE plan)
+            - Next billing date (if paid plan)
+            - Cancel subscription button (if paid plan)
+          - Upgrade/Downgrade section:
+            - Plan comparison cards:
+              - FREE: $0/month, 5 uploads, 5 translations, 2 languages, 1 member
+              - STANDARD: $10/month, 25 uploads, 25 translations, 5 languages, 5 members
+              - PRO: $30/month, unlimited uploads, unlimited translations, 5 languages, unlimited members
+            - Upgrade/Downgrade buttons
+            - "Current Plan" badge on active plan
+          - Credits section (FREE plan only):
+            - Current balance
+            - Purchase credits form:
+              - Number of credits input
+              - Price calculation ($1 per credit)
+              - Purchase button (Stripe payment)
+            - Credit purchase history table
+          - Payment Methods section:
+            - List of saved payment methods:
+              - Card brand + last 4 digits
+              - Default badge
+              - Set as default button
+              - Remove button
+            - Add payment method button (Stripe Elements)
+          - Invoices section:
+            - Table of invoices:
+              - Invoice number
+              - Date
+              - Amount
+              - Status (paid, pending, failed)
+              - Download PDF button
+            - Pagination
+          - Usage History section:
+            - Monthly usage chart (last 12 months)
+            - Table: Month, Uploads, Plan
+        </billing_page>
+        
+        <user_settings_page>
+          - Page title: "User Settings"
+          - Sections:
+            - Profile:
+              - Full name (editable)
+              - Email (read-only)
+              - Password change button
+            - Preferences:
+              - Preferred language dropdown (en, de, es, fr, jp)
+              - Theme selector (light/dark/auto)
+            - Notifications:
+              - Email notifications toggle
+              - Job completion notifications toggle
+            - Account:
+              - Account created date
+              - Last login date
+              - Delete account button (with confirmation)
+          - Save button (saves all changes)
+        </user_settings_page>
+        
+        <!-- ERROR PAGES -->
+        <error_404_page>
+          - "Page not found" message
+          - Illustration or icon
+          - "Go to Dashboard" button
+          - "Go back" button
+        </error_404_page>
+        
+        <error_500_page>
+          - "Something went wrong" message
+          - "Try again" button
+          - "Contact support" link
+          - Error ID for support reference
+        </error_500_page>
+        
+        <error_403_page>
+          - "Access denied" message
+          - Reason: "Your account is suspended" or "You don't have permission"
+          - "Contact support" link (if suspended)
+          - "Go to Dashboard" button (if permission issue)
+        </error_403_page>
+        
+        <session_expired_page>
+          - "Your session has expired" message
+          - "Log in again" button
+        </session_expired_page>
+      </pages>
+      
+      <navigation>
+        - Top navigation header with app name + language switcher
+        - Main nav: Dashboard, Upload, Pending Jobs, Library, Team, Billing, Settings
+        - User menu: Profile, Settings, Logout
+        - Plan badge in header (FREE, STANDARD, PRO)
+        - Usage indicator in header (uploads remaining this month)
+      </navigation>
+    </web_app>
+
+    <!-- ADMIN PANEL (apps/admin) -->
+    <admin_panel>
+      <pages>
+        <admin_login_page>
+          - Email + password form (separate from user login)
+          - No signup option (admins created manually)
+        </admin_login_page>
+        
+        <admin_dashboard_page>
+          - Overview stats: total users, teams, jobs (all time + last 30 days)
+          - System health metrics (API uptime, queue depth, worker status)
+          - Storage usage (total audio files, transcripts)
+          - Active jobs count (QUEUED, RUNNING)
+          - Quick links to Users, Teams, Jobs, Analytics
+        </admin_dashboard_page>
+        
+        <admin_users_page>
+          - List all users (searchable, filterable)
+          - Filters: Status (all, active, suspended), Date range
+          - Each row shows:
+            - Email, Full name, Teams count, Last login, Status
+            - Actions: View, Suspend/Unsuspend, Delete, Impersonate
+          - Pagination
+        </admin_users_page>
+        
+        <admin_user_detail_page>
+          - User details (email, name, created date, last login)
+          - Teams list (with roles)
+          - Recent jobs
+          - Actions: Suspend/Unsuspend, Delete, Impersonate
+        </admin_user_detail_page>
+        
+        <admin_teams_page>
+          - List all teams (searchable, filterable)
+          - Filters: Status (all, active, suspended), Date range
+          - Each row shows:
+            - Team name, Members count, Jobs count, Storage usage, Status
+            - Actions: View, Suspend/Unsuspend, Delete
+          - Pagination
+        </admin_teams_page>
+        
+        <admin_team_detail_page>
+          - Team details (name, created date, default language)
+          - Members list
+          - Recent jobs
+          - Activity timeline (member changes, jobs created)
+          - Actions: Suspend/Unsuspend, Delete
+        </admin_team_detail_page>
+        
+        <admin_jobs_page>
+          - List all jobs across all teams
+          - Filters: Status, Team, Date range, Engine
+          - Each row shows:
+            - Job ID, Team, Filename, Status, Language, Engine, Created date
+            - Actions: View, Retry (if failed), Cancel (if running)
+          - Pagination
+        </admin_jobs_page>
+        
+        <admin_analytics_page>
+          - Usage charts (jobs per day, transcription minutes)
+          - Popular languages (pie chart)
+          - Engine usage distribution
+          - Error rate trends
+          - Date range selector
+        </admin_analytics_page>
+        
+        <admin_system_settings_page>
+          - STT Engines configuration (enable/disable, set defaults)
+          - Global rate limits
+          - Storage backend settings
+          - Email/SMTP settings
+          - Feature flags
+          - Save button
+        </admin_system_settings_page>
+        
+        <admin_audit_logs_page>
+          - List all admin actions
+          - Filters: Admin user, Action type, Resource type, Date range
+          - Each row shows:
+            - Admin email, Action, Resource, Details, IP, Timestamp
+          - Pagination
+        </admin_audit_logs_page>
+      </pages>
+      
+      <navigation>
+        - Top navigation: Dashboard, Users, Teams, Jobs, Analytics, Settings, Audit Logs
+        - Admin user menu: Profile, Logout
+      </navigation>
+    </admin_panel>
+
+    <!-- MARKETING SITE (apps/marketing) -->
+    <marketing_site>
+      <pages>
+        - Homepage (5 languages via Astro i18n routing)
+        - Pricing page
+        - Features page
+        - Documentation
+        - Blog
+        - Contact form
+      </pages>
+    </marketing_site>
+
+    <!-- DESIGN SYSTEM (packages/ui) -->
+    <design_system>
+      <principles>
+        - Clean, modern, developer-friendly UI
+        - Strong status clarity (pills, progress bars, empty states)
+        - Accessible (keyboard nav, ARIA labels, good contrast)
+        - Responsive (mobile-first)
+      </principles>
+
+      <components>
+        - Button (variants: default, destructive, outline, secondary, ghost, link)
+        - StatusPill (colors by state: QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELED)
+        - ProgressBar (determinate/indeterminate with stage label)
+        - UploadDropzone (drag-and-drop with file type hints)
+        - Modal/Dialog
+        - Table (sortable, filterable)
+        - Toast notifications
+        - Language switcher
+        - Theme toggle
+      </components>
+      
+      <theme>
+        - Colors: Primary, secondary, accent, destructive, muted
+        - Typography: Inter or Roboto from Google Fonts
+        - Dark mode support
+        - Tailwind CSS configuration
+      </theme>
+    </design_system>
+  </ui_specifications>
+
+  <!-- ============================================ -->
+  <!-- SECTION 9: TESTING STRATEGY -->
+  <!-- ============================================ -->
+  
+  <testing_strategy>
+    <unit_tests>
+      - packages/storage/db: model validation, repository methods
+      - packages/storage/redis: queue operations
+      - packages/stt: engine normalization, result parsing
+      - packages/core: service layer business logic
+      - Test framework: pytest
+      - Coverage target: 80%+
+      - Example tests:
+        1. User model validation (email format, password hashing)
+        2. Team member role validation
+        3. Job state machine transitions
+        4. STT result normalization
+        5. Export format conversion
+    </unit_tests>
+    
+    <integration_tests>
+      - API endpoint tests (auth, teams, jobs, transcripts, admin)
+      - Database transaction tests
+      - Redis queue integration
+      - Email sending (mocked SMTP)
+      - Test framework: pytest + httpx
+      - Example scenarios:
+        1. User signup → team creation → onboarding → invite member
+        2. Create job → enqueue → process → retrieve result
+        3. Team admin changes member role
+        4. User accepts invitation and joins team
+        5. Job fails and retries with backoff
+        6. Edit transcript and view history
+        7. Admin suspends user account
+        8. Export transcript in multiple formats
+        9. Live progress updates via SSE
+        10. Bulk export multiple transcripts
+    </integration_tests>
+    
+    <e2e_tests>
+      - Web app user flows (signup, onboarding, upload, view results, edit transcript)
+      - Admin panel flows (user management, team management, analytics)
+      - Test framework: Playwright
+      - Example scenarios:
+        1. Complete signup and onboarding flow
+        2. Upload audio and watch live transcription
+        3. Edit transcript and export
+        4. Invite team member and verify email
+        5. Change UI language and verify translations
+        6. Admin suspends team and verifies access denied
+        7. Admin views analytics dashboard
+        8. Bulk export from library
+        9. Live progress updates during transcription
+        10. Revert transcript to original
+    </e2e_tests>
+    
+    <ci_integration>
+      - Run unit tests on every commit
+      - Run integration tests on PR
+      - Run e2e tests on main branch
+      - Code coverage reporting
+      - Lint and type checking (mypy, eslint, tsc)
+    </ci_integration>
+  </testing_strategy>
+
+  <!-- ============================================ -->
+  <!-- SECTION 10: IMPLEMENTATION STEPS -->
+  <!-- ============================================ -->
+  
+  <implementation_steps>
+    <step number="1">
+      <title>Foundation: Storage, DB, Redis, UI Package</title>
+      <tasks>
+        - Implement packages/storage/db: models (teams with subscription fields, users, team_members, team_invitations, admin_users, subscriptions, payment_methods, invoices, credit_purchases, usage_logs, jobs, transcripts, edits, settings, audit_logs) + repositories + migrations
+        - Implement packages/storage/redis: redis client + queue primitives
+        - Implement packages/ui: shadcn/ui components + theme configuration
+        - Add configuration loader in apps/api (env vars centralized, including Stripe keys)
+        - Add /v1/health endpoint
+        - Set up i18n infrastructure (translation files for en, de, es, fr, jp)
+      </tasks>
+    </step>
+    
+    <step number="2">
+      <title>Billing & Subscriptions (Stripe Integration)</title>
+      <tasks>
+        - Implement billing service (Stripe integration, plan limits, usage tracking)
+        - POST /v1/billing/subscription/upgrade, /downgrade, /cancel, /reactivate
+        - GET/POST /v1/billing/payment-methods
+        - POST /v1/billing/credits/purchase (FREE plan)
+        - GET /v1/billing/invoices, /usage, /pricing
+        - POST /v1/webhooks/stripe (handle subscription events)
+        - Implement plan gating logic (check limits before job creation)
+        - Implement monthly usage reset cron job
+        - Build billing page in web app (subscription, credits, invoices, payment methods)
+        - Add upgrade prompts to upload page
+        - Add plan badge and usage indicator to navigation
+      </tasks>
+    </step>
+    
+    <step number="3">
+      <title>Auth & Teams System</title>
+      <tasks>
+        - Implement auth service (JWT, password hashing, OAuth)
+        - POST /v1/auth/signup (creates user + team)
+        - POST /v1/auth/login, /v1/auth/logout, /v1/auth/refresh
+        - GET /v1/auth/me
+        - Implement team service (CRUD, member management)
+        - Team endpoints: GET/PATCH /v1/teams/:teamId
+        - Member endpoints: GET/PATCH/DELETE /v1/teams/:teamId/members/:memberId
+        - Invitation endpoints: POST/GET/DELETE /v1/teams/:teamId/invitations
+        - POST /v1/invitations/:token/accept
+        - Implement notification service (email sending for invitations)
+      </tasks>
+    </step>
+    
+    <step number="4">
+      <title>Web App: Signup, Onboarding, Team Management</title>
+      <tasks>
+        - Build signup page (email/password + OAuth)
+        - Build onboarding flow (language selection, team name, invite members)
+        - Build team settings page (members list, invitations, role management)
+        - Build user settings page (profile, language, notifications)
+        - Implement i18n in web app (language switcher, translations)
+        - Wire up auth endpoints
+      </tasks>
+    </step>
+    
+    <step number="5">
+      <title>Job Creation Endpoints</title>
+      <tasks>
+        - POST /v1/jobs multipart upload (team-scoped)
+        - POST /v1/jobs/url (team-scoped)
+        - Persist transcription_jobs + audio_assets
+        - Enqueue work payload to Redis (transcription:queue)
+        - Build upload page in web app
+      </tasks>
+    </step>
+
+    <step number="6">
+      <title>Consumer Thread + Processing Pipeline</title>
+      <tasks>
+        - Create separate apps/worker service with dedicated event loop
+        - Implement graceful shutdown (complete current job, exit cleanly)
+        - Dequeue jobs, mark RUNNING, update progress
+        - Retry with exponential backoff and mark FAILED after max attempts
+        - Publish progress to Redis pub/sub (SSE consumed by apps/api)
+        - Remove worker startup from apps/api lifespan
+      </tasks>
+
+    <step number="7">
+      <title>STT Package + First Engine</title>
+      <tasks>
+        - Implement packages/stt engine interface + registry
+        - Implement at least one engine (e.g., Whisper local or provider-backed)
+        - Normalize outputs (text + segments)
+        - Persist transcripts + segments_json
+      </tasks>
+    </step>
+
+    <step number="8">
+      <title>Job Status & Results Endpoints</title>
+      <tasks>
+        - GET /v1/jobs (list, team-scoped)
+        - GET /v1/jobs/pending, /v1/jobs/completed
+        - GET /v1/jobs/:id (status/progress, team-scoped)
+        - GET /v1/jobs/:id/live (SSE)
+        - GET /v1/jobs/:id/result (transcript, team-scoped)
+        - POST /v1/jobs/:id/cancel (best-effort, team-scoped)
+        - Build pending jobs page in web app
+        - Build live transcript viewer page
+      </tasks>
+    </step>
+    
+    <step number="9">
+      <title>Transcript Editing & Export</title>
+      <tasks>
+        - GET /v1/transcripts/:id
+        - PATCH /v1/transcripts/:id (full text)
+        - GET/PATCH /v1/transcripts/:id/segments/:segmentId
+        - POST /v1/transcripts/:id/revert
+        - GET /v1/transcripts/:id/history
+        - GET/POST /v1/transcripts/:id/export
+        - Implement export service (TXT, JSON, SRT, VTT)
+        - Build transcript editor page in web app
+        - Build library page in web app
+      </tasks>
+    </step>
+
+    <step number="10">
+      <title>Admin Panel</title>
+      <tasks>
+        - POST /v1/admin/auth/login
+        - Implement all admin endpoints (users, teams, jobs, analytics, settings, audit logs)
+        - Implement admin service (suspension, impersonation, audit logging)
+        - Build admin panel (apps/admin) with all pages
+        - Add audit log creation for all admin actions
+      </tasks>
+    </step>
+
+    <step number="11">
+      <title>Marketing Site (Astro)</title>
+      <tasks>
+        - Build Astro static site with i18n routing (en, de, es, fr, jp)
+        - Create homepage, pricing, features, docs pages
+        - Add contact form (wired to API)
+        - Deploy to CDN/static hosting
+      </tasks>
+    </step>
+    
+    <step number="12">
+      <title>Polish: Observability, Limits, Testing</title>
+      <tasks>
+        - Add structured logging with request_id + job_id + team_id
+        - Add upload size limits + mime validation
+        - Add /v1/engines endpoint (capabilities)
+        - Add API rate limiting per team
+        - Add comprehensive tests (unit + integration + e2e)
+        - Add monitoring and alerting
+        - Performance optimization
+      </tasks>
+    </step>
+  </implementation_steps>
+
+  <!-- ============================================ -->
+  <!-- SECTION 11: SUCCESS CRITERIA -->
+  <!-- ============================================ -->
+  
+  <success_criteria>
+    <functionality>
+      - User can sign up and create a team
+      - User completes onboarding (language selection, team name, optional member invitations)
+      - Team admin can invite members via email
+      - Invited users can accept invitation and join team
+      - Team admin can manage member roles (ADMIN, MEMBER, VIEWER)
+      - Team starts on FREE plan by default
+      - Team can upgrade to STANDARD or PRO plan
+      - Team can downgrade or cancel subscription
+      - FREE plan users can purchase credits when monthly limit reached
+      - Plan limits are enforced (upload count, team members, languages)
+      - Upload is blocked when FREE plan limit reached and no credits
+      - Upgrade prompts shown when limits reached
+      - Payment methods can be added, removed, and set as default
+      - Invoices are generated and downloadable as PDF
+      - Usage tracking works correctly (monthly reset)
+      - Stripe webhooks update subscription status correctly
+      - Web upload creates a team-scoped job and returns a job id
+      - Job transitions QUEUED -> RUNNING -> SUCCEEDED for valid audio
+      - Live progress updates work via SSE
+      - Results endpoint returns normalized transcript + segments (team-scoped)
+      - Users can edit transcripts (full text or segments)
+      - Edit history is tracked and viewable
+      - Users can revert to original transcript
+      - Users can export transcripts in multiple formats (TXT, JSON, SRT, VTT)
+      - Failures retry up to configured max attempts and then become FAILED with sanitized error
+      - Consumer thread starts/stops cleanly with FastAPI lifecycle
+      - Multi-tenant isolation: users can only see their team's jobs
+      - Admin can view all users, teams, and jobs
+      - Admin can suspend/unsuspend users and teams
+      - Admin can view analytics and audit logs
+    </functionality>
+
+    <user_experience>
+      - Signup and onboarding flow is smooth and intuitive
+      - UI displays in user's selected language (en, de, es, fr, jp)
+      - Language switcher works across all pages
+      - Upload is fast and gives immediate feedback
+      - Live transcript viewer shows real-time progress
+      - Status/progress is clear and updates automatically
+      - Transcript editor is intuitive with audio player integration
+      - Transcript is readable and exportable
+      - Errors are understandable, localized, and actionable
+      - Team management is straightforward (invite, remove, change roles)
+      - Library page is easy to search and filter
+      - Admin panel provides clear insights into system health
+    </user_experience>
+
+    <technical_quality>
+      - Business logic lives in packages/* (routes remain thin)
+      - Clear interfaces between API, queue, DB, and STT engines
+      - Test coverage for core job lifecycle, auth, teams, transcripts, and normalization (80%+)
+      - Config is centralized and documented
+      - Multi-tenant data isolation is enforced at DB and API level
+      - i18n translations are complete for all 5 languages
+      - API returns localized error messages based on Accept-Language header
+      - All admin actions are logged in audit_logs table
+      - SSE connections are stable and performant
+      - Export artifacts are cached to avoid regeneration
+      - Redis-based distributed rate limiting with per-plan limits
+      - X-RateLimit headers included on all API responses
+    </technical_quality>
+
+    <rate_limiting>
+      <implementation>
+        - Redis-based sliding window rate limiter using sorted sets
+        - Per-plan rate limits: FREE (30 req/min), STANDARD (60 req/min), PRO (120 req/min)
+        - Rate limiting applied to all /v1/* endpoints except /v1/health
+        - Keys by: team_id > user_id > IP address (fallback)
+        - Response headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+        - 429 response includes Retry-After header
+      </implementation>
+      <configuration>
+        - PLAN_RATE_LIMITS in apps/api/src/middleware/rate_limit.py
+        - Uses Redis sorted sets for distributed state across API workers
+        - Automatic cleanup of expired entries via TTL
+      </configuration>
+    </rate_limiting>
+  </success_criteria>
+
+  <!-- ============================================ -->
+  <!-- SECTION 12: DEV CREDENTIALS -->
+  <!-- ============================================ -->
+  
+  <dev_credentials>
+    <created_date>2026-02-02</created_date>
+    <purpose>Local development and testing</purpose>
+    
+    <services>
+      <web_app>
+        <url>http://localhost:5173</url>
+        <description>Vite + React web application for authenticated users</description>
+      </web_app>
+      
+      <admin_panel>
+        <url>http://localhost:5174</url>
+        <description>Vite + React admin panel for super admin</description>
+        <credentials>
+          <email>test@example.com</email>
+          <password>test123</password>
+          <role>SUPER_ADMIN</role>
+        </credentials>
+      </admin_panel>
+      
+      <marketing>
+        <url>http://localhost:3000</url>
+        <description>Astro static marketing site</description>
+      </marketing>
+      
+      <api>
+        <url>http://localhost:8000</url>
+        <docs>http://localhost:8000/docs</docs>
+        <description>FastAPI backend</description>
+      </api>
+    </services>
+    
+    <database>
+      <engine>PostgreSQL</engine>
+      <host>localhost</host>
+      <port>5432</port>
+      <database>polyscript</database>
+      <username>postgres</username>
+      <password>postgres</password>
+      <connection_string>postgresql://postgres:postgres@localhost:5432/polyscript</connection_string>
+    </database>
+    
+    <cache>
+      <engine>Redis</engine>
+      <host>localhost</host>
+      <port>6379</port>
+      <url>redis://localhost:6379/0</url>
+    </cache>
+    
+    <environment_files>
+      <root_env>
+        <path>.env</path>
+        <content>
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/polyscript
+REDIS_URL=redis://localhost:6379/0
+JWT_SECRET=supersecret
+ADMIN_JWT_SECRET=adminsupersecret
+STRIPE_SECRET_KEY=sk_test_123
+STRIPE_PUBLISHABLE_KEY=pk_test_123
+STRIPE_WEBHOOK_SECRET=whsec_123
+STRIPE_PRICE_ID_STANDARD=price_standard_monthly
+STRIPE_PRICE_ID_PRO=price_pro_monthly
+CREDIT_PRICE_PER_UPLOAD=10
+OAUTH_REDIRECT_URL=http://localhost:5173/auth/callback
+APP_URL=http://localhost:5173
+ADMIN_URL=http://localhost:5174
+        </content>
+      </root_env>
+      
+      <api_env>
+        <path>apps/api/.env</path>
+        <content>
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/polyscript
+REDIS_URL=redis://localhost:6379/0
+JWT_SECRET=supersecret
+ADMIN_JWT_SECRET=adminsupersecret
+STRIPE_SECRET_KEY=sk_test_123
+STRIPE_PUBLISHABLE_KEY=pk_test_123
+STRIPE_WEBHOOK_SECRET=whsec_123
+STRIPE_PRICE_ID_STANDARD=price_standard_monthly
+STRIPE_PRICE_ID_PRO=price_pro_monthly
+CREDIT_PRICE_PER_UPLOAD=10
+OAUTH_REDIRECT_URL=http://localhost:5173/auth/callback
+APP_URL=http://localhost:5173
+ADMIN_URL=http://localhost:5174
+        </content>
+      </api_env>
+      
+      <db_env>
+        <path>packages/storage/db/.env</path>
+        <content>
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/polyscript
+        </content>
+      </db_env>
+    </environment_files>
+    
+    <commands>
+      <setup_database>
+        <description>Run database migrations</description>
+        <command>cd packages/storage/db && ../../.venv/bin/python -m alembic upgrade head</command>
+        <prerequisites>PostgreSQL running, .env configured</prerequisites>
+      </setup_database>
+      
+      <create_admin>
+        <description>Create admin user</description>
+        <command>cd apps/api && ../.venv/bin/python scripts/create_admin.py --email test@example.com --password test123 --full-name "Test User"</command>
+        <prerequisites>Database migrated, ADMIN_JWT_SECRET set</prerequisites>
+      </create_admin>
+      
+      <start_all>
+        <description>Start all development servers</description>
+        <command>just web & just admin & just api & just worker</command>
+        <prerequisites>Dependencies installed</prerequisites>
+      </start_all>
+    </commands>
+    
+    <notes>
+      - Default admin user created for testing admin panel features
+      - Stripe test keys are placeholders - replace with real test keys for payment testing
+      - Redis and PostgreSQL must be running before starting API
+      - Run `just db-migrate` after fresh database setup
+      - Run `just install` to install all dependencies
+    </notes>
+  </dev_credentials>
+</project_specification>
