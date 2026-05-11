@@ -86,14 +86,16 @@ class TestJobManagerService:
         mock_db.add = Mock()
         mock_db.commit = Mock()
 
-        with patch.object(job_manager, "team_repo", mock_team_repo):
-            with patch.object(job_manager, "job_repo", mock_job_repo):
-                result = job_manager.create_job(
-                    team_id=str(mock_team.id),
-                    user_id=str(uuid.uuid4()),
-                    audio_ref={"storage_key": "test.mp3"},
-                    language="en",
-                )
+        with (
+            patch.object(job_manager, "team_repo", mock_team_repo),
+            patch.object(job_manager, "job_repo", mock_job_repo),
+        ):
+            result = job_manager.create_job(
+                team_id=str(mock_team.id),
+                user_id=str(uuid.uuid4()),
+                audio_ref={"storage_key": "test.mp3"},
+                language="en",
+            )
 
-                assert result is not None
-                mock_db.commit.assert_called()
+            assert result is not None
+            mock_db.commit.assert_called()

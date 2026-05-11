@@ -3,12 +3,20 @@ from __future__ import annotations
 import enum
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from .team_invitations import TeamInvitation
+    from .team_members import TeamMember
+    from .transcription_jobs import TranscriptionJob
+
+SQLALCHEMY_TYPE_NAMESPACE = (datetime,)
 
 
 class PlanType(str, enum.Enum):
@@ -45,13 +53,13 @@ class Team(Base, TimestampMixin):
     monthly_translation_count: Mapped[int] = mapped_column(Integer, default=0)
     extra_credits: Mapped[int] = mapped_column(Integer, default=0)
 
-    members: Mapped[list["TeamMember"]] = relationship(
+    members: Mapped[list[TeamMember]] = relationship(
         back_populates="team", cascade="all, delete-orphan"
     )
-    invitations: Mapped[list["TeamInvitation"]] = relationship(
+    invitations: Mapped[list[TeamInvitation]] = relationship(
         back_populates="team", cascade="all, delete-orphan"
     )
-    jobs: Mapped[list["TranscriptionJob"]] = relationship(back_populates="team")
+    jobs: Mapped[list[TranscriptionJob]] = relationship(back_populates="team")
 
     def __repr__(self):
         return f"<Team(id={self.id}, name={self.name}, plan={self.plan})>"

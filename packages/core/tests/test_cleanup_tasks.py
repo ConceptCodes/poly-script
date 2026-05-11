@@ -1,5 +1,6 @@
 from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
+
 from poly_core.tasks.cleanup_tasks import _cleanup_soft_deleted_users_internal
 
 

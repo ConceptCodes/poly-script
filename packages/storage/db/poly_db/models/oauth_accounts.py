@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from .users import User
 
 
 class OAuthAccount(Base, TimestampMixin):
@@ -21,7 +25,7 @@ class OAuthAccount(Base, TimestampMixin):
     provider: Mapped[str] = mapped_column(String(50))
     provider_user_id: Mapped[str] = mapped_column(String(255))
 
-    user: Mapped["User"] = relationship(back_populates="oauth_accounts")
+    user: Mapped[User] = relationship(back_populates="oauth_accounts")
 
     def __repr__(self):
         return f"<OAuthAccount(provider={self.provider}, user_id={self.user_id})>"

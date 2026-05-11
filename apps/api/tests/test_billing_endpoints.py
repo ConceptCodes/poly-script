@@ -1,24 +1,18 @@
-import sys
 import uuid
 from datetime import UTC, datetime
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
-# Add apps/api to path before other imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# From setup paths import
-from . import setup_paths as _setup_paths
-from ..main import app
-
-del _setup_paths
-
 from src.dependencies import get_current_team_id as dependency_get_current_team_id
 from src.dependencies import get_current_user
 from src.routes.billing import get_billing_service, get_current_team_id
+
+from ..main import app
+from . import setup_paths as _setup_paths
+
+del _setup_paths
 
 client = TestClient(app)
 

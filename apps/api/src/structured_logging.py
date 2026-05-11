@@ -1,6 +1,7 @@
 """Structured logging configuration using structlog."""
 
 import logging
+
 import structlog
 
 from poly_core.logging_context import (

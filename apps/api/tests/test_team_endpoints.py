@@ -1,17 +1,12 @@
 import uuid
-import sys
-from pathlib import Path
-
-# Add apps/api to path before other imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 from unittest.mock import Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from . import setup_paths as _setup_paths
 from ..main import app
+from . import setup_paths as _setup_paths
 
 del _setup_paths
 

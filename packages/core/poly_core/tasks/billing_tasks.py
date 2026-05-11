@@ -1,3 +1,4 @@
+import os
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
@@ -37,7 +38,6 @@ def _sync_active_subscriptions_internal(db: Session, stripe_secret_key: str):
 # Public wrapper functions for APScheduler (create their own DB sessions)
 def reset_all_monthly_usage():
     """Resets monthly usage for all teams. Should be called by a cron job."""
-    import os
     stripe_secret_key = os.getenv("STRIPE_SECRET_KEY", "")
     factory = get_session_factory()
     with factory() as db:
@@ -46,7 +46,6 @@ def reset_all_monthly_usage():
 
 def sync_active_subscriptions():
     """Syncs active subscriptions with Stripe. Should be called daily."""
-    import os
     stripe_secret_key = os.getenv("STRIPE_SECRET_KEY", "")
     factory = get_session_factory()
     with factory() as db:

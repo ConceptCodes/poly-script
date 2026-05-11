@@ -2,39 +2,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 @import "@poly/ui/index.css";
- 
-:root {
-  /* Marketing Site Design Tokens (Overwriting @poly/ui) */
-  --background: 222 47% 4%;
-  --foreground: 0 0% 100%;
-  
-  --primary: 199 89% 48%;
-  --primary-foreground: 0 0% 100%;
-  
-  --card: 222 47% 8%;
-  --card-foreground: 0 0% 100%;
-  
-  --popover: 222 47% 8%;
-  --popover-foreground: 0 0% 100%;
-  
-  --secondary: 222 47% 12%;
-  --secondary-foreground: 0 0% 100%;
-  
-  --muted: 222 47% 12%;
-  --muted-foreground: 215 20% 65%;
-  
-  --accent: 222 47% 12%;
-  --accent-foreground: 0 0% 100%;
-  
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
-  
-  --border: 222 47% 15%;
-  --input: 222 47% 15%;
-  --ring: 199 89% 48%;
-  
-  --radius: 0.75rem;
-}
 
 * {
   box-sizing: border-box;
@@ -49,8 +16,8 @@ html {
 body {
   margin: 0;
   font-family: var(--font-body);
-  background: var(--gradient-mesh), hsl(var(--background));
-  color: hsl(var(--foreground));
+  background: var(--gradient-mesh), var(--background);
+  color: var(--foreground);
   line-height: 1.6;
   overflow-x: hidden;
   position: relative;
@@ -150,7 +117,7 @@ a {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 20px;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   letter-spacing: -0.02em;
   transition: all 0.3s var(--ease-smooth);
 }
@@ -184,7 +151,7 @@ a {
   gap: 32px;
   font-size: 14px;
   font-weight: 500;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .nav-links a {
@@ -210,7 +177,7 @@ a {
 }
 
 .nav-links a:hover {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .nav-links a:hover::after {
@@ -273,7 +240,7 @@ a {
 }
 
 .link:hover {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   text-decoration: underline;
   text-decoration-color: hsla(var(--primary) /  0.6);
 }
@@ -289,7 +256,7 @@ a {
   border-radius: 12px;
   border: 1px solid hsla(var(--border) / 0.5);
   background: hsla(var(--secondary) / 0.3);
-  color: hsl(var(--secondary-foreground));
+  color: var(--secondary-foreground);
   padding: 14px 16px;
   font-size: 14px;
   transition: all 0.2s ease;
@@ -318,7 +285,7 @@ a {
 .btn.ghost {
   background: transparent;
   border: 1px solid hsla(var(--border) / 0.5);
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .btn.ghost:hover {
@@ -330,7 +297,7 @@ a {
 .lang select {
   background: hsla(var(--secondary) / 0.3);
   border: 1px solid hsla(var(--border) / 0.5);
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   padding: 8px 12px;
   border-radius: 10px;
   cursor: pointer;
@@ -350,18 +317,18 @@ a {
   border: 1px solid transparent;
   font-size: 12px;
   font-weight: 600;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   text-decoration: none;
 }
 
 .lang a[aria-current="page"] {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   border-color: hsla(var(--primary) /  0.5);
   background: hsla(var(--secondary) / 0.4);
 }
 
 .lang a:hover {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   border-color: hsla(var(--primary) /  0.4);
 }
 
@@ -423,7 +390,7 @@ a {
   font-weight: 700;
   font-family: var(--font-display);
   letter-spacing: 0.2em;
-  color: hsl(var(--primary));
+  color: var(--primary);
   margin-bottom: 24px;
   text-shadow: 0 0 20px hsla(var(--primary) / 0.5);
 }
@@ -433,7 +400,7 @@ a {
   line-height: 1.05;
   font-family: var(--font-display);
   font-weight: 800;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   letter-spacing: -0.03em;
   margin-bottom: 28px;
   background: var(--gradient-brand);
@@ -444,7 +411,7 @@ a {
 
 .hero-subtitle {
   font-size: 19px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   line-height: 1.7;
   margin-bottom: 36px;
   max-width: 520px;
@@ -535,7 +502,7 @@ a {
 
 .card h3 {
   margin: 0 0 12px;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 19px;
@@ -544,11 +511,11 @@ a {
 
 .card p {
   line-height: 1.7;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .card strong {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   font-weight: 700;
 }
 
@@ -566,20 +533,20 @@ a {
   font-weight: 600;
   font-family: var(--font-display);
   border: 1px solid hsla(var(--border) / 0.5);
-  color: hsl(var(--primary));
+  color: var(--primary);
   letter-spacing: 0.05em;
   text-shadow: 0 0 10px hsla(var(--primary) / 0.3);
 }
 
 .muted {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .section-title {
   font-size: clamp(32px, 4.5vw, 48px);
   font-weight: 800;
   font-family: var(--font-display);
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   letter-spacing: -0.02em;
   margin-bottom: 16px;
 }
@@ -647,7 +614,7 @@ a {
 .pricing .card ul li {
   padding-left: 24px;
   position: relative;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   line-height: 1.6;
 }
 
@@ -655,7 +622,7 @@ a {
   content: "✓";
   position: absolute;
   left: 0;
-  color: hsl(var(--primary));
+  color: var(--primary);
   font-weight: 700;
 }
 
@@ -701,7 +668,7 @@ a {
 }
 
 .footer-links a {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   font-size: 14px;
   padding: 4px 0;
   display: block;
@@ -709,7 +676,7 @@ a {
 }
 
 .footer-links a:hover {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
   padding-left: 4px;
 }
 
@@ -724,7 +691,7 @@ a {
   justify-content: space-between;
   padding-top: 40px;
   font-size: 13px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 section {
@@ -821,7 +788,7 @@ section {
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   font-size: 14px;
 }
 @media (max-width: 480px) {

@@ -2,13 +2,14 @@
 Tests for standardized exception handling system.
 """
 
+from typing import ClassVar
+
 import pytest
-from fastapi import FastAPI, Request
-from fastapi.testclient import TestClient
+from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
+from fastapi.testclient import TestClient
 
 from poly_core.exceptions.base import (
-    APIException,
     ErrorCode,
     ErrorDetail,
     ErrorResponse,
@@ -16,13 +17,14 @@ from poly_core.exceptions.base import (
 )
 from poly_core.exceptions.common import (
     BadRequestError,
+    InternalServerError,
     NotFoundError,
     ValidationError,
-    InternalServerError,
 )
 from poly_core.exceptions.handlers import (
     get_locale_from_request,
     localize_error_message,
+    setup_exception_handlers,
 )
 from poly_core.exceptions.utils import convert_http_exception
 
@@ -167,7 +169,7 @@ class TestLocalizationUtilities:
         """Test extracting locale from simple Accept-Language header."""
 
         class MockRequest:
-            headers = {"accept-language": "en"}
+            headers: ClassVar[dict[str, str]] = {"accept-language": "en"}
 
         request = MockRequest()
         locale = get_locale_from_request(request)
@@ -178,7 +180,9 @@ class TestLocalizationUtilities:
         """Test extracting locale from complex Accept-Language header."""
 
         class MockRequest:
-            headers = {"accept-language": "en-US,en;q=0.9,fr;q=0.8"}
+            headers: ClassVar[dict[str, str]] = {
+                "accept-language": "en-US,en;q=0.9,fr;q=0.8"
+            }
 
         request = MockRequest()
         locale = get_locale_from_request(request)
@@ -189,7 +193,7 @@ class TestLocalizationUtilities:
         """Test locale fallback to English."""
 
         class MockRequest:
-            headers = {"accept-language": "xx-YY"}  # Unsupported locale
+            headers: ClassVar[dict[str, str]] = {"accept-language": "xx-YY"}
 
         request = MockRequest()
         locale = get_locale_from_request(request)
@@ -200,7 +204,7 @@ class TestLocalizationUtilities:
         """Test locale extraction when header is missing."""
 
         class MockRequest:
-            headers = {}
+            headers: ClassVar[dict[str, str]] = {}
 
         request = MockRequest()
         locale = get_locale_from_request(request)
@@ -256,8 +260,6 @@ class TestFastAPIIntegration:
     @pytest.fixture
     def client(self):
         """Create test client with exception handlers."""
-        from poly_core.exceptions.handlers import setup_exception_handlers
-
         setup_exception_handlers(app, i18n_service=None)
         return TestClient(app, raise_server_exceptions=False)
 

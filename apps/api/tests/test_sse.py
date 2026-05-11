@@ -15,12 +15,12 @@ from unittest.mock import Mock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from . import setup_paths as _setup_paths
+from poly_db.models import JobStatus
+
 from ..main import app
+from . import setup_paths as _setup_paths
 
 del _setup_paths
-
-from poly_db.models import JobStatus
 
 
 @pytest.fixture

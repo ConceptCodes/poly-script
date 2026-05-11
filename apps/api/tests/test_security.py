@@ -24,8 +24,8 @@ from unittest.mock import Mock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from . import setup_paths as _setup_paths
 from ..main import app
+from . import setup_paths as _setup_paths
 
 del _setup_paths
 

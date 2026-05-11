@@ -1,7 +1,8 @@
 """Unit tests for export service."""
 
+import json
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import Mock
 
 import pytest
@@ -41,8 +42,8 @@ def mock_transcript():
         },
     ]
     transcript.engine_version = "whisper-local-base"
-    transcript.created_at = datetime(2024, 1, 15, 10, 30, 0)
-    transcript.updated_at = datetime(2024, 1, 15, 11, 0, 0)
+    transcript.created_at = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
+    transcript.updated_at = datetime(2024, 1, 15, 11, 0, 0, tzinfo=UTC)
     return transcript
 
 
@@ -79,8 +80,6 @@ class TestExportJson:
 
     def test_export_json_returns_valid_json(self, mock_transcript):
         """Verify export_json returns valid JSON string."""
-        import json
-
         result = export_json(mock_transcript)
 
         # Should be valid JSON

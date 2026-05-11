@@ -1,4 +1,5 @@
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
@@ -14,6 +15,19 @@ if TYPE_CHECKING:
     from poly_stt import TranscriptionResult
 else:
     TranscriptionResult = Any
+
+
+@dataclass(frozen=True)
+class TranscriptListFilters:
+    """Filters and pagination for transcript listing."""
+
+    team_id: str
+    language: str | None = None
+    search: str | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    page: int = 1
+    page_size: int = 20
 
 
 class TranscriptService:
@@ -366,13 +380,8 @@ class TranscriptService:
 
     def list_transcripts(
         self,
-        team_id: str,
-        language: str | None = None,
-        search: str | None = None,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
-        page: int = 1,
-        page_size: int = 20,
+        filters: TranscriptListFilters | None = None,
+        **kwargs: Any,
     ) -> tuple[list[dict[str, Any]], int]:
         """
         List transcripts for a team with filtering and pagination.
@@ -387,27 +396,32 @@ class TranscriptService:
         Returns:
             Tuple of (transcripts list as dicts, total count)
         """
+        if isinstance(filters, str):
+            filters = TranscriptListFilters(team_id=filters, **kwargs)
+        else:
+            filters = filters or TranscriptListFilters(**kwargs)
+
         # Build query with joins
         stmt = (
             select(Transcript)
             .join(TranscriptionJob, Transcript.job_id == TranscriptionJob.id)
             .where(
-                TranscriptionJob.team_id == uuid.UUID(team_id),
+                TranscriptionJob.team_id == uuid.UUID(filters.team_id),
                 Transcript.deleted_at.is_(None),
             )
         )
 
-        if language:
-            stmt = stmt.where(Transcript.language == language)
+        if filters.language:
+            stmt = stmt.where(Transcript.language == filters.language)
 
-        if search:
-            stmt = stmt.where(Transcript.text.ilike(f"%{search}%"))
+        if filters.search:
+            stmt = stmt.where(Transcript.text.ilike(f"%{filters.search}%"))
 
-        if start_date:
-            stmt = stmt.where(Transcript.created_at >= start_date)
+        if filters.start_date:
+            stmt = stmt.where(Transcript.created_at >= filters.start_date)
 
-        if end_date:
-            stmt = stmt.where(Transcript.created_at <= end_date)
+        if filters.end_date:
+            stmt = stmt.where(Transcript.created_at <= filters.end_date)
 
         # Get total count
         count_stmt = select(Transcript.id).select_from(stmt.subquery())
@@ -423,7 +437,7 @@ class TranscriptService:
 
         # Apply pagination
         stmt = stmt.order_by(Transcript.created_at.desc())
-        stmt = stmt.offset((page - 1) * page_size).limit(page_size)
+        stmt = stmt.offset((filters.page - 1) * filters.page_size).limit(filters.page_size)
 
         transcripts = _extract_all(self.session.execute(stmt))
 

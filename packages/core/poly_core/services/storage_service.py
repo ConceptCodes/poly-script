@@ -4,6 +4,7 @@ Supports local filesystem and AWS S3 backends with a unified interface.
 """
 
 import base64
+import contextlib
 import hashlib
 import shutil
 import uuid
@@ -82,17 +83,15 @@ class LocalStorageBackend:
 
         file_size = file_path.stat().st_size
         if file_size != len(file_content):
-            try:
+            with contextlib.suppress(Exception):
                 file_path.unlink()
-            except Exception:
-                pass
             raise RuntimeError(
                 f"Local storage write failed (expected {len(file_content)} bytes, got {file_size})"
             )
 
         return f"local://{file_path}"
 
-    def get_url(self, storage_uri: str, expires_in: int = 3600) -> str:
+    def get_url(self, storage_uri: str, _expires_in: int = 3600) -> str:
         parsed = urlparse(storage_uri)
         if parsed.scheme != "local":
             raise ValueError(f"Invalid storage URI scheme: {parsed.scheme}")

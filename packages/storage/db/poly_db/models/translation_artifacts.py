@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import enum
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, ForeignKey, Index, String, Text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from .transcription_jobs import TranscriptionJob
 
 
 class TranslationStatus(str, enum.Enum):
@@ -42,7 +46,7 @@ class TranslationArtifact(Base, TimestampMixin):
     error_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
     error_message: Mapped[str | None] = mapped_column(String(1000), nullable=True)
 
-    job: Mapped["TranscriptionJob"] = relationship(back_populates="translation_artifact")
+    job: Mapped[TranscriptionJob] = relationship(back_populates="translation_artifact")
 
     def __repr__(self):
         return f"<TranslationArtifact(id={self.id}, job_id={self.job_id}, status={self.status})>"

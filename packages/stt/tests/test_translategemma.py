@@ -59,7 +59,7 @@ class TestTranslateGemmaEngine:
         assert result.segments[0].end_ms == 1000
         assert result.segments[1].start_ms == 1000
         assert result.segments[1].end_ms == 2000
-        assert result.language == "es"
+        assert result.language == "es-ES"
 
     @patch("poly_stt.engines.translategemma.AutoTokenizer")
     @patch("poly_stt.engines.translategemma.AutoModelForCausalLM")
@@ -92,7 +92,7 @@ class TestTranslateGemmaEngine:
         # Mock tokenizer to return large token count
         mock_tok = MagicMock()
 
-        def mock_tokenize(text):
+        def mock_tokenize(text, **_kwargs):
             mock_result = MagicMock()
             # Simulate 1 token per 2 characters
             token_count = len(text) // 2
@@ -101,7 +101,7 @@ class TestTranslateGemmaEngine:
             )
             return mock_result
 
-        mock_tok.return_value = mock_tokenize(None)
+        mock_tok.side_effect = mock_tokenize
         mock_tokenizer.from_pretrained.return_value = mock_tok
         mock_tok.apply_chat_template.return_value = "Translate: {text}"
         mock_tok.decode.return_value = "model> Translated text"
@@ -119,7 +119,7 @@ class TestTranslateGemmaEngine:
 
         assert result is not None
         assert result.text != ""
-        assert result.language == "es"
+        assert result.language == "es-ES"
 
     @patch("poly_stt.engines.translategemma.AutoTokenizer")
     @patch("poly_stt.engines.translategemma.AutoModelForCausalLM")

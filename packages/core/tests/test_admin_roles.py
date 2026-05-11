@@ -77,34 +77,34 @@ def team():
 class TestAdminRoleAccessControl:
     """Test role-based access control for admin operations."""
 
-    def test_admin_can_manage_users_in_their_team(self, db_session, admin_user, regular_user, team):
+    def test_admin_can_manage_users_in_their_team(self):
         """ADMIN can manage users within their team scope."""
         # This test documents the requirement:
         # - Admins can only manage users in teams they have access to
         # - Implementation will enforce team scoping
         pytest.skip("Role-based access to be implemented in Task 3/4 - GREEN phase")
 
-    def test_super_admin_can_manage_any_user(self, db_session, super_admin_user, regular_user):
+    def test_super_admin_can_manage_any_user(self):
         """SUPER_ADMIN can manage any user across all teams."""
         # SUPER_ADMIN has system-wide access
         pytest.skip("Role-based access to be implemented in Task 3/4 - GREEN phase")
 
-    def test_super_admin_can_manage_admins(self, db_session, super_admin_user, admin_user):
+    def test_super_admin_can_manage_admins(self):
         """SUPER_ADMIN can manage other admin users."""
         # SUPER_ADMIN can create/suspend/modify other admins
         pytest.skip("Role-based access to be implemented in Task 3/4 - GREEN phase")
 
-    def test_admin_cannot_manage_other_admins(self, db_session, admin_user, super_admin_user):
+    def test_admin_cannot_manage_other_admins(self):
         """ADMIN cannot manage other admin users."""
         # Only SUPER_ADMIN can manage admin users
         pytest.skip("Role-based access to be implemented in Task 3/4 - GREEN phase")
 
-    def test_super_admin_can_access_admin_panel(self, db_session, super_admin_user):
+    def test_super_admin_can_access_admin_panel(self):
         """SUPER_ADMIN can access apps/admin panel."""
         # Only SUPER_ADMIN can access the admin panel
         pytest.skip("Role-based access to be implemented in Task 3/4 - GREEN phase")
 
-    def test_admin_cannot_access_admin_panel(self, db_session, admin_user):
+    def test_admin_cannot_access_admin_panel(self):
         """ADMIN cannot access apps/admin panel."""
         # ADMIN manages their own team via apps/web or API
         pytest.skip("Role-based access to be implemented in Task 3/4 - GREEN phase")
@@ -124,12 +124,12 @@ class TestAdminRoleValidation:
         for role in invalid_roles:
             assert role not in ["ADMIN", "SUPER_ADMIN"], f"{role} should be invalid"
 
-    def test_role_change_requires_valid_role(self, db_session):
+    def test_role_change_requires_valid_role(self):
         """Changing admin role requires valid target role."""
         # Service should reject invalid role changes
         pytest.skip("Role validation to be implemented in Task 4 - GREEN phase")
 
-    def test_self_role_change_restricted(self, db_session):
+    def test_self_role_change_restricted(self):
         """Admins cannot change their own role to prevent privilege escalation."""
         # Service should prevent self-modification of role
         pytest.skip("Role validation to be implemented in Task 4 - GREEN phase")

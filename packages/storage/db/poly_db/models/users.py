@@ -2,11 +2,20 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from .oauth_accounts import OAuthAccount
+    from .refresh_tokens import RefreshToken
+    from .team_members import TeamMember
+    from .user_settings import UserSettings
+
+SQLALCHEMY_TYPE_NAMESPACE = (datetime,)
 
 
 class User(Base, TimestampMixin):
@@ -38,16 +47,16 @@ class User(Base, TimestampMixin):
         ForeignKey("admin_users.id", ondelete="SET NULL"), nullable=True
     )
 
-    team_memberships: Mapped[list["TeamMember"]] = relationship(
+    team_memberships: Mapped[list[TeamMember]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    oauth_accounts: Mapped[list["OAuthAccount"]] = relationship(
+    oauth_accounts: Mapped[list[OAuthAccount]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
+    refresh_tokens: Mapped[list[RefreshToken]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    settings: Mapped["UserSettings"] = relationship(
+    settings: Mapped[UserSettings] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
 

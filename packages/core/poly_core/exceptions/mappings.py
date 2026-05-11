@@ -2,14 +2,13 @@
 Mapping between ErrorCode enum and I18nKeys for localization.
 """
 
-from typing import Dict
 
 from poly_core.constants import I18nKeys
 
 from .base import ErrorCode
 
 # Map ErrorCode values to I18nKeys for localization
-ERROR_CODE_TO_I18N_KEY: Dict[ErrorCode, I18nKeys] = {
+ERROR_CODE_TO_I18N_KEY: dict[ErrorCode, I18nKeys] = {
     # Authentication errors
     ErrorCode.AUTH_INVALID_CREDENTIALS: I18nKeys.INVALID_CREDENTIALS,
     ErrorCode.AUTH_TOKEN_EXPIRED: I18nKeys.EXPIRED_REFRESH_TOKEN,

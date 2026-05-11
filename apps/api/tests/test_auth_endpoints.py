@@ -1,21 +1,17 @@
 import uuid
-import sys
-from pathlib import Path
-
-# Add apps/api to path before other imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from . import setup_paths as _setup_paths
+from src.dependencies import get_async_auth_service, get_async_db, get_current_user
+from src.routes.auth import get_oauth_service
+
 from ..main import app
+from . import setup_paths as _setup_paths
 
 del _setup_paths
-from src.dependencies import get_async_db, get_async_auth_service, get_current_user
-from src.routes.auth import get_oauth_service
 
 
 @pytest.fixture

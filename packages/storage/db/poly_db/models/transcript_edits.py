@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, ForeignKey, Index, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from .transcripts import Transcript
 
 
 class TranscriptEdit(Base, TimestampMixin):
@@ -29,7 +33,7 @@ class TranscriptEdit(Base, TimestampMixin):
     previous_segments: Mapped[dict] = mapped_column(JSON)
     new_segments: Mapped[dict] = mapped_column(JSON)
 
-    transcript: Mapped["Transcript"] = relationship(back_populates="edits")
+    transcript: Mapped[Transcript] = relationship(back_populates="edits")
 
     def __repr__(self):
         return f"<TranscriptEdit(id={self.id}, transcript_id={self.transcript_id})>"

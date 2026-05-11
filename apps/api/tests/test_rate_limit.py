@@ -45,10 +45,11 @@ def test_plan_rate_limits_config():
 
 def test_rate_limit_headers_added_to_response():
     """Test that rate limit headers are added to successful responses."""
-    from src.middleware.rate_limit import RateLimitMiddleware, RedisRateLimiter
     from starlette.applications import Starlette
     from starlette.responses import PlainTextResponse
     from starlette.testclient import TestClient
+
+    from src.middleware.rate_limit import RateLimitMiddleware, RedisRateLimiter
 
     mock_redis = MagicMock()
     mock_pipeline = MagicMock()
@@ -75,10 +76,11 @@ def test_rate_limit_headers_added_to_response():
 
 def test_rate_limit_429_response():
     """Test that 429 response includes proper headers and Retry-After."""
-    from src.middleware.rate_limit import RateLimitMiddleware, RedisRateLimiter
     from starlette.applications import Starlette
     from starlette.responses import PlainTextResponse
     from starlette.testclient import TestClient
+
+    from src.middleware.rate_limit import RateLimitMiddleware, RedisRateLimiter
 
     mock_redis = MagicMock()
     mock_pipeline = MagicMock()

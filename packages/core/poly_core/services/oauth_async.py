@@ -104,7 +104,7 @@ class AsyncOAuthService:
     def exchange_google_code(
         self,
         code: str,
-        state: str | None = None,
+        _state: str | None = None,
         code_verifier: str | None = None,
         redirect_url: str | None = None,
     ) -> GoogleUserInfo | None:

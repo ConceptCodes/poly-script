@@ -30,7 +30,7 @@ class TeamRepository(BaseRepository[Team]):
         return self.session.execute(stmt).scalars().all()
 
     def list_suspended(self) -> list[Team]:
-        stmt = select(Team).where(Team.is_suspended == True)
+        stmt = select(Team).where(Team.is_suspended.is_(True))
         return self.session.execute(stmt).scalars().all()
 
 

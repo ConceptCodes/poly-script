@@ -1,11 +1,5 @@
 """Tests for job status endpoints."""
 
-import sys
-from pathlib import Path
-
-# Add apps/api to path before other imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import uuid
 from datetime import UTC, datetime
 from unittest.mock import Mock, patch
@@ -13,12 +7,12 @@ from unittest.mock import Mock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from . import setup_paths as _setup_paths
+from poly_db.models import JobStatus
+
 from ..main import app
+from . import setup_paths as _setup_paths
 
 del _setup_paths
-
-from poly_db.models import JobStatus
 
 
 @pytest.fixture

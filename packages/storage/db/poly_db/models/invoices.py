@@ -8,6 +8,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, TimestampMixin
 
+SQLALCHEMY_TYPE_NAMESPACE = (datetime,)
+
 
 class Invoice(Base, TimestampMixin):
     __tablename__ = "invoices"

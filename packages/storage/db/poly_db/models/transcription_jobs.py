@@ -3,12 +3,21 @@ from __future__ import annotations
 import enum
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from .audio_assets import AudioAsset
+    from .teams import Team
+    from .transcripts import Transcript
+    from .translation_artifacts import TranslationArtifact
+
+SQLALCHEMY_TYPE_NAMESPACE = (datetime,)
 
 
 class JobStatus(str, enum.Enum):
@@ -48,14 +57,14 @@ class TranscriptionJob(Base, TimestampMixin):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    team: Mapped["Team"] = relationship(back_populates="jobs")
-    audio_asset: Mapped["AudioAsset"] = relationship(
+    team: Mapped[Team] = relationship(back_populates="jobs")
+    audio_asset: Mapped[AudioAsset] = relationship(
         back_populates="job", uselist=False, cascade="all, delete-orphan"
     )
-    transcript: Mapped["Transcript"] = relationship(
+    transcript: Mapped[Transcript] = relationship(
         back_populates="job", uselist=False, cascade="all, delete-orphan"
     )
-    translation_artifact: Mapped["TranslationArtifact"] = relationship(
+    translation_artifact: Mapped[TranslationArtifact] = relationship(
         back_populates="job", uselist=False, cascade="all, delete-orphan"
     )
 

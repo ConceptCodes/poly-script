@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from poly_core.constants import PLAN_LIMITS, SUPPORTED_LANGUAGES, PlanType
 from poly_core.services.storage_service import StorageBackend
 from poly_db.models.teams import Team
-from poly_db.models.transcription_jobs import JobStatus, TranscriptionJob
+from poly_db.models.transcription_jobs import JobStatus
 from poly_db.repositories import (
     AudioAssetRepository,
     TranscriptionJobRepository,
@@ -104,7 +104,7 @@ class JobManagerService:
             "status": job.status.value if hasattr(job.status, "value") else str(job.status),
         }
 
-    def create_job_from_url(  # noqa: PLR0913
+    def create_job_from_url(
         self,
         team_id: uuid.UUID,
         _user_id: uuid.UUID,

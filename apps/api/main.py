@@ -2,15 +2,24 @@ import logging
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
-from threading import Thread
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 
 from poly_core.constants import I18nKeys
+from poly_core.exceptions.base import ErrorResponse
+from poly_core.exceptions.handlers import setup_exception_handlers
+from poly_core.logging_context import set_request_context
 from poly_core.services.i18n import I18nService
-from src.structured_logging import StructuredLogger, setup_logging
+from poly_core.tasks.billing_tasks import reset_all_monthly_usage, sync_active_subscriptions
+from poly_core.tasks.cleanup_tasks import (
+    cleanup_audio_files,
+    cleanup_expired_invitations,
+    cleanup_expired_password_resets,
+    cleanup_orphaned_content,
+    cleanup_revoked_tokens,
+    hard_delete_soft_deleted_content,
+)
 from src.middleware.setup import setup_middleware
 from src.routes.admin import router as admin_router
 
@@ -26,13 +35,10 @@ from src.routes.onboarding import onboarding_router
 from src.routes.settings import router as settings_router
 from src.routes.teams import teams_router
 from src.routes.transcripts import transcripts_router
-from src.routes.user import router as user_router, users_router
+from src.routes.user import router as user_router
+from src.routes.user import users_router
 from src.routes.webhooks import webhooks_router
-from poly_core.logging_context import set_request_context
-
-# Import standardized exception handlers
-from poly_core.exceptions.handlers import setup_exception_handlers
-from poly_core.exceptions.base import ErrorResponse
+from src.structured_logging import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -52,16 +58,6 @@ async def add_request_id(request: Request, call_next):
 
 def setup_cron_jobs(scheduler: AsyncIOScheduler) -> None:
     """Configure scheduled jobs for maintenance tasks."""
-    from poly_core.tasks.billing_tasks import reset_all_monthly_usage, sync_active_subscriptions
-    from poly_core.tasks.cleanup_tasks import (
-        cleanup_audio_files,
-        cleanup_expired_invitations,
-        cleanup_expired_password_resets,
-        cleanup_orphaned_content,
-        cleanup_revoked_tokens,
-        hard_delete_soft_deleted_content,
-    )
-
     # Hourly tasks
     scheduler.add_job(
         cleanup_expired_password_resets,

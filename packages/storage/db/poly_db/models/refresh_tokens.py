@@ -2,11 +2,17 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from .users import User
+
+SQLALCHEMY_TYPE_NAMESPACE = (datetime,)
 
 
 class RefreshToken(Base, TimestampMixin):
@@ -24,7 +30,7 @@ class RefreshToken(Base, TimestampMixin):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    user: Mapped["User"] = relationship(back_populates="refresh_tokens")
+    user: Mapped[User] = relationship(back_populates="refresh_tokens")
 
     def __repr__(self):
         return f"<RefreshToken(user_id={self.user_id}, token={self.token})>"

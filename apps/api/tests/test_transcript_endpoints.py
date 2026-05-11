@@ -1,19 +1,13 @@
 """Integration tests for transcript API endpoints."""
 
-import sys
-from pathlib import Path
-
-# Add apps/api to path before other imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
-from . import setup_paths as _setup_paths
 from ..main import app
+from . import setup_paths as _setup_paths
 
 del _setup_paths
 

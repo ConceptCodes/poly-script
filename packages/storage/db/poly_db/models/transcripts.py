@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from .transcript_edits import TranscriptEdit
+    from .transcription_jobs import TranscriptionJob
 
 
 class Transcript(Base, TimestampMixin):
@@ -26,8 +31,8 @@ class Transcript(Base, TimestampMixin):
     format_versions: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=None)
     engine_version: Mapped[str] = mapped_column(String(50))
 
-    job: Mapped["TranscriptionJob"] = relationship(back_populates="transcript")
-    edits: Mapped[list["TranscriptEdit"]] = relationship(
+    job: Mapped[TranscriptionJob] = relationship(back_populates="transcript")
+    edits: Mapped[list[TranscriptEdit]] = relationship(
         back_populates="transcript", cascade="all, delete-orphan"
     )
 

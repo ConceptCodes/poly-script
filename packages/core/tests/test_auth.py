@@ -87,7 +87,7 @@ class TestAuthService:
         assert len(parts) == 3
 
     @patch("poly_core.services.auth.NotificationService")
-    def test_send_verification_email(self, mock_notification_class, mock_db, auth_service):
+    def test_send_verification_email(self, _mock_notification_class, mock_db, auth_service):
         mock_user = Mock()
         mock_user.id = "user-id"
         mock_user.email = "test@example.com"
@@ -108,17 +108,19 @@ class TestAuthService:
 
     @patch("poly_core.services.auth.NotificationService")
     def test_send_verification_email_user_not_found(
-        self, mock_notification_class, mock_db, auth_service
+        self, _mock_notification_class, auth_service
     ):
         mock_user_repo = Mock()
         mock_user_repo.get_by_email.return_value = None
 
-        with patch.object(auth_service, "user_repo", mock_user_repo):
-            with pytest.raises(AuthError):
-                auth_service.send_verification_email("notfound@example.com", "en")
+        with (
+            patch.object(auth_service, "user_repo", mock_user_repo),
+            pytest.raises(AuthError),
+        ):
+            auth_service.send_verification_email("notfound@example.com", "en")
 
     @patch("poly_core.services.auth.NotificationService")
-    def test_verify_email_success(self, mock_notification_class, mock_db, auth_service):
+    def test_verify_email_success(self, _mock_notification_class, mock_db, auth_service):
         mock_user = Mock()
         mock_user.verification_token = "valid-token"
         mock_user.is_verified = False
@@ -138,15 +140,17 @@ class TestAuthService:
             mock_db.add.assert_called_once()
             mock_db.commit.assert_called_once()
 
-    def test_verify_email_invalid_token(self, mock_db, auth_service):
+    def test_verify_email_invalid_token(self, auth_service):
         mock_user_repo = Mock()
         mock_user_repo.get_by_verification_token.return_value = None
 
-        with patch.object(auth_service, "user_repo", mock_user_repo):
-            with pytest.raises(EmailVerificationError):
-                auth_service.verify_email("invalid-token")
+        with (
+            patch.object(auth_service, "user_repo", mock_user_repo),
+            pytest.raises(EmailVerificationError),
+        ):
+            auth_service.verify_email("invalid-token")
 
-    def test_verify_email_already_verified(self, mock_db, auth_service):
+    def test_verify_email_already_verified(self, auth_service):
         mock_user = Mock()
         mock_user.verification_token = "valid-token"
         mock_user.is_verified = True
@@ -154,12 +158,14 @@ class TestAuthService:
         mock_user_repo = Mock()
         mock_user_repo.get_by_verification_token.return_value = mock_user
 
-        with patch.object(auth_service, "user_repo", mock_user_repo):
-            with pytest.raises(EmailVerificationError):
-                auth_service.verify_email("valid-token")
+        with (
+            patch.object(auth_service, "user_repo", mock_user_repo),
+            pytest.raises(EmailVerificationError),
+        ):
+            auth_service.verify_email("valid-token")
 
     @patch("poly_core.services.auth.NotificationService")
-    def test_request_password_reset(self, mock_notification_class, mock_db, auth_service):
+    def test_request_password_reset(self, _mock_notification_class, mock_db, auth_service):
         mock_user = Mock()
         mock_user.id = "user-id"
         mock_user.email = "test@example.com"
@@ -174,14 +180,16 @@ class TestAuthService:
         mock_db.add = Mock()
         mock_db.commit = Mock()
 
-        with patch.object(auth_service, "user_repo", mock_user_repo):
-            with patch.object(auth_service, "password_reset_repo", mock_password_reset_repo):
-                auth_service.request_password_reset("test@example.com", "en")
+        with (
+            patch.object(auth_service, "user_repo", mock_user_repo),
+            patch.object(auth_service, "password_reset_repo", mock_password_reset_repo),
+        ):
+            auth_service.request_password_reset("test@example.com", "en")
 
-                mock_user_repo.get_by_email.assert_called_once_with("test@example.com")
-                mock_password_reset_repo.delete_by_user.assert_called_once()
-                mock_db.add.assert_called()
-                mock_db.commit.assert_called()
+            mock_user_repo.get_by_email.assert_called_once_with("test@example.com")
+            mock_password_reset_repo.delete_by_user.assert_called_once()
+            mock_db.add.assert_called()
+            mock_db.commit.assert_called()
 
     def test_reset_password_success(self, mock_db, auth_service):
         mock_password_reset = Mock()
@@ -201,24 +209,28 @@ class TestAuthService:
         mock_db.add = Mock()
         mock_db.commit = Mock()
 
-        with patch.object(auth_service, "password_reset_repo", mock_password_reset_repo):
-            with patch.object(auth_service, "user_repo", mock_user_repo):
-                auth_service.reset_password("valid-token", "new_password_123")
+        with (
+            patch.object(auth_service, "password_reset_repo", mock_password_reset_repo),
+            patch.object(auth_service, "user_repo", mock_user_repo),
+        ):
+            auth_service.reset_password("valid-token", "new_password_123")
 
-                assert mock_user.hashed_password is not None
-                assert mock_password_reset.used_at is not None
-                mock_db.add.assert_called()
-                mock_db.commit.assert_called()
+            assert mock_user.hashed_password is not None
+            assert mock_password_reset.used_at is not None
+            mock_db.add.assert_called()
+            mock_db.commit.assert_called()
 
-    def test_reset_password_token_not_found(self, mock_db, auth_service):
+    def test_reset_password_token_not_found(self, auth_service):
         mock_password_reset_repo = Mock()
         mock_password_reset_repo.get_by_token.return_value = None
 
-        with patch.object(auth_service, "password_reset_repo", mock_password_reset_repo):
-            with pytest.raises(PasswordResetError):
-                auth_service.reset_password("invalid-token", "new_password")
+        with (
+            patch.object(auth_service, "password_reset_repo", mock_password_reset_repo),
+            pytest.raises(PasswordResetError),
+        ):
+            auth_service.reset_password("invalid-token", "new_password")
 
-    def test_reset_password_token_expired(self, mock_db, auth_service):
+    def test_reset_password_token_expired(self, auth_service):
         mock_password_reset = Mock()
         mock_password_reset.user_id = "user-id"
         mock_password_reset.expires_at = datetime.now(UTC) - timedelta(hours=1)
@@ -227,11 +239,13 @@ class TestAuthService:
         mock_password_reset_repo = Mock()
         mock_password_reset_repo.get_by_token.return_value = mock_password_reset
 
-        with patch.object(auth_service, "password_reset_repo", mock_password_reset_repo):
-            with pytest.raises(PasswordResetError):
-                auth_service.reset_password("expired-token", "new_password")
+        with (
+            patch.object(auth_service, "password_reset_repo", mock_password_reset_repo),
+            pytest.raises(PasswordResetError),
+        ):
+            auth_service.reset_password("expired-token", "new_password")
 
-    def test_reset_password_already_used(self, mock_db, auth_service):
+    def test_reset_password_already_used(self, auth_service):
         mock_password_reset = Mock()
         mock_password_reset.user_id = "user-id"
         mock_password_reset.expires_at = datetime.now(UTC) + timedelta(hours=1)
@@ -240,12 +254,14 @@ class TestAuthService:
         mock_password_reset_repo = Mock()
         mock_password_reset_repo.get_by_token.return_value = mock_password_reset
 
-        with patch.object(auth_service, "password_reset_repo", mock_password_reset_repo):
-            with pytest.raises(PasswordResetError):
-                auth_service.reset_password("used-token", "new_password")
+        with (
+            patch.object(auth_service, "password_reset_repo", mock_password_reset_repo),
+            pytest.raises(PasswordResetError),
+        ):
+            auth_service.reset_password("used-token", "new_password")
 
     @patch("poly_core.services.auth.NotificationService")
-    def test_signup_success(self, mock_notification_class, mock_db, auth_service):
+    def test_signup_success(self, _mock_notification_class, mock_db, auth_service):
         mock_user = Mock()
         mock_user.id = "user-id"
 
@@ -264,27 +280,29 @@ class TestAuthService:
         mock_db.add = Mock()
         mock_db.commit = Mock()
 
-        with patch.object(auth_service, "user_repo", mock_user_repo):
-            with patch.object(auth_service, "team_repo", mock_team_repo):
-                with patch.object(auth_service, "team_member_repo", mock_team_member_repo):
-                    result = auth_service.signup(
-                        "test@example.com", "password_123", "John Doe", "en"
-                    )
+        with (
+            patch.object(auth_service, "user_repo", mock_user_repo),
+            patch.object(auth_service, "team_repo", mock_team_repo),
+            patch.object(auth_service, "team_member_repo", mock_team_member_repo),
+        ):
+            result = auth_service.signup("test@example.com", "password_123", "John Doe", "en")
 
-                    assert result is not None
-                    assert result.id == "user-id"
-                    mock_db.add.assert_called()
-                    mock_db.commit.assert_called()
+            assert result is not None
+            assert result.id == "user-id"
+            mock_db.add.assert_called()
+            mock_db.commit.assert_called()
 
-    def test_signup_email_exists(self, mock_db, auth_service):
+    def test_signup_email_exists(self, auth_service):
         mock_user = Mock()
 
         mock_user_repo = Mock()
         mock_user_repo.get_by_email.return_value = mock_user
 
-        with patch.object(auth_service, "user_repo", mock_user_repo):
-            with pytest.raises(AuthError):
-                auth_service.signup("exists@example.com", "password_123", "John Doe", "en")
+        with (
+            patch.object(auth_service, "user_repo", mock_user_repo),
+            pytest.raises(AuthError),
+        ):
+            auth_service.signup("exists@example.com", "password_123", "John Doe", "en")
 
 
 class TestOAuthPKCE:

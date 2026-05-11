@@ -4,12 +4,10 @@ import os
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import pytest
-
 from poly_core.services.storage_service import (
-    get_storage_backend,
     LocalStorageBackend,
     S3StorageBackend,
+    get_storage_backend,
 )
 
 
@@ -54,7 +52,7 @@ class TestLocalStorageBackend:
         """Verify local storage save works correctly."""
         backend = LocalStorageBackend(storage_path="/tmp/uploads")
 
-        with patch.object(Path, "mkdir") as mock_mkdir:
+        with patch.object(Path, "mkdir"):
             mock_file = Mock()
             with patch("builtins.open") as mock_open:
                 mock_open.return_value.__enter__ = Mock(return_value=mock_file)
@@ -65,8 +63,6 @@ class TestLocalStorageBackend:
                 assert result is not None
                 assert ".mp3" in result
                 assert "local://" in result
-                # mkdir is called in constructor, not in save method
-                # mock_mkdir.assert_called_once()
 
     def test_get_url_local_file(self):
         """Verify local storage get_url works correctly."""
@@ -82,8 +78,10 @@ class TestLocalStorageBackend:
         backend = LocalStorageBackend(storage_path="/tmp/uploads")
 
         # Mock Path.exists to return True so unlink is called
-        with patch.object(Path, "exists", return_value=True):
-            with patch.object(Path, "unlink") as mock_unlink:
-                backend.delete("local:///test/file.mp3")
+        with (
+            patch.object(Path, "exists", return_value=True),
+            patch.object(Path, "unlink") as mock_unlink,
+        ):
+            backend.delete("local:///test/file.mp3")
 
-                mock_unlink.assert_called_once()
+            mock_unlink.assert_called_once()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Index, String
 from sqlalchemy import Enum as SQLEnum
@@ -9,6 +10,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
 from .team_members import TeamRole
+
+if TYPE_CHECKING:
+    from .teams import Team
+
+SQLALCHEMY_TYPE_NAMESPACE = (datetime,)
 
 
 class TeamInvitation(Base, TimestampMixin):
@@ -27,7 +33,7 @@ class TeamInvitation(Base, TimestampMixin):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    team: Mapped["Team"] = relationship(back_populates="invitations")
+    team: Mapped[Team] = relationship(back_populates="invitations")
 
     def __repr__(self):
         return f"<TeamInvitation(team_id={self.team_id}, email={self.email})>"

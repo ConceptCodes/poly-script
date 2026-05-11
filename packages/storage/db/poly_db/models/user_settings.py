@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from .users import User
 
 
 class UserSettings(Base, TimestampMixin):
@@ -22,7 +26,7 @@ class UserSettings(Base, TimestampMixin):
         JSON, default=lambda: {"email": True, "job_completion": True, "in_app": True}
     )
 
-    user: Mapped["User"] = relationship(back_populates="settings")
+    user: Mapped[User] = relationship(back_populates="settings")
 
     def __repr__(self):
         return f"<UserSettings(user_id={self.user_id})>"

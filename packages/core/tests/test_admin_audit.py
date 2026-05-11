@@ -1,4 +1,3 @@
-# ruff: noqa: ARG001
 
 import uuid
 from unittest.mock import Mock
@@ -50,19 +49,19 @@ def admin_auth_service(db_session):
 class TestAdminAuthAuditLogging:
     """Test audit logging for admin authentication events."""
 
-    def test_login_success_creates_audit_log(self, db_session, admin_auth_service, mock_admin_user):
+    def test_login_success_creates_audit_log(self):
         """Login success must create audit log."""
         pytest.skip("Audit logging to be implemented in Task 3 - GREEN phase")
 
-    def test_login_failure_creates_audit_log(self, db_session, admin_auth_service):
+    def test_login_failure_creates_audit_log(self):
         """Login failure (invalid credentials) must create audit log."""
         pytest.skip("Audit logging to be implemented in Task 3 - GREEN phase")
 
-    def test_login_inactive_account_creates_audit_log(self, db_session, admin_auth_service):
+    def test_login_inactive_account_creates_audit_log(self):
         """Login attempt to inactive account must create audit log."""
         pytest.skip("Audit logging to be implemented in Task 3 - GREEN phase")
 
-    def test_login_suspended_account_creates_audit_log(self, db_session, admin_auth_service):
+    def test_login_suspended_account_creates_audit_log(self):
         """Login attempt to suspended account must create audit log."""
         pytest.skip("Audit logging to be implemented in Task 3 - GREEN phase")
 
@@ -70,23 +69,23 @@ class TestAdminAuthAuditLogging:
 class TestAdminUserManagementAuditLogging:
     """Test audit logging for admin user management actions."""
 
-    def test_create_admin_creates_audit_log(self, db_session):
+    def test_create_admin_creates_audit_log(self):
         """Creating a new admin user must create audit log."""
         pytest.skip("Method to be implemented in Task 4 - GREEN phase")
 
-    def test_suspend_admin_creates_audit_log(self, db_session):
+    def test_suspend_admin_creates_audit_log(self):
         """Suspending an admin user must create audit log."""
         pytest.skip("Method to be implemented in Task 4 - GREEN phase")
 
-    def test_unsuspend_admin_creates_audit_log(self, db_session):
+    def test_unsuspend_admin_creates_audit_log(self):
         """Unsuspending an admin user must create audit log."""
         pytest.skip("Method to be implemented in Task 4 - GREEN phase")
 
-    def test_change_admin_role_creates_audit_log(self, db_session):
+    def test_change_admin_role_creates_audit_log(self):
         """Changing admin role must create audit log."""
         pytest.skip("Method to be implemented in Task 4 - GREEN phase")
 
-    def test_delete_admin_creates_audit_log(self, db_session):
+    def test_delete_admin_creates_audit_log(self):
         """Deleting an admin user must create audit log."""
         pytest.skip("Method to be implemented in Task 4 - GREEN phase")
 
@@ -94,15 +93,15 @@ class TestAdminUserManagementAuditLogging:
 class TestUserManagementAuditLogging:
     """Test audit logging for regular user management by admins."""
 
-    def test_suspend_user_creates_audit_log(self, db_session):
+    def test_suspend_user_creates_audit_log(self):
         """Suspending a regular user must create audit log."""
         pytest.skip("Covered by route-level tests in apps/api/tests")
 
-    def test_unsuspend_user_creates_audit_log(self, db_session):
+    def test_unsuspend_user_creates_audit_log(self):
         """Unsuspending a regular user must create audit log."""
         pytest.skip("Covered by route-level tests in apps/api/tests")
 
-    def test_delete_user_creates_audit_log(self, db_session):
+    def test_delete_user_creates_audit_log(self):
         """Deleting a regular user must create audit log."""
         pytest.skip("Covered by route-level tests in apps/api/tests")
 
@@ -110,15 +109,15 @@ class TestUserManagementAuditLogging:
 class TestTeamManagementAuditLogging:
     """Test audit logging for team management by admins."""
 
-    def test_suspend_team_creates_audit_log(self, db_session):
+    def test_suspend_team_creates_audit_log(self):
         """Suspending a team must create audit log."""
         pytest.skip("Method to be implemented in Task 4 - GREEN phase")
 
-    def test_unsuspend_team_creates_audit_log(self, db_session):
+    def test_unsuspend_team_creates_audit_log(self):
         """Unsuspending a team must create audit log."""
         pytest.skip("Method to be implemented in Task 4 - GREEN phase")
 
-    def test_delete_team_creates_audit_log(self, db_session):
+    def test_delete_team_creates_audit_log(self):
         """Deleting a team must create audit log."""
         pytest.skip("Method to be implemented in Task 4 - GREEN phase")
 
@@ -126,7 +125,7 @@ class TestTeamManagementAuditLogging:
 class TestJobManagementAuditLogging:
     """Test audit logging for job management by admins."""
 
-    def test_cancel_job_creates_audit_log(self, db_session):
+    def test_cancel_job_creates_audit_log(self):
         """Canceling a job must create audit log."""
         expected_log = {
             "target_type": "job",
@@ -134,7 +133,7 @@ class TestJobManagementAuditLogging:
         }
         assert "target_type" in expected_log
 
-    def test_retry_job_creates_audit_log(self, db_session):
+    def test_retry_job_creates_audit_log(self):
         """Retrying a job must create audit log."""
         expected_log = {
             "target_type": "job",

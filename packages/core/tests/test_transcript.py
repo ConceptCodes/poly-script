@@ -1,6 +1,5 @@
 """Unit tests for transcript service."""
 
-# ruff: noqa: ARG001
 
 import uuid
 from unittest.mock import MagicMock, Mock
@@ -67,7 +66,7 @@ def mock_edit():
 class TestTranscriptServiceInit:
     """Test TranscriptService initialization."""
 
-    def test_init_creates_repositories(self, transcript_service, mock_session):
+    def test_init_creates_repositories(self, transcript_service):
         """Verify service initializes with correct repositories."""
         assert hasattr(transcript_service, "session")
         assert hasattr(transcript_service, "repo")
@@ -77,9 +76,7 @@ class TestTranscriptServiceInit:
 class TestGetTranscript:
     """Test get_transcript method."""
 
-    def test_get_transcript_returns_transcript(
-        self, transcript_service, mock_session, mock_transcript
-    ):
+    def test_get_transcript_returns_transcript(self, transcript_service, mock_transcript):
         """Verify get_transcript returns the transcript."""
         transcript_service.repo.get.return_value = mock_transcript
 
@@ -89,7 +86,7 @@ class TestGetTranscript:
         assert result["id"] == mock_transcript.id
         transcript_service.repo.get.assert_called_once_with(str(mock_transcript.id))
 
-    def test_get_transcript_returns_none_when_not_found(self, transcript_service, mock_session):
+    def test_get_transcript_returns_none_when_not_found(self, transcript_service):
         """Verify get_transcript returns None for non-existent transcript."""
         transcript_service.repo.get.return_value = None
 
@@ -101,9 +98,7 @@ class TestGetTranscript:
 class TestGetTranscriptWithTeamCheck:
     """Test get_transcript_with_team_check method."""
 
-    def test_returns_transcript_for_correct_team(
-        self, transcript_service, mock_session, mock_transcript
-    ):
+    def test_returns_transcript_for_correct_team(self, transcript_service, mock_transcript):
         """Verify transcript is returned when team matches."""
         transcript_service.repo.get.return_value = mock_transcript
         mock_transcript.job.team_id = mock_transcript.team_id
@@ -115,7 +110,7 @@ class TestGetTranscriptWithTeamCheck:
         assert result is not None
         assert result["id"] == mock_transcript.id
 
-    def test_returns_none_for_wrong_team(self, transcript_service, mock_session, mock_transcript):
+    def test_returns_none_for_wrong_team(self, transcript_service, mock_transcript):
         """Verify None is returned when team doesn't match."""
         transcript_service.repo.get.return_value = mock_transcript
         wrong_team_id = str(uuid.uuid4())
@@ -127,7 +122,7 @@ class TestGetTranscriptWithTeamCheck:
 
         assert result is None
 
-    def test_returns_none_when_not_found(self, transcript_service, mock_session):
+    def test_returns_none_when_not_found(self, transcript_service):
         """Verify None is returned when no transcript for job."""
         transcript_service.repo.get_by_job_id.return_value = None
 
@@ -153,7 +148,7 @@ class TestUpdateFullText:
         mock_session.flush.assert_called()
         transcript_service.edit_repo.create.assert_called_once()
 
-    def test_raises_error_for_nonexistent_transcript(self, transcript_service, mock_session):
+    def test_raises_error_for_nonexistent_transcript(self, transcript_service):
         """Verify ValueError is raised for non-existent transcript."""
         transcript_service.repo.get.return_value = None
 
@@ -166,7 +161,7 @@ class TestUpdateFullText:
 class TestUpdateSegment:
     """Test update_segment method."""
 
-    def test_updates_segment_text(self, transcript_service, mock_session, mock_transcript):
+    def test_updates_segment_text(self, transcript_service, mock_transcript):
         """Verify update_segment updates the correct segment."""
         transcript_service.repo.get.return_value = mock_transcript
         segment_id = 1
@@ -179,9 +174,7 @@ class TestUpdateSegment:
         assert result is not None
         assert result["segments"][segment_id]["text"] == new_text
 
-    def test_raises_error_for_invalid_segment_id(
-        self, transcript_service, mock_session, mock_transcript
-    ):
+    def test_raises_error_for_invalid_segment_id(self, transcript_service, mock_transcript):
         """Verify ValueError is raised for invalid segment_id."""
         transcript_service.repo.get.return_value = mock_transcript
 
@@ -195,9 +188,7 @@ class TestUpdateSegment:
 
         assert "Invalid segment_id" in str(exc_info.value)
 
-    def test_raises_error_for_negative_segment_id(
-        self, transcript_service, mock_session, mock_transcript
-    ):
+    def test_raises_error_for_negative_segment_id(self, transcript_service, mock_transcript):
         """Verify ValueError is raised for negative segment_id."""
         transcript_service.repo.get.return_value = mock_transcript
 
@@ -215,7 +206,7 @@ class TestUpdateSegment:
 class TestGetEditHistory:
     """Test get_edit_history method."""
 
-    def test_returns_edit_history(self, transcript_service, mock_session, mock_edit):
+    def test_returns_edit_history(self, transcript_service, mock_edit):
         """Verify get_edit_history returns list of edits."""
         transcript_service.edit_repo.get_history_by_transcript_id.return_value = [mock_edit]
 
@@ -224,7 +215,7 @@ class TestGetEditHistory:
         assert len(result) == 1
         assert result[0] == mock_edit
 
-    def test_returns_empty_list_when_no_edits(self, transcript_service, mock_session):
+    def test_returns_empty_list_when_no_edits(self, transcript_service):
         """Verify empty list is returned when no edits exist."""
         transcript_service.edit_repo.get_history_by_transcript_id.return_value = []
 
@@ -255,9 +246,7 @@ class TestRevertToOriginal:
         assert result is not None
         mock_session.flush.assert_called()
 
-    def test_raises_error_when_no_edits_exist(
-        self, transcript_service, mock_session, mock_transcript
-    ):
+    def test_raises_error_when_no_edits_exist(self, transcript_service, mock_transcript):
         """Verify ValueError is raised when no edits to revert."""
         transcript_service.repo.get.return_value = mock_transcript
         transcript_service.edit_repo.get_history_by_transcript_id.return_value = []
@@ -285,7 +274,7 @@ class TestListTranscripts:
         assert len(result[0]) == 1
         assert result[1] == 1  # total count
 
-    def test_passes_language_filter(self, transcript_service, mock_session, mock_transcript):
+    def test_passes_language_filter(self, transcript_service, mock_session):
         """Verify language filter is applied."""
         mock_query_result = MagicMock()
         mock_query_result.all.return_value = []
@@ -297,7 +286,7 @@ class TestListTranscripts:
         # Verify where clause was called with language filter
         mock_session.execute.assert_called()
 
-    def test_passes_search_filter(self, transcript_service, mock_session, mock_transcript):
+    def test_passes_search_filter(self, transcript_service, mock_session):
         """Verify search filter is applied."""
         mock_query_result = MagicMock()
         mock_query_result.all.return_value = []
@@ -323,7 +312,7 @@ class TestListTranscripts:
 class TestGetTranscriptByJob:
     """Test get_transcript_by_job method."""
 
-    def test_returns_transcript_for_job(self, transcript_service, mock_session, mock_transcript):
+    def test_returns_transcript_for_job(self, transcript_service, mock_transcript):
         """Verify transcript is returned when found by job_id."""
         transcript_service.repo.get_by_job_id.return_value = mock_transcript
 
@@ -333,7 +322,7 @@ class TestGetTranscriptByJob:
         assert result["id"] == mock_transcript.id
         transcript_service.repo.get_by_job_id.assert_called_once_with(str(mock_transcript.job_id))
 
-    def test_returns_none_when_not_found(self, transcript_service, mock_session):
+    def test_returns_none_when_not_found(self, transcript_service):
         """Verify None is returned when no transcript for job."""
         transcript_service.repo.get_by_job_id.return_value = None
 

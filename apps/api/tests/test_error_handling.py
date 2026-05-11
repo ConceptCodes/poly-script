@@ -16,11 +16,12 @@ These tests verify:
 import pytest
 from fastapi.testclient import TestClient
 
-from . import setup_paths as _setup_paths
+from poly_core.constants import I18N_KEY_HTTP_STATUS, I18nKeys
+
 from ..main import app
+from . import setup_paths as _setup_paths
 
 del _setup_paths
-from poly_core.constants import I18N_KEY_HTTP_STATUS, I18nKeys
 
 
 @pytest.fixture

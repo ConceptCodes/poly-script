@@ -20,7 +20,6 @@ from poly_db.repositories.users_async import UserRepositoryAsync
 class TeamError(Exception):
     """Team service error."""
 
-    pass
 
 
 def _team_to_dict(team: Team) -> dict:
@@ -341,7 +340,7 @@ class AsyncTeamService:
     async def update_member_role(
         self,
         team_id: uuid.UUID,
-        requesting_user_id: uuid.UUID,
+        _requesting_user_id: uuid.UUID,
         target_user_id: uuid.UUID,
         new_role: TeamRole,
     ) -> TeamMember | None:

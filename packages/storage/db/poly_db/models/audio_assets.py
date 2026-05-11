@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from .transcription_jobs import TranscriptionJob
 
 
 class AudioAsset(Base, TimestampMixin):
@@ -25,7 +29,7 @@ class AudioAsset(Base, TimestampMixin):
     file_size: Mapped[int] = mapped_column(BigInteger)
     duration_seconds: Mapped[float | None] = mapped_column(nullable=True)
 
-    job: Mapped["TranscriptionJob"] = relationship(back_populates="audio_asset")
+    job: Mapped[TranscriptionJob] = relationship(back_populates="audio_asset")
 
     def __repr__(self):
         return f"<AudioAsset(id={self.id}, filename={self.filename})>"

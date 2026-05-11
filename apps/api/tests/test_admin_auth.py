@@ -8,9 +8,8 @@ import pytest
 from fastapi.testclient import TestClient
 from jose import jwt
 
-from poly_db.models.admin_users import AdminUser, AdminUserRole
-from poly_core.services.admin_auth import AdminAuthService
 from poly_core.services.audit import AuditService
+from poly_db.models.admin_users import AdminUser, AdminUserRole
 
 
 @pytest.fixture
@@ -159,7 +158,6 @@ class TestAdminAuthEndpoints:
     ):
         """POST /v1/admin/auth/login with valid credentials returns token."""
         from fastapi import FastAPI
-        from fastapi.testclient import TestClient
 
         # Mock the admin repository
         with patch(
@@ -183,6 +181,7 @@ class TestAdminAuthEndpoints:
                         @app.post("/v1/admin/auth/login")
                         async def login():
                             from fastapi import HTTPException
+
                             from poly_core.services.admin_auth import AdminAuthService
 
                             auth_service = AdminAuthService(
@@ -225,7 +224,6 @@ class TestAdminAuthEndpoints:
                 ):
                     from fastapi import FastAPI
                     from fastapi.testclient import TestClient
-                    from fastapi.exceptions import HTTPException
 
                     app = FastAPI()
 
@@ -264,7 +262,6 @@ class TestAdminAuthEndpoints:
                 ):
                     from fastapi import FastAPI
                     from fastapi.testclient import TestClient
-                    from fastapi.exceptions import HTTPException
 
                     app = FastAPI()
 

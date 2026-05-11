@@ -16,33 +16,16 @@ Behavior:
 import argparse
 import logging
 import os
-import pathlib
 import sys
-
-
-def _setup_python_path():
-    script_dir = pathlib.Path(__file__).resolve()
-    root = script_dir.parent.parent.parent.parent
-
-    core_pkg = root / "packages" / "core"
-    if core_pkg.exists():
-        sys.path.insert(0, str(core_pkg))
-
-    db_path = root / "packages" / "storage" / "db"
-    if db_path.exists():
-        sys.path.insert(0, str(db_path))
-
-    return root
-
-
-_root = _setup_python_path()
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(_root / ".env")
+from poly_core.services.admin_auth import AdminAuthService
+from poly_db.database import get_db_session
 
-from poly_core.services.admin_auth import AdminAuthService  # noqa: E402
-from poly_db.database import get_db_session  # noqa: E402
+ROOT = Path(__file__).resolve().parents[3]
+load_dotenv(ROOT / ".env")
 
 logger = logging.getLogger(__name__)
 

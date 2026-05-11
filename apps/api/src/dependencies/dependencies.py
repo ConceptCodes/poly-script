@@ -11,7 +11,8 @@ from poly_core.services.admin_auth import AdminAuthService
 from poly_core.services.auth import AuthService
 from poly_core.services.auth_async import AsyncAuthService
 from poly_core.services.notification import NotificationService
-from poly_db.database import get_db, get_db_session
+from poly_db.database import get_db
+from poly_db.database_async import get_async_engine
 from poly_db.models.teams import Team
 from poly_db.repositories import AdminUserRepository, TeamMemberRepository, UserRepository
 from src.config import get_settings
@@ -84,8 +85,6 @@ def _get_async_session_factory() -> async_sessionmaker[AsyncSession]:
     """Get or create async session factory."""
     global _async_session_factory
     if _async_session_factory is None:
-        from poly_db.database_async import get_async_engine
-
         engine = get_async_engine()
         _async_session_factory = async_sessionmaker(
             bind=engine,

@@ -230,7 +230,7 @@ class TeamService:
     def update_member_role(
         self,
         team_id: uuid.UUID,
-        requesting_user_id: uuid.UUID,
+        _requesting_user_id: uuid.UUID,
         target_user_id: uuid.UUID,
         new_role: TeamRole,
     ) -> TeamMember | None:

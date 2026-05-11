@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from poly_stt.engines import WhisperLocalEngine
-from poly_stt.interface import Segment, TranscriptionResult
+from poly_stt.interface import TranscriptionResult
 from poly_stt.registry import EngineRegistry
 
 

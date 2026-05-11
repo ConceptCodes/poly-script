@@ -16,7 +16,7 @@ dependencies = [
 [project.scripts]
 run = "python -m main"
 
-[tool.ruff]
+[tool.ruff.lint]
 ignore = [
     "E501",
     "PLC0415",  # imports inside functions for lazy loading

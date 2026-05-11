@@ -15,7 +15,7 @@ Usage:
 import argparse
 import json
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -189,7 +189,7 @@ def generate_markdown_docs() -> str:
     lines = [
         "# PolyScript API Error Documentation",
         "",
-        f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Generated: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')}",
         "",
         "## Overview",
         "",
