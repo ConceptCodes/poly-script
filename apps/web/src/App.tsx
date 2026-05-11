@@ -8,8 +8,8 @@ import { queryClient } from "./lib/queryClient";
 import { useAppStore } from "./lib/store";
 import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
 import { LoginPage } from "./pages/auth/LoginPage";
-import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
 import { OAuthCallbackPage } from "./pages/auth/OAuthCallbackPage";
+import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
 import { SignupPage } from "./pages/auth/SignupPage";
 import { VerifyEmailCodePage } from "./pages/auth/VerifyEmailCodePage";
 import { VerifyEmailPage } from "./pages/auth/VerifyEmailPage";
@@ -229,9 +229,6 @@ function App() {
         </div>
       </Router>
       <Toaster />
-      {import.meta.env.DEV && (
-        <>{/* ReactQueryDevtools removed from prod — add back manually for local dev if needed */}</>
-      )}
     </QueryClientProvider>
   );
 }

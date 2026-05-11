@@ -42,7 +42,7 @@ export function LibraryPage() {
         start_date: startDate || undefined,
         end_date: endDate || undefined,
       }),
-    });
+  });
 
   const toggleSelect = (id: string) => {
     const newSelected = new Set(selectedIds);

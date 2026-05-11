@@ -17,9 +17,7 @@ test.describe("Transcript Editor E2E", () => {
     await page.evaluate(() => {
       localStorage.setItem("access_token", "mock-token");
       localStorage.setItem("user_id", "mock-user-id");
-      if ((window as Window & { __initAuth?: () => void }).__initAuth) {
-        (window as Window & { __initAuth?: () => void }).__initAuth!();
-      }
+      (window as Window & { __initAuth?: () => void }).__initAuth?.();
     });
     await page.waitForTimeout(500);
   });

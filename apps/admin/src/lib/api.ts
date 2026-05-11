@@ -5,7 +5,7 @@ import { createApiFetch } from "@poly/ui";
 // - Error thrown as Error object (not error object)
 export const apiFetch = createApiFetch({
   tokenKey: "admin_access_token",
-  errorTransformer: (error: unknown, status: number) => {
+  errorTransformer: (error: unknown, _status: number) => {
     const errorMsg = (error as { detail?: string })?.detail || "An unknown error occurred";
     throw new Error(errorMsg);
   },

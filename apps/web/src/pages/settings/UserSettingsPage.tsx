@@ -22,7 +22,7 @@ import {
   Switch,
 } from "@poly/ui";
 import { useForm } from "@tanstack/react-form";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../lib/api";
@@ -67,24 +67,25 @@ export function UserSettingsPage() {
     },
   });
 
-  const applyThemePreference = (nextTheme: "light" | "dark" | "system") => {
+  const applyThemePreference = useCallback((nextTheme: "light" | "dark" | "system") => {
     if (typeof document === "undefined") return;
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const resolvedTheme =
-      nextTheme === "system" ? (prefersDark ? "dark" : "light") : nextTheme;
+    const resolvedTheme = nextTheme === "system" ? (prefersDark ? "dark" : "light") : nextTheme;
     document.documentElement.classList.toggle("dark", resolvedTheme === "dark");
     document.documentElement.dataset.theme = resolvedTheme;
-  };
+  }, []);
 
   useEffect(() => {
     applyThemePreference(theme);
-  }, [theme]);
+  }, [theme, applyThemePreference]);
 
   useEffect(() => {
     const loadSettings = async () => {
       if (!userId) return;
       try {
-        const data = (await apiFetch(`/v1/users/${userId}/settings`)) as UserSettingsResponse | null;
+        const data = (await apiFetch(
+          `/v1/users/${userId}/settings`,
+        )) as UserSettingsResponse | null;
         if (data) {
           setTheme((data.theme as "light" | "dark" | "system") || "system");
           form.setFieldValue("name", data.full_name || "");
@@ -319,7 +320,8 @@ export function UserSettingsPage() {
                   </div>
                 );
               }}
-              validators={{
+              validators=
+              {{
                 onChange: ({ value }) =>
                   value.trim().length > 0 ? undefined : "Current password is required.",
               }}
@@ -345,7 +347,8 @@ export function UserSettingsPage() {
                   </div>
                 );
               }}
-              validators={{
+              validators=
+              {{
                 onChange: ({ value }) =>
                   value.length >= 8 ? undefined : "New password must be at least 8 characters.",
               }}
@@ -371,11 +374,10 @@ export function UserSettingsPage() {
                   </div>
                 );
               }}
-              validators={{
+              validators=
+              {{
                 onChange: ({ value }) =>
-                  value === form.state.values.newPassword
-                    ? undefined
-                    : "Passwords do not match.",
+                  value === form.state.values.newPassword ? undefined : "Passwords do not match.",
               }}
             </form.Field>
 

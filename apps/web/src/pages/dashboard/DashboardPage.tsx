@@ -1,11 +1,7 @@
 import { Button, Card } from "@poly/ui";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import {
-  useDashboardActivity,
-  useDashboardStats,
-  useRecentJobs,
-} from "../../hooks/useDashboard";
+import { useDashboardActivity, useDashboardStats, useRecentJobs } from "../../hooks/useDashboard";
 
 export function DashboardPage() {
   const { t } = useTranslation();
