@@ -1,15 +1,5 @@
-"""Pytest configuration for API tests."""
+"""Shared API test configuration."""
 
-import sys
-from pathlib import Path
+from . import setup_paths as _setup_paths
 
-api_dir = Path(__file__).parent.parent
-api_dir_str = str(api_dir)
-
-if api_dir_str in sys.path:
-    sys.path.remove(api_dir_str)
-sys.path.insert(0, api_dir_str)
-
-worker_dir = str(Path(__file__).parent.parent.parent / "worker")
-if worker_dir in sys.path:
-    sys.path.remove(worker_dir)
+del _setup_paths
