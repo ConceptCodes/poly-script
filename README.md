@@ -30,9 +30,11 @@ Transform audio into accurate transcripts in 5 languages with team-based access 
 
 ### 💳 Billing & Subscriptions
 - **Three Flexible Plans**:
-  - **FREE**: 5 uploads/month, 2 languages, 1 member, credit purchases available
-  - **STANDARD**: 25 uploads/month, 5 languages, 5 members, $10/month
-  - **PRO**: Unlimited uploads, 5 languages, unlimited members, priority support, $30/month
+| Plan | Price | Uploads | Languages | Members | Translations |
+|:-----|:------|:--------|:----------|:--------|:-------------|
+| **FREE** | $0/mo | 5/mo | 2 | 1 (Admin) | 5/mo |
+| **STANDARD** | $10/mo | 25/mo | 5 | 5 | 25/mo |
+| **PRO** | $30/mo | Unlimited | 5 | Unlimited | Unlimited |
 - **Stripe Integration**: Secure payment processing for subscriptions and credits
 - **Credit System**: Purchase additional credits on FREE plan ($1 per upload)
 - **Usage Tracking**: Monitor monthly usage and billing history
@@ -248,14 +250,16 @@ poly-script/
 │   │
 │   ├── api/              # FastAPI backend
 │   │   ├── main.py           # App entry point
-│   │   ├── routes/           # API endpoints
-│   │   ├── middleware/       # Auth, CORS, logging
-│   │   ├── dependencies/     # FastAPI dependencies
+│   │   ├── src/
+│   │   │   ├── routes/       # API endpoints
+│   │   │   ├── middleware/   # Auth, CORS, logging
+│   │   │   └── locales/      # API translations
+│   │   ├── scripts/          # Maintenance & admin scripts
 │   │   └── pyproject.toml
 │   │
 │   └── worker/           # Background worker
 │       ├── main.py           # Worker entry point
-│       ├── consumer.py       # Job consumer
+│       ├── src/              # Worker logic
 │       └── pyproject.toml
 │
 ├── packages/
@@ -287,9 +291,10 @@ poly-script/
 │   │       └── pyproject.toml
 │   │
 │   └── stt/              # STT engines (Python)
-│       ├── poly_stt/
-│       │   ├── engines/       # STT implementations
-│       │   └── normalizer.py  # Output normalization
+│       ├── src/
+│       │   └── poly_stt/
+│       │       ├── engines/       # STT implementations
+│       │       └── normalizer.py  # Output normalization
 │       └── pyproject.toml
 │
 ├── justfile              # Task runner recipes
@@ -373,6 +378,7 @@ Install the following tools before setting up the project:
    just admin      # Admin panel (http://localhost:5174)
    just marketing  # Marketing site (http://localhost:3000)
    just api        # API server (http://localhost:8000)
+   just worker     # Background worker
    ```
 
 7. **Verify installation**
@@ -396,6 +402,7 @@ just web              # Start web app
 just admin            # Start admin panel
 just marketing        # Start marketing site
 just api              # Start API server
+just worker           # Start background worker
 just frontend         # Start all frontend apps (parallel)
 
 # Building
@@ -426,6 +433,20 @@ just pre-commit       # Pre-commit hook (lint, format, test)
 
 # Utilities
 just clean            # Clean build artifacts
+
+# Maintenance
+# Run these periodically to clean up expired data
+just api-maintenance  # Run API maintenance script
+```
+
+### Maintenance Tasks
+
+The system includes a maintenance script to handle cleanup of expired resources (tokens, invitations, etc.):
+
+```bash
+# Run maintenance tasks
+cd apps/api
+uv run python scripts/run_maintenance.py
 ```
 
 ## 🧪 Testing
@@ -593,20 +614,6 @@ This project is configured for deployment on [Railway](https://railway.app).
 ### Production Configuration
 
 The `infra/railway-prod.json` file contains the production service configuration.
-
-**Production checklist:**
-- [ ] Set all environment variables
-- [ ] Configure PostgreSQL database
-- [ ] Configure Redis instance
-- [ ] Set up Stripe webhooks
-- [ ] Configure email service (SMTP)
-- [ ] Set up Google OAuth credentials
-- [ ] Configure CORS origins
-- [ ] Set secure JWT secrets
-- [ ] Run database migrations
-- [ ] Create admin user
-- [ ] Test health endpoints
-- [ ] Monitor logs and metrics
 
 ### Health Checks
 

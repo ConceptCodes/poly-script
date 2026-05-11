@@ -27,6 +27,10 @@ marketing:
 api:
     cd apps/api && uv run uvicorn main:app --reload
 
+# Start background worker
+worker:
+    cd apps/worker && uv run python main.py
+
 # Start all frontend apps (parallel)
 frontend:
     just web & just admin & just marketing
@@ -181,6 +185,10 @@ db-migrate:
 # Generate new migration
 db-migration name:
     cd packages/storage/db && uv run alembic revision --autogenerate -m "{{ name }}"
+
+# Run API maintenance script
+api-maintenance:
+    cd apps/api && uv run python scripts/run_maintenance.py
 
 # ──────────────────────────────────────────────────────────────────────────────
 # CI/CD
