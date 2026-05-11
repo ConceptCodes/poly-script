@@ -107,9 +107,7 @@ class TestAuthService:
             mock_db.commit.assert_called_once()
 
     @patch("poly_core.services.auth.NotificationService")
-    def test_send_verification_email_user_not_found(
-        self, _mock_notification_class, auth_service
-    ):
+    def test_send_verification_email_user_not_found(self, _mock_notification_class, auth_service):
         mock_user_repo = Mock()
         mock_user_repo.get_by_email.return_value = None
 

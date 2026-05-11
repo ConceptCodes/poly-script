@@ -512,6 +512,7 @@ async def admin_analytics(
 
     # Parse dates if provided
     from datetime import datetime
+
     start = None
     end = None
     if start_date:
@@ -566,7 +567,9 @@ async def admin_update_settings(
 ):
     """Update system settings (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can update settings")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can update settings"
+        )
 
     service = AdminService(db)
     try:
@@ -578,8 +581,6 @@ async def admin_update_settings(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-
-
 @router.post("/admin-users", response_model=dict)
 async def admin_create_admin_user(
     request: dict,
@@ -588,7 +589,9 @@ async def admin_create_admin_user(
 ):
     """Create a new admin user (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can create admins")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can create admins"
+        )
 
     service = AdminService(db)
     try:
@@ -613,7 +616,9 @@ async def admin_suspend_admin_user(
 ):
     """Suspend an admin user (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can suspend admins")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can suspend admins"
+        )
 
     service = AdminService(db)
     try:
@@ -636,7 +641,9 @@ async def admin_unsuspend_admin_user(
 ):
     """Unsuspend an admin user (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can unsuspend admins")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can unsuspend admins"
+        )
 
     service = AdminService(db)
     try:
@@ -659,7 +666,9 @@ async def admin_change_admin_role(
 ):
     """Change admin role (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can change admin roles")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can change admin roles"
+        )
 
     service = AdminService(db)
     try:
@@ -683,7 +692,9 @@ async def admin_delete_admin_user(
 ):
     """Delete an admin user (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can delete admins")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can delete admins"
+        )
 
     service = AdminService(db)
     try:
@@ -706,7 +717,9 @@ async def admin_suspend_team(
 ):
     """Suspend a team (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can suspend teams")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can suspend teams"
+        )
 
     service = AdminService(db)
     try:
@@ -729,7 +742,9 @@ async def admin_unsuspend_team(
 ):
     """Unsuspend a team (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can unsuspend teams")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can unsuspend teams"
+        )
 
     service = AdminService(db)
     try:
@@ -766,6 +781,7 @@ async def admin_audit_logs(
     ]
     return AuditLogListResponse(logs=items, total=len(items))
 
+
 @router.get("/audit-logs/{audit_id}", response_model=AuditLogListItem)
 async def admin_audit_log_detail(
     audit_id: uuid.UUID,
@@ -799,7 +815,10 @@ async def admin_create_impersonation_token(
 ):
     """Create an impersonation token for a user (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can create impersonation tokens")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only SUPER_ADMIN can create impersonation tokens",
+        )
 
     user_id_str = request.get("user_id")
     if not user_id_str:
@@ -829,7 +848,10 @@ async def admin_revoke_impersonation_token(
 ):
     """Revoke an impersonation token (SUPER_ADMIN only)."""
     if admin["role"] != "SUPER_ADMIN":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only SUPER_ADMIN can revoke impersonation tokens")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only SUPER_ADMIN can revoke impersonation tokens",
+        )
 
     service = AdminService(db)
     result = service.revoke_impersonation_token(
@@ -851,6 +873,7 @@ async def admin_job_volume_analytics(
 
     # Parse dates if provided
     from datetime import datetime
+
     start = None
     end = None
     if start_date:
@@ -865,5 +888,6 @@ async def admin_job_volume_analytics(
             pass
 
     return service.job_volume_analytics(start_date=start, end_date=end)
+
 
 admin_router = router

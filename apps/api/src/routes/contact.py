@@ -19,4 +19,5 @@ async def submit_contact(
     )
     return ContactResponse(status="received")
 
+
 contact_router = router

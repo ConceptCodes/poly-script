@@ -2,7 +2,6 @@
 Mapping between ErrorCode enum and I18nKeys for localization.
 """
 
-
 from poly_core.constants import I18nKeys
 
 from .base import ErrorCode

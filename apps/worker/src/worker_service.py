@@ -12,7 +12,9 @@ try:
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
-    logging.getLogger(__name__).warning("Redis not available. Install with: pip install redis")
+    logging.getLogger(__name__).warning(
+        "Redis not available. Install with: pip install redis"
+    )
 
 try:
     from poly_storage.redis.queue import TranscriptionQueue, TranscriptionWorkItem

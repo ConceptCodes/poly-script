@@ -14,9 +14,13 @@ def mock_templates_dir(tmp_path):
     templates_dir.mkdir()
 
     # Create test templates
-    (templates_dir / "verification_email.html").write_text("{{ user_name }} - {{ verification_url }}")
+    (templates_dir / "verification_email.html").write_text(
+        "{{ user_name }} - {{ verification_url }}"
+    )
     (templates_dir / "password_reset_email.html").write_text("{{ user_name }} - {{ reset_url }}")
-    (templates_dir / "team_invitation_email.html").write_text("{{ invitee_name }} - {{ inviter_name }} - {{ team_name }} - {{ invitation_url }} - {{ role }}")
+    (templates_dir / "team_invitation_email.html").write_text(
+        "{{ invitee_name }} - {{ inviter_name }} - {{ team_name }} - {{ invitation_url }} - {{ role }}"
+    )
 
     return str(templates_dir)
 

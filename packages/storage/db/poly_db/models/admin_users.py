@@ -11,6 +11,7 @@ from .base import Base, TimestampMixin
 
 class AdminUserRole(str, Enum):
     """Admin user role enum."""
+
     ADMIN = "ADMIN"
     SUPER_ADMIN = "SUPER_ADMIN"
 

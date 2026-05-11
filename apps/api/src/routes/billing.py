@@ -264,4 +264,5 @@ async def get_credits(
 async def get_pricing(billing_service: BillingService = Depends(get_billing_service)):
     return billing_service.get_pricing()
 
+
 billing_router = router

@@ -83,9 +83,7 @@ def test_upgrade_plan_success(override_billing_service, mock_team_id):
     app.dependency_overrides[get_current_user] = mock_current_user
     app.dependency_overrides[dependency_get_current_team_id] = mock_team_id
     app.dependency_overrides[get_current_team_id] = mock_team_id
-    override_billing_service.create_checkout_session.return_value.url = (
-        "http://stripe.com/checkout"
-    )
+    override_billing_service.create_checkout_session.return_value.url = "http://stripe.com/checkout"
 
     response = client.post(
         "/v1/billing/subscription/upgrade",

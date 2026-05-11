@@ -63,6 +63,7 @@ async def stripe_webhook(
             team = team_repo.get_by_stripe_customer_id(customer_id)
             if team:
                 from poly_db.models.teams import PlanType
+
                 team_repo.update(team.id, plan=PlanType.FREE)
                 # Also delete local subscription record
                 local_sub = sub_repo.get_by_team_id(team.id)
@@ -111,5 +112,6 @@ async def stripe_webhook(
 
     session.commit()
     return {"status": "success"}
+
 
 webhooks_router = router

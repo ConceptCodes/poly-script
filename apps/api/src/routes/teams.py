@@ -197,7 +197,9 @@ def get_team_invitations(
     current_user: dict = Depends(get_current_user),
     invitation_service: InvitationService = Depends(get_invitation_service),
 ):
-    invitations = invitation_service.get_pending_invitations(team_id=team_id, user_id=current_user["id"])
+    invitations = invitation_service.get_pending_invitations(
+        team_id=team_id, user_id=current_user["id"]
+    )
     return invitations
 
 
@@ -208,7 +210,9 @@ def cancel_invitation(
     current_user: dict = Depends(get_current_user),
     invitation_service: InvitationService = Depends(get_invitation_service),
 ):
-    success = invitation_service.cancel_invitation(invitation_id=invitation_id, user_id=current_user["id"])
+    success = invitation_service.cancel_invitation(
+        invitation_id=invitation_id, user_id=current_user["id"]
+    )
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -231,5 +235,6 @@ def accept_invitation(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=I18nKeys.INVALID_INVITATION_TOKEN.value,
         )
+
 
 teams_router = router

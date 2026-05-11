@@ -50,7 +50,9 @@ def mock_bootstrap():
 class TestWorkerService:
     """Tests for WorkerService."""
 
-    @pytest.mark.usefixtures("mock_settings", "mock_redis", "mock_storage", "mock_bootstrap")
+    @pytest.mark.usefixtures(
+        "mock_settings", "mock_redis", "mock_storage", "mock_bootstrap"
+    )
     def test_service_initialization(self):
         """Test service initializes correctly."""
         service = WorkerService()
@@ -60,7 +62,9 @@ class TestWorkerService:
         assert service._queue is not None
         assert service._storage_backend is not None
 
-    @pytest.mark.usefixtures("mock_settings", "mock_redis", "mock_storage", "mock_bootstrap")
+    @pytest.mark.usefixtures(
+        "mock_settings", "mock_redis", "mock_storage", "mock_bootstrap"
+    )
     def test_start_service(self):
         """Test starting the service."""
         service = WorkerService()
@@ -70,7 +74,9 @@ class TestWorkerService:
 
         service.stop()
 
-    @pytest.mark.usefixtures("mock_settings", "mock_redis", "mock_storage", "mock_bootstrap")
+    @pytest.mark.usefixtures(
+        "mock_settings", "mock_redis", "mock_storage", "mock_bootstrap"
+    )
     def test_stop_service(self):
         """Test stopping the service."""
         service = WorkerService()
@@ -81,7 +87,9 @@ class TestWorkerService:
         service.stop()
         assert not service.is_running
 
-    @pytest.mark.usefixtures("mock_settings", "mock_redis", "mock_storage", "mock_bootstrap")
+    @pytest.mark.usefixtures(
+        "mock_settings", "mock_redis", "mock_storage", "mock_bootstrap"
+    )
     def test_current_job_id(self):
         """Test getting current job ID."""
         service = WorkerService()

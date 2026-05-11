@@ -95,4 +95,5 @@ def get_usage(
             detail=str(exc),
         )
 
+
 dashboard_router = router

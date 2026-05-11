@@ -57,5 +57,6 @@ def complete_onboarding(
         plan=team.plan.value,
     )
 
+
 onboarding_router = router
 onboarding_router = router

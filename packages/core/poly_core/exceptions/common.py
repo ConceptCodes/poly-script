@@ -2,7 +2,6 @@
 Common exception types for different error categories.
 """
 
-
 from .base import APIErrorOptions, APIException, ErrorCode, ErrorDetail, ErrorSeverity
 
 

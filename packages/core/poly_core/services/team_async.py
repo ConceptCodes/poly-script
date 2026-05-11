@@ -21,7 +21,6 @@ class TeamError(Exception):
     """Team service error."""
 
 
-
 def _team_to_dict(team: Team) -> dict:
     """Convert Team model to safe dictionary matching TeamResponse schema."""
     return {

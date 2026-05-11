@@ -62,8 +62,8 @@ def mock_transcription_result():
         ],
         engine="whisper-local-base",
     )
- 
- 
+
+
 @pytest.fixture
 def mock_processor(mock_session, mock_storage_backend, mock_publisher):
     """Mock job processor."""
@@ -82,7 +82,7 @@ class TestProgressPublisher:
         with patch("worker.src.progress.get_redis_client") as mock_get_redis:
             mock_redis = Mock()
             mock_get_redis.return_value = mock_redis
-            
+
             publisher = ProgressPublisher()
             publisher.publish_progress(
                 job_id="test-job-123",
@@ -91,10 +91,10 @@ class TestProgressPublisher:
                 progress_stage="transcribing",
                 status="RUNNING",
             )
- 
+
             # Verify publish was called
             mock_redis.publish.assert_called_once()
- 
+
             # Verify channel format
             call_args = mock_redis.publish.call_args
             channel, message = call_args[0]
@@ -136,13 +136,13 @@ class TestJobProcessor:
         mock_response.headers = {}
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
- 
+
         audio_path = mock_processor._download_audio("https://example.com/audio.mp3")
- 
+
         # Verify download was called
         mock_get.assert_called_once()
         assert "https://example.com/audio.mp3" in mock_get.call_args[0]
- 
+
         # Verify temp file was created
         assert audio_path.endswith(".mp3")
 
@@ -152,14 +152,14 @@ class TestJobProcessor:
         """Test audio validation."""
         # Mock librosa to return audio
         import numpy as np
- 
+
         mock_load.return_value = (np.zeros(1000), 16000)
- 
+
         # Mock soundfile info
         mock_info.return_value = Mock(samplerate=16000, channels=1, format="WAV")
- 
+
         duration_ms = mock_processor._validate_audio("/tmp/test.wav")
- 
+
         # Verify duration calculation
         assert duration_ms == pytest.approx(62.5, rel=1e-2)  # ~1000/16
 
@@ -168,7 +168,9 @@ class TestJobProcessor:
         job = Mock()
         job.id = "job-123"
 
-        transcript = mock_processor._format_transcript(job, mock_transcription_result, duration_ms=5000)
+        transcript = mock_processor._format_transcript(
+            job, mock_transcription_result, duration_ms=5000
+        )
 
         # Verify transcript structure
         assert isinstance(transcript, Transcript)
@@ -228,21 +230,21 @@ class TestTranscriptionConsumer:
     @patch("worker.src.consumer.TranscriptionJobRepository")
     def test_retry_logic(self, mock_repo_class, mock_queue):
         """Test retry logic with exponential backoff."""
- 
+
         consumer = TranscriptionConsumer(
             queue=mock_queue, storage_backend=Mock(), max_retries=3, retry_backoff=2
         )
- 
+
         # Mock session and job
         mock_session = Mock()
         job = Mock()
         job.id = "job-123"
         job.attempts = 0
- 
+
         mock_repo = mock_repo_class.return_value
         mock_repo.get.return_value = job
-        mock_repo.update = Mock() # Ensure update is mocked if called
- 
+        mock_repo.update = Mock()  # Ensure update is mocked if called
+
         # Simulate failure handling
         work_item = {
             "job_id": "job-123",
@@ -250,24 +252,24 @@ class TestTranscriptionConsumer:
             "engine": None,
             "options": {},
         }
- 
+
         with patch("time.sleep") as mock_sleep:
             with patch("worker.src.consumer.get_db_session") as mock_get_session:
                 # Mock the context manager
                 mock_get_session.return_value.__enter__.return_value = mock_session
- 
+
                 consumer._handle_job_failure(
                     session=mock_session,
                     job_id="job-123",
                     work_item=work_item,
                 )
- 
+
                 # Verify retry was attempted
                 assert mock_queue.enqueue.call_count == 1
- 
+
                 # Verify sleep with backoff: 2^0 = 1s
                 mock_sleep.assert_called_with(1)
- 
+
     @patch("worker.src.consumer.TranscriptionJobRepository")
     def test_max_retries_exceeded(self, mock_repo_class, mock_queue):
         """Test job fails after max retries."""
@@ -275,32 +277,32 @@ class TestTranscriptionConsumer:
         job = Mock()
         job.id = "job-123"
         job.attempts = 3  # Already at max retries
- 
+
         mock_repo = mock_repo_class.return_value
         mock_repo.get.return_value = job
-        mock_repo.update = Mock() # Ensure update is mocked if called
- 
+        mock_repo.update = Mock()  # Ensure update is mocked if called
+
         consumer = TranscriptionConsumer(
             queue=mock_queue, storage_backend=Mock(), max_retries=3, retry_backoff=2
         )
- 
+
         work_item = {
             "job_id": "job-123",
             "audio_ref": "local://test.mp3",
             "engine": None,
             "options": {},
         }
- 
+
         with patch("worker.src.consumer.get_db_session") as mock_get_session:
             # Mock the context manager
             mock_get_session.return_value.__enter__.return_value = mock_session
- 
+
             consumer._handle_job_failure(
                 session=mock_session,
                 job_id="job-123",
                 work_item=work_item,
             )
- 
+
             # Verify job was NOT re-enqueued
             assert mock_queue.enqueue.call_count == 0
 

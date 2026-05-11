@@ -7,7 +7,11 @@ import wave
 import pytest
 
 from apps.worker.src.config import Settings
-from apps.worker.src.processor import AudioDownloadError, AudioValidationError, JobProcessor
+from apps.worker.src.processor import (
+    AudioDownloadError,
+    AudioValidationError,
+    JobProcessor,
+)
 
 
 class FakeResponse:
@@ -77,7 +81,9 @@ def test_validate_audio_corrupt(processor, tmp_path):
 
 def test_download_audio_content_length_mismatch(processor, monkeypatch):
     body = b"1234"
-    response = FakeResponse(body, headers={"Content-Length": "10", "Content-Type": "audio/mpeg"})
+    response = FakeResponse(
+        body, headers={"Content-Length": "10", "Content-Type": "audio/mpeg"}
+    )
 
     def fake_get(*_args, **_kwargs):
         return response

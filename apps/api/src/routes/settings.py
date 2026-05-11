@@ -20,6 +20,7 @@ def get_settings_service(db: Session = Depends(get_db_session)) -> SettingsServi
 
 # Team Settings
 
+
 @router.get("/team", response_model=TeamSettingsResponse)
 def get_team_settings(
     settings_service: SettingsService = Depends(get_settings_service),
@@ -93,6 +94,7 @@ def get_team_members(
 
 # Billing Settings
 
+
 @router.get("/billing", response_model=BillingInfoResponse)
 def get_billing_info(
     settings_service: SettingsService = Depends(get_settings_service),
@@ -111,5 +113,6 @@ def get_billing_info(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(exc),
         )
+
 
 settings_router = router

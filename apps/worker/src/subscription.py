@@ -13,7 +13,9 @@ class ProgressSubscriber:
         self._redis_client = redis.from_url(redis_url, decode_responses=True)
         self._pubsub = None
 
-    async def subscribe_to_job(self, job_id: str) -> AsyncGenerator[dict[str, Any], None]:
+    async def subscribe_to_job(
+        self, job_id: str
+    ) -> AsyncGenerator[dict[str, Any], None]:
         channel = f"job:{job_id}:progress"
 
         pubsub = self._redis_client.pubsub()

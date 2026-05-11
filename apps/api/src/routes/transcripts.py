@@ -407,7 +407,6 @@ async def bulk_delete_transcripts(
     return BulkDeleteTranscriptsResponse(deleted_count=deleted)
 
 
-
 @router.post("/{transcript_id}/segments/{segment_id}/split", response_model=SplitSegmentResponse)
 async def split_segment(
     transcript_id: uuid.UUID,
@@ -480,7 +479,10 @@ async def merge_segments(
             )
 
 
-@router.patch("/{transcript_id}/segments/{segment_id}/timestamps", response_model=UpdateSegmentTimestampsResponse)
+@router.patch(
+    "/{transcript_id}/segments/{segment_id}/timestamps",
+    response_model=UpdateSegmentTimestampsResponse,
+)
 async def update_segment_timestamps(
     transcript_id: uuid.UUID,
     segment_id: int,
@@ -526,6 +528,7 @@ async def update_segment_timestamps(
                 detail=str(e),
             )
 
+
 @router.get("/{transcript_id}/export")
 async def export_transcript(
     transcript_id: uuid.UUID,
@@ -535,7 +538,7 @@ async def export_transcript(
 ):
     """
     Export transcript in the specified format.
-    
+
     For async_export=true, returns a presigned URL for large exports.
     Otherwise, returns the exported content directly.
     """
@@ -569,6 +572,7 @@ async def export_transcript(
             if cached and cached.presigned_url:
                 # Return redirect to presigned URL
                 from fastapi.responses import RedirectResponse
+
                 return RedirectResponse(url=cached.presigned_url, status_code=307)
 
             # Generate new export
@@ -581,6 +585,7 @@ async def export_transcript(
             if artifact.presigned_url:
                 # Return redirect to presigned URL
                 from fastapi.responses import RedirectResponse
+
                 return RedirectResponse(url=artifact.presigned_url, status_code=307)
             else:
                 # Return inline content
@@ -611,5 +616,6 @@ async def export_transcript(
                 "Content-Length": str(content_length),
             },
         )
+
 
 transcripts_router = router

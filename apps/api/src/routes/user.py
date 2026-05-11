@@ -159,9 +159,10 @@ def delete_user_account(
 ):
     """Delete user account."""
     from poly_db.models.users import User
+
     user = db.query(User).filter(User.id == current_user["id"]).first()
     if not user:
-         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     db.delete(user)
     db.commit()
@@ -225,5 +226,6 @@ def delete_user_account_by_id(
 
     db.delete(user)
     db.commit()
+
 
 user_router = router

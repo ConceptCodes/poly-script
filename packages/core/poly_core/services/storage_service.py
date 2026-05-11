@@ -20,9 +20,7 @@ from botocore.exceptions import ClientError
 class StorageBackend(Protocol):
     """Protocol for storage backends (local, S3)."""
 
-    def save(
-        self, file_content: bytes, filename: str, _content_type: str = "audio/mpeg"
-    ) -> str:
+    def save(self, file_content: bytes, filename: str, _content_type: str = "audio/mpeg") -> str:
         """Save file and return storage URI.
 
         Args:
@@ -64,9 +62,7 @@ class LocalStorageBackend:
         self.storage_path.mkdir(parents=True, exist_ok=True)
         self.min_free_bytes = min_free_bytes
 
-    def save(
-        self, file_content: bytes, filename: str, _content_type: str = "audio/mpeg"
-    ) -> str:
+    def save(self, file_content: bytes, filename: str, _content_type: str = "audio/mpeg") -> str:
         file_extension = Path(filename).suffix
         unique_filename = f"{uuid.uuid4()}{file_extension}"
         file_path = self.storage_path / unique_filename

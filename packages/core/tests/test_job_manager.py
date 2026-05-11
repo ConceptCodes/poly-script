@@ -36,7 +36,9 @@ class TestJobManagerService:
         assert hasattr(job_manager, "billing")
         assert hasattr(job_manager, "queue")
 
-    @pytest.mark.xfail(reason="JobManagerService doesn't have team_repo or check_plan_limits method")
+    @pytest.mark.xfail(
+        reason="JobManagerService doesn't have team_repo or check_plan_limits method"
+    )
     def test_check_plan_limits_free_plan(self, job_manager):
         """Verify plan limits are checked for FREE plan."""
         mock_team = Mock()
@@ -52,7 +54,9 @@ class TestJobManagerService:
             assert result["within_limits"] is True
             assert result["remaining"] == 1
 
-    @pytest.mark.xfail(reason="JobManagerService doesn't have team_repo or check_plan_limits method")
+    @pytest.mark.xfail(
+        reason="JobManagerService doesn't have team_repo or check_plan_limits method"
+    )
     def test_check_plan_limits_exceeded(self, job_manager):
         """Verify plan limits catch exceeded quota."""
         mock_team = Mock()

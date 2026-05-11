@@ -305,7 +305,9 @@ class JobProcessor:
                     try:
                         os.unlink(temp_path)
                     except Exception:
-                        logger.debug("Failed to cleanup temp file after download failure")
+                        logger.debug(
+                            "Failed to cleanup temp file after download failure"
+                        )
 
                 if attempt < max_retries:
                     time.sleep(retry_backoff ** (attempt - 1))
@@ -322,11 +324,15 @@ class JobProcessor:
                     try:
                         os.unlink(temp_path)
                     except Exception:
-                        logger.debug("Failed to cleanup temp file after unexpected download error")
+                        logger.debug(
+                            "Failed to cleanup temp file after unexpected download error"
+                        )
                 if attempt < max_retries:
                     time.sleep(retry_backoff ** (attempt - 1))
 
-        raise AudioDownloadError(str(last_error) if last_error else "Audio download failed")
+        raise AudioDownloadError(
+            str(last_error) if last_error else "Audio download failed"
+        )
 
     def _validate_audio(self, audio_path: str) -> int:
         """Validate audio format and get duration in milliseconds."""
@@ -364,7 +370,9 @@ class JobProcessor:
                     info.format,
                 )
             else:
-                logger.info("Audio validated: %sms, %sHz (format unknown)", duration_ms, sr)
+                logger.info(
+                    "Audio validated: %sms, %sHz (format unknown)", duration_ms, sr
+                )
 
             return duration_ms
         except Exception as e:
@@ -372,7 +380,9 @@ class JobProcessor:
                 raise
             raise AudioValidationError(f"Invalid audio file: {e}") from e
 
-    def _validate_extension_matches_format(self, audio_path: str, detected_format: str | None) -> None:
+    def _validate_extension_matches_format(
+        self, audio_path: str, detected_format: str | None
+    ) -> None:
         if not detected_format:
             return
 
@@ -395,7 +405,9 @@ class JobProcessor:
                 f"Audio codec mismatch: file extension {ext} does not match detected {detected_format}"
             )
 
-    def _transcribe_audio(self, job: TranscriptionJob, audio_path: str) -> TranscriptionResult:
+    def _transcribe_audio(
+        self, job: TranscriptionJob, audio_path: str
+    ) -> TranscriptionResult:
         """Transcribe audio using configured STT engine."""
         # Get engine
         engine_name = job.engine or "whisper-local-base"
@@ -452,7 +464,10 @@ class JobProcessor:
         )
 
     def _translate_transcript(
-        self, job: TranscriptionJob, transcript: Transcript, stt_result: TranscriptionResult
+        self,
+        job: TranscriptionJob,
+        transcript: Transcript,
+        stt_result: TranscriptionResult,
     ) -> None:
         """Translate transcript to target language.
 
@@ -517,7 +532,9 @@ class JobProcessor:
             self._increment_translation_count(job)
 
             self.session.commit()
-            logger.info(f"Translation completed for job {job.id}: {job.target_language}")
+            logger.info(
+                f"Translation completed for job {job.id}: {job.target_language}"
+            )
 
         except Exception as e:
             # Mark translation as failed but don't fail the job

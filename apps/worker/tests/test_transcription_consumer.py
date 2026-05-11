@@ -69,7 +69,9 @@ class TestTranscriptionConsumer:
 
     @patch("apps.worker.src.consumer.get_db_session")
     @patch("apps.worker.src.consumer.JobProcessor")
-    def test_process_work_item_success(self, mock_processor_class, mock_db_session, consumer, mock_queue):
+    def test_process_work_item_success(
+        self, mock_processor_class, mock_db_session, consumer, mock_queue
+    ):
         """Test processing a work item successfully."""
         work_item = {
             "job_id": "test-job-123",
@@ -82,10 +84,10 @@ class TestTranscriptionConsumer:
         mock_queue.dequeue.return_value = work_item
         mock_session = Mock()
         mock_db_session.return_value.__enter__.return_value = mock_session
-        
+
         mock_processor = mock_processor_class.return_value
         mock_processor.process_job.return_value = True
 
         consumer._process_work_item(work_item)
-        
+
         mock_processor.process_job.assert_called_once_with("test-job-123")

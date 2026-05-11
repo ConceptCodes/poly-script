@@ -129,6 +129,7 @@ class ErrorResponse(BaseModel):
         },
     )
 
+
 @dataclass(frozen=True)
 class APIErrorOptions:
     """Optional response metadata for API errors."""

@@ -1,6 +1,5 @@
 """Unit tests for transcript service."""
 
-
 import uuid
 from unittest.mock import MagicMock, Mock
 

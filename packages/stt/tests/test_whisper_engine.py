@@ -47,10 +47,12 @@ class TestWhisperEngine:
     @patch("poly_stt.engines.whisper.WhisperLocalEngine._transcribe_with_fallback")
     def test_transcribe_basic(self, mock_transcribe, tiny_engine, sample_audio_file):
         """Test basic transcription."""
-        mock_segments = iter([
-            MagicMock(start=0.0, end=1.0, text="Hello"),
-            MagicMock(start=1.0, end=2.0, text="world"),
-        ])
+        mock_segments = iter(
+            [
+                MagicMock(start=0.0, end=1.0, text="Hello"),
+                MagicMock(start=1.0, end=2.0, text="world"),
+            ]
+        )
         mock_info = MagicMock(language="en", language_probability=0.9, duration=2.0)
         mock_transcribe.return_value = (mock_segments, mock_info)
 

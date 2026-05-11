@@ -81,7 +81,9 @@ class ProgressPublisher:
             status="RUNNING",
         )
 
-        logger.info(f"[Progress] Job {job_id} completed stage '{stage}' ({progress_pct}%)")
+        logger.info(
+            f"[Progress] Job {job_id} completed stage '{stage}' ({progress_pct}%)"
+        )
 
     @staticmethod
     def _get_stage_progress(stage: str) -> int:

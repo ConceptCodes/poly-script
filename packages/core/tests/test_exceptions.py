@@ -180,9 +180,7 @@ class TestLocalizationUtilities:
         """Test extracting locale from complex Accept-Language header."""
 
         class MockRequest:
-            headers: ClassVar[dict[str, str]] = {
-                "accept-language": "en-US,en;q=0.9,fr;q=0.8"
-            }
+            headers: ClassVar[dict[str, str]] = {"accept-language": "en-US,en;q=0.9,fr;q=0.8"}
 
         request = MockRequest()
         locale = get_locale_from_request(request)

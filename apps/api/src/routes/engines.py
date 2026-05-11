@@ -5,6 +5,7 @@ from src.schemas.engines import EngineCapabilitiesSchema, EngineInfo, EnginesRes
 
 router = APIRouter()
 
+
 @router.get("/v1/engines", response_model=EnginesResponse)
 async def list_engines():
     engines = []
@@ -24,5 +25,6 @@ async def list_engines():
         "engines": engines,
         "default": EngineRegistry._default,
     }
+
 
 engines_router = router
